@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  frontend:
+    name: Dashboard (lint, typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @rkpr/dashboard lint
+      - name: Typecheck
+        run: pnpm --filter @rkpr/dashboard typecheck
+      - name: Unit tests
+        run: pnpm --filter @rkpr/dashboard test
+      - name: Production build
+        run: pnpm --filter @rkpr/dashboard build
+      - name: Dependency audit
+        run: pnpm audit --prod || true
+
+  backend:
+    name: API and worker (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.11.32"
+          python-version: "3.12"
+      - name: Sync workspace
+        run: uv sync --all-packages
+      - name: Ruff check
+        run: uv run ruff check apps/api apps/worker
+      - name: Ruff format check
+        run: uv run ruff format --check apps/api apps/worker
+      - name: mypy (api)
+        run: uv run --package rkpr-api mypy apps/api/app
+      - name: mypy (worker)
+        run: uv run --package rkpr-worker mypy apps/worker/worker
+      - name: Pytest (api)
+        run: uv run --package rkpr-api pytest apps/api/tests
+      - name: Pytest (worker)
+        run: uv run --package rkpr-worker pytest apps/worker/tests
+      - name: API import/startup validation
+        run: uv run --package rkpr-api python -c "from app.main import create_app; create_app()"
+      - name: Worker import/startup validation
+        run: uv run --package rkpr-worker python -c "import worker.main"
