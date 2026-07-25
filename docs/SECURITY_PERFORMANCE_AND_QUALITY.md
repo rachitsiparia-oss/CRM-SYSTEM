@@ -538,6 +538,8 @@ Tenant-based RLS is not required.
 
 RLS may still be used where it provides specific protection for direct Supabase Storage or approved realtime access, but it must not create a second conflicting authorization model.
 
+Every table must still have RLS **enabled with zero policies**, regardless of the above — added during Phase 3 after Supabase's Table Editor flagged every table as "Unrestricted." Without this, every table is reachable through Supabase's auto-generated REST API (PostgREST) using the public `anon` key shipped in the browser bundle, completely bypassing FastAPI's authorization layer, regardless of whether the frontend is ever intended to call that path directly. RLS-enabled-with-no-policies denies all PostgREST access by default without requiring a second, business-rule-shaped authorization model (no policies to write or keep in sync with `app.permissions`). `apps/api`'s own connection is unaffected: it connects as the table-owning `postgres.<project-ref>` role over a direct connection, not through PostgREST, and table owners bypass RLS unless `FORCE ROW LEVEL SECURITY` is also set — it is not. Every new migration that creates a table must include `ALTER TABLE <table> ENABLE ROW LEVEL SECURITY` in the same migration.
+
 ### 8.6 Audit integrity
 
 Audit records must not be editable by ordinary business users.
