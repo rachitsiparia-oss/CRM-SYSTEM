@@ -12,14 +12,65 @@ every such change attributable to a second party in the audit trail.
 
 import uuid
 
+import httpx
 from fastapi import HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import record_audit_event
+from app.core.config import get_settings
 from app.db.models import Role, StaffInvitation, StaffRole, StaffUser
 from app.permissions.seed import default_invitation_expiry
 from app.permissions.service import invalidate_permissions_cache
+
+
+async def _send_supabase_invite_email(
+    *, email: str, first_name: str, last_name: str | None
+) -> None:
+    """Creates the (unconfirmed) Supabase Auth user and sends Supabase's
+    own "invite user" email — GoTrue's `POST /invite` admin endpoint,
+    which `supabase.auth.admin.inviteUserByEmail()` calls under the hood.
+
+    This is a real, previously-missing step: earlier, `create_invitation`
+    only wrote our own bookkeeping row and never actually told Supabase to
+    email anyone, so no invitation email was ever sent.
+    """
+    settings = get_settings()
+    if not (settings.supabase_url and settings.supabase_service_role_key):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invitations are not configured on this environment.",
+        )
+
+    redirect_to = f"{settings.dashboard_base_url}/auth/callback?next=/reset-password"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(
+                f"{settings.supabase_url}/auth/v1/invite",
+                params={"redirect_to": redirect_to},
+                json={"email": email, "data": {"first_name": first_name, "last_name": last_name}},
+                headers={
+                    "apikey": settings.supabase_service_role_key,
+                    "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not send the invitation email. Try again shortly.",
+        ) from exc
+
+    if response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already registered with Supabase Auth.",
+        )
+    if response.status_code >= 400:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not send the invitation email. Try again shortly.",
+        )
 
 
 class SelfModificationError(HTTPException):
@@ -169,6 +220,11 @@ async def create_invitation(
             status_code=status.HTTP_409_CONFLICT,
             detail="A pending invitation already exists for this email.",
         )
+
+    # Send the real email before writing our own bookkeeping row — if
+    # Supabase can't be reached or refuses the invite, we don't want a
+    # StaffInvitation row implying one was sent when it wasn't.
+    await _send_supabase_invite_email(email=email, first_name=first_name, last_name=last_name)
 
     invitation = StaffInvitation(
         id=uuid.uuid4(),

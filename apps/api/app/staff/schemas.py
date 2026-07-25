@@ -82,8 +82,14 @@ class RoleAssignIn(BaseModel):
 class InvitationCreateIn(BaseModel):
     email: str = Field(min_length=3, max_length=255)
     first_name: str = Field(min_length=1, max_length=80)
-    last_name: str | None = Field(default=None, max_length=80)
-    department_id: uuid.UUID | None = None
+    # last_name and department_id are nullable at the database level
+    # (DATABASE_AND_API.md section 4.6, StaffInvitation still allows both
+    # NULL for rows created through other paths) but required here: the
+    # invite form requires every field before it can submit, and the
+    # backend is the authority on that rule, not just the frontend
+    # (CLAUDE.md section 10, "server validation as the authority").
+    last_name: str = Field(min_length=1, max_length=80)
+    department_id: uuid.UUID
     role_code: str
 
 
