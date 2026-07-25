@@ -1,0 +1,56 @@
+# --- Environment and secrets ---
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+*.p12
+*credentials*.json
+!**/fixtures/**credentials*.json
+
+# --- Node / pnpm ---
+node_modules/
+.pnpm-store/
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# --- Python / uv ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Local databases ---
+*.sqlite3
+*.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# --- Claude Code local session state (not project source) ---
+.claude/
+
+# --- Misc build artifacts ---
+*.tsbuildinfo
+playwright-report/
+test-results/
