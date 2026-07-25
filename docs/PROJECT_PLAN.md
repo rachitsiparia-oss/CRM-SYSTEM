@@ -1344,6 +1344,8 @@ Implement secure staff access and backend-enforced authorization before business
 
 Build the responsive, high-speed dashboard framework and shared UI system that later modules will populate with real data, without hardcoded production data.
 
+**Implementation note (Phase 4 completion):** the dummy KPI widgets described below under "Initial dummy widgets" were not wired into the dashboard home page. The explicit Phase 4 instruction the user gave at implementation time repeatedly said "nothing business-specific should be implemented" and listed Dashboard under placeholder-only pages ("Title, Breadcrumb, Placeholder. Nothing more.") — CLAUDE.md section 1.1 makes that instruction controlling when it conflicts with this document. The `StatCard`/`MetricCard`/chart wrapper components this section calls for do exist (`apps/dashboard/src/components/`); only populating the actual dashboard page with the dummy values below was deferred. See `ROADMAP.md`'s Phase 4 completion notes.
+
 ## Scope
 
 - Owner, general manager, operations, kitchen, reservation, and marketing dashboard shells

@@ -106,7 +106,7 @@ Deferred items, each a deliberate scope boundary rather than an omission: (1) th
 
 ## Phase 4 — Dashboard Shell and Shared UI System
 
-Status: NOT STARTED
+Status: COMPLETED
 
 Scope:
 
@@ -115,9 +115,23 @@ Scope:
 - Add shared tables, filters, forms, dialogs, charts, loading, empty, and error states
 - Add permission-aware UI behavior
 
-Completion date:
+Completion date: 2026-07-25
 
-Completion notes:
+Completion notes: Established the design-token foundation shadcn/ui components resolve against (`globals.css` — `--background`/`--card`/`--primary`/`--destructive`/`--success`/`--warning`/`--sidebar-*`/`--chart-1..5`, light and dark via the existing `prefers-color-scheme` strategy, no new class-based toggle introduced since none was requested) and installed 31 shadcn/ui primitives (button/input/label were already hand-written from Phase 1 and were preserved, not overwritten).
+
+Rebuilt the authenticated shell: `DashboardShell` (sidebar + header + scrollable content, `TooltipProvider` once for the whole shell) now wraps the `(app)` route group; the root layout is minimal so the public auth pages render without CRM chrome. `Sidebar` replaces Phase 3's `dashboard-nav.tsx` in place (collapsible with a persisted `localStorage` preference, icons, nested navigation demonstrated on Staff & HR's two real sub-routes, active-route highlighting via `aria-current`, keyboard-reachable, permission-aware) with a `MobileNav` off-canvas counterpart for small screens — both read one shared `nav-config.ts` source so they can't drift apart. `Header` composes `Breadcrumbs` (auto-derived from the URL against that same nav config), `GlobalSearch` (⌘K command-palette foundation, UI-only per PROJECT_PLAN.md Phase 4 scope — jumps between the twelve sections, no backend search), `NotificationsMenu` (mock/empty data only, per scope), and an upgraded `UserMenu` (avatar, dropdown, Profile/Settings/Sign out).
+
+Added a real `/profile` page using Phase 3's existing (previously unused from the UI side) `PATCH /api/v1/auth/me` self-service endpoint — the one exception to "shell pages only," justified because the Phase 4 spec explicitly required a working "Profile" menu item and the backend support for it already existed from Phase 3.
+
+Design system: `PageHeader`, `SectionCard`, `StatCard`, `MetricCard`, `StatusBadge` (icon-paired per tone, never color-only), `EmptyState`, `ErrorState` (404/403/500/offline/generic — now used by `not-found.tsx`, `error.tsx`, and `/forbidden`, replacing three previously-inconsistent hand-rolled versions). Forms: `PhoneInput`/`EmailInput`/`PasswordInput`/`SearchInput`/`NumberInput`/`CurrencyInput`/`TimeInput`, `DatePicker`, `MultiSelect`, `FileUpload`/`ImageUpload` (presentation only — no Storage transport wiring, that belongs to whichever business form uses them), and a `FormField` wrapper for label/error/description/required. `DataTable`: the one generic enterprise table (server-driven sorting and pagination only — it never assumes it holds a full dataset to sort or paginate client-side), with column resize/visibility, row/bulk selection, sticky header, loading/empty states. `FilterBar`, `Modal` (sm/md/lg/fullscreen), `ConfirmDialog` (AlertDialog-based — cannot be dismissed by an outside click, with an optional typed-confirmation safeguard for the highest-risk deletes), `Drawer` (left/right), `ActionMenu`. Charts: `LineChart`/`BarChart`/`AreaChart`/`PieChart` (with a `donut` variant) wrapping Apache ECharts, colored from the design tokens via a `useChartColors` hook (resolves `--chart-1..5` to concrete values since ECharts can't read CSS custom properties itself, re-reads on an OS color-scheme flip). Skeletons: page/card/table/form/chart.
+
+All twelve placeholder pages (`ModulePlaceholder`, plus the Dashboard home page) now render through `PageHeader` + `EmptyState` instead of ad hoc markup — deliberately still just "title, breadcrumb, placeholder, nothing more," per this phase's explicit instruction. This is a conscious, explicit deviation from `PROJECT_PLAN.md`'s Phase 4 section, which describes dummy KPI widgets (`Revenue today: ₹84,620`, etc.) on the dashboard home page — the most recent explicit user instruction for this phase repeatedly said "nothing business-specific" and listed Dashboard under "placeholder pages only," which CLAUDE.md section 1.1 makes the controlling instruction when it conflicts with a document. The KPI/metric-card and chart *components* PROJECT_PLAN.md and this phase both wanted now exist either way; only wiring them into the actual dashboard page with dummy data was skipped, deferred to whichever phase populates the dashboard with real aggregates.
+
+Two real bugs found and fixed while building this, both from React Compiler's `react-hooks/set-state-in-effect` rule (new since Phase 1's ESLint config was last exercised against non-trivial client components): `ImageUpload` stored a derived object-URL in state and set it from inside an effect (restructured to compute it via `useMemo` instead, with the effect doing only cleanup); `useChartColors` re-set state unconditionally on every mount even though its lazy `useState` initializer already produces the correct value on the client's first render (removed the redundant call, keeping the effect only for the *future* OS color-scheme-change subscription). `Sidebar`'s mount-only localStorage read triggered the same rule but is the correct, standard pattern for avoiding a hydration mismatch (reading `localStorage` during SSR isn't possible) — scoped `eslint-disable-next-line` with a comment explaining why, rather than restructured away.
+
+Verified: `ruff check`, `ruff format --check`, `mypy --strict` (63 files), and the full `apps/api` Pytest suite (47/47) all still pass, confirming the "do not touch auth/authorization/database/API contracts" constraint held — nothing in `apps/api` changed this phase. Frontend: ESLint (0 errors after the fixes above; the two remaining warnings are TanStack Table's own known, benign React Compiler incompatibility note, pre-existing since Phase 3), `tsc --noEmit`, Vitest (4/4 — `sidebar.test.tsx` replaces Phase 3's `dashboard-nav.test.tsx`, covering the same permission-visibility behavior against the new component), `next build`, and Playwright e2e (3/3) all pass. Manually verified in a live browser: `/login`, `/health`, `/forbidden` (new `ErrorState` rendering), and that `/staff` still redirects unauthenticated visitors to `/login` — no regression in Phase 3's auth flow.
+
+Deferred, deliberately: dummy dashboard KPI widgets (see the PROJECT_PLAN.md deviation note above), any business-specific table/form/filter usage (every module in Phase 5 onward composes the primitives built here, none were pre-wired to real data), Redis-backed anything (still Phase 16/17, unrelated to this phase), and real cross-module search/notifications backends (both stay UI-only until their owning phases).
 
 ## Phase 5 — Customer and Lead CRM
 
