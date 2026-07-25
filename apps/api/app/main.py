@@ -4,12 +4,17 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
 from app.health.router import router as health_router
+
+# Must run before uvicorn (or anything else) creates an event loop — see
+# app/core/asyncio_policy.py.
+configure_event_loop_policy()
 
 logger = get_logger(__name__)
 

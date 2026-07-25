@@ -3,12 +3,18 @@ from typing import Any
 from arq import cron
 from arq.connections import RedisSettings
 
+from worker.asyncio_policy import configure_event_loop_policy
 from worker.config import get_worker_settings
 from worker.logging import configure_logging, get_logger
+from worker.observability import configure_sentry
 from worker.tasks.heartbeat import heartbeat
+
+# Must run before ARQ creates its event loop — see worker/asyncio_policy.py.
+configure_event_loop_policy()
 
 settings = get_worker_settings()
 configure_logging(settings)
+configure_sentry(settings)
 logger = get_logger(__name__)
 
 

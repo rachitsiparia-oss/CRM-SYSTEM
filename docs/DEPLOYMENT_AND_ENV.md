@@ -367,6 +367,10 @@ The API and worker use the psycopg 3 driver with SQLAlchemy 2.x, with connection
 
 Migrations (Alembic) may use a direct connection distinct from pooled runtime connections.
 
+**Use the Supabase connection pooler (Session mode, port 5432), not the direct `db.<ref>.supabase.co:5432` host.** The direct host is IPv6-only on most Supabase projects and will time out with a connection timeout on networks without IPv6 egress (confirmed during Phase 2 setup). The pooler host follows the pattern `aws-<n>-<region>.pooler.supabase.com`, with username `postgres.<project-ref>` instead of plain `postgres` — find the exact values under Project Settings → Database → Connection string → Session pooler in the Supabase dashboard. Session mode (not Transaction mode, port 6543) is used for both the application runtime and Alembic migrations, since DDL and long-running transactions behave better outside transaction pooling.
+
+**Windows local development note:** psycopg 3's async mode refuses to run under Windows' default `ProactorEventLoop` — it requires a selector-based event loop. `apps/api/run.py` sets the correct event loop policy before starting uvicorn; do not run `uvicorn app.main:app` directly on Windows, as the plain CLI creates its event loop before the app module (and its policy fix) is ever imported. This is a no-op on Linux/macOS (Railway, CI, production).
+
 ### 7.2 Connection rules
 
 - TLS required

@@ -82,16 +82,20 @@ cp apps/worker/.env.example apps/worker/.env
 | Dashboard unit tests | `pnpm --filter @rkpr/dashboard test` |
 | Dashboard e2e tests | `pnpm --filter @rkpr/dashboard test:e2e` |
 | Production build | `pnpm --filter @rkpr/dashboard build` |
-| Run the API locally | `uv run --package rkpr-api uvicorn app.main:app --reload --app-dir apps/api` |
+| Run the API locally | `uv run --package rkpr-api python apps/api/run.py` (do not run `uvicorn` directly on Windows — see note below) |
 | Run the worker locally | `uv run --package rkpr-worker arq worker.main.WorkerSettings` (from `apps/worker`) |
 | Lint/format the backend | `uv run ruff check apps/api apps/worker` / `uv run ruff format apps/api apps/worker` |
 | Type-check the backend | `uv run --package rkpr-api mypy apps/api/app` / `uv run --package rkpr-worker mypy apps/worker/worker` |
 | Backend tests | `uv run --package rkpr-api pytest apps/api/tests` / `uv run --package rkpr-worker pytest apps/worker/tests` |
+| Run/create database migrations | `uv run --package rkpr-api alembic upgrade head` / `alembic revision --autogenerate -m "..."` (from `apps/api`) |
+| Run canonical seed data | `uv run --package rkpr-api python apps/api/app/db/seed.py` |
+
+> **Windows note:** always start the API via `apps/api/run.py`, not `uvicorn app.main:app` directly. psycopg 3's async mode requires a selector-based event loop; the plain `uvicorn` CLI creates Windows' default `ProactorEventLoop` before our app code ever runs, which is too late to fix. `run.py` sets the correct policy first. This is a no-op (and unnecessary, but harmless) on Linux/macOS/Railway.
 
 ## Testing
 
 - **Frontend**: Vitest + React Testing Library for unit/component tests, Playwright for end-to-end journeys.
-- **Backend**: Pytest + pytest-asyncio + HTTPX test client.
+- **Backend**: Pytest + pytest-asyncio + HTTPX test client. Database-backed tests (`apps/api/tests/test_db_foundation.py`) run against the real configured `DATABASE_URL` inside a SAVEPOINT that is always rolled back, so they never leave data behind; they skip automatically (not fail) when `DATABASE_URL` isn't set, which is why they currently skip in CI — no database credential is configured there yet.
 - **Load testing**: k6, run before production launch — never against production itself.
 
 ## Production status

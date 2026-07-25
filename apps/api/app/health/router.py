@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, status
+
+from app.core.config import get_settings
+from app.db.session import check_database_connection
 
 router = APIRouter(tags=["health"])
 
@@ -11,11 +14,21 @@ async def liveness() -> dict[str, str]:
 
 
 @router.get("/health/ready")
-async def readiness() -> dict[str, str]:
+async def readiness(response: Response) -> dict[str, str]:
     """Service can accept traffic.
 
-    Phase 1 has no database or Redis dependency yet, so readiness currently
-    mirrors liveness. Phase 2 onward adds real dependency checks (database
-    connectivity) here without exposing connection strings or credentials.
+    Checks database connectivity when DATABASE_URL is configured — never
+    exposes the connection string, host, or credentials, only a boolean
+    outcome. Environments that intentionally have no database yet (local/
+    test without DATABASE_URL — see core/config.py) stay "ok" rather than
+    being reported as degraded for a dependency they were never given.
     """
-    return {"status": "ok"}
+    settings = get_settings()
+    if not settings.database_url:
+        return {"status": "ok"}
+
+    if await check_database_connection(settings):
+        return {"status": "ok"}
+
+    response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return {"status": "degraded", "reason": "database_unreachable"}
