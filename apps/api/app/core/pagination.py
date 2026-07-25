@@ -23,6 +23,11 @@ class Pagination(BaseModel):
     total: int
 
 
+class Meta(BaseModel):
+    request_id: str
+
+
 class PaginatedResponse[T](BaseModel):
     data: list[T]
     pagination: Pagination
+    meta: Meta
