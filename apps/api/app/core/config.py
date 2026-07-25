@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     environment: Literal["local", "test", "staging", "production"] = "local"
 
     api_base_url: str = "http://localhost:8000"
+    # Used only to build the Supabase password-recovery email's redirect
+    # link back to the dashboard — not a security boundary (CORS is).
+    dashboard_base_url: str = "http://localhost:3000"
     cors_allowed_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     sentry_dsn: str | None = None
@@ -46,6 +49,16 @@ class Settings(BaseSettings):
     db_pool_max_overflow: int = 10
     db_echo: bool = False
 
+    # Supabase Auth — required from Phase 3 onward. `supabase_service_role_key`
+    # is server-only (SECURITY_PERFORMANCE_AND_QUALITY.md section 3.7,
+    # section 5.2) and must never be sent to the browser or logged.
+    # `auth_jwt_signing_secret` is the HS256 shared secret Supabase issues
+    # access tokens with (Project Settings -> API -> JWT Settings); used to
+    # verify tokens locally without a network round trip on every request.
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    auth_jwt_signing_secret: str | None = None
+
     @model_validator(mode="after")
     def _require_database_url_outside_local_dev(self) -> Self:
         # Staging and production must never start without a real database —
@@ -55,6 +68,17 @@ class Settings(BaseSettings):
         if self.environment in ("staging", "production") and not self.database_url:
             raise ValueError(
                 "DATABASE_URL is required when ENVIRONMENT is 'staging' or 'production'"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _require_auth_config_outside_local_dev(self) -> Self:
+        if self.environment in ("staging", "production") and not (
+            self.supabase_url and self.supabase_service_role_key and self.auth_jwt_signing_secret
+        ):
+            raise ValueError(
+                "SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and AUTH_JWT_SIGNING_SECRET are "
+                "required when ENVIRONMENT is 'staging' or 'production'"
             )
         return self
 
