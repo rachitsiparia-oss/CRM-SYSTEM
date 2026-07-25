@@ -10,7 +10,7 @@ test("health page confirms the dashboard is serving requests", async ({
 test("unauthenticated visitors are redirected to sign in", async ({ page }) => {
   // Phase 3: every route except the public auth pages requires a session —
   // src/proxy.ts. The full twelve-section nav is covered by
-  // dashboard-nav.test.tsx instead, since rendering it now requires an
+  // sidebar.test.tsx instead, since rendering it now requires an
   // authenticated current-user response the e2e environment doesn't have.
   await page.goto("/");
   await expect(page).toHaveURL(/\/login(\?.*)?$/);
