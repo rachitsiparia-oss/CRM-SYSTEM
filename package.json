@@ -1,0 +1,18 @@
+{
+  "name": "rkpr-crm",
+  "private": true,
+  "version": "0.1.0",
+  "description": "RKPR Restaurant CRM - private, single-business CRM monorepo",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev:dashboard": "pnpm --filter @rkpr/dashboard dev",
+    "build:dashboard": "pnpm --filter @rkpr/dashboard build",
+    "lint:dashboard": "pnpm --filter @rkpr/dashboard lint",
+    "test:dashboard": "pnpm --filter @rkpr/dashboard test",
+    "typecheck:dashboard": "pnpm --filter @rkpr/dashboard typecheck",
+    "test:e2e": "pnpm --filter @rkpr/dashboard test:e2e"
+  }
+}
