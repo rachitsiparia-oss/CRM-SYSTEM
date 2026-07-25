@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { ErrorState } from "@/components/error-state";
+
 export default function GlobalError({
   error,
   reset,
@@ -16,22 +18,14 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div role="alert" className="flex flex-1 flex-col items-start gap-3 p-8">
-      <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-        Something went wrong
-      </h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        {error.digest
-          ? `Reference: ${error.digest}`
-          : "No further details are available."}
-      </p>
-      <button
-        type="button"
-        onClick={reset}
-        className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
-      >
-        Try again
-      </button>
+    <div role="alert" className="flex flex-1 items-center justify-center p-8">
+      <ErrorState
+        variant="500"
+        description={
+          error.digest ? `Reference: ${error.digest}` : "No further details are available."
+        }
+        onRetry={reset}
+      />
     </div>
   );
 }
