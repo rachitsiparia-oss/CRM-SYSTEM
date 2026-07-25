@@ -7,10 +7,18 @@ test("health page confirms the dashboard is serving requests", async ({
   await expect(page.getByRole("heading", { name: "Dashboard: OK" })).toBeVisible();
 });
 
-test("primary navigation lists all twelve approved sections", async ({
-  page,
-}) => {
+test("unauthenticated visitors are redirected to sign in", async ({ page }) => {
+  // Phase 3: every route except the public auth pages requires a session —
+  // src/proxy.ts. The full twelve-section nav is covered by
+  // dashboard-nav.test.tsx instead, since rendering it now requires an
+  // authenticated current-user response the e2e environment doesn't have.
   await page.goto("/");
-  const nav = page.getByRole("navigation", { name: "Primary" });
-  await expect(nav.getByRole("link")).toHaveCount(12);
+  await expect(page).toHaveURL(/\/login(\?.*)?$/);
+});
+
+test("the login page renders the sign-in form", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
 });

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { DashboardNav } from "@/components/dashboard-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +18,11 @@ export const metadata: Metadata = {
   description: "Private, single-business CRM for RKPR Fast-Food Restaurant.",
 };
 
+// Deliberately minimal: the (app) route group's own layout adds the
+// authenticated shell (nav + user menu). Auth pages (/login,
+// /reset-password, /unauthorized, /forbidden, /session-expired) and
+// /auth/callback render directly under this root layout with no nav —
+// src/proxy.ts is what keeps them reachable without a session.
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,12 +34,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>
-          <div className="flex flex-1">
-            <DashboardNav />
-            <main className="flex flex-1 flex-col">{children}</main>
-          </div>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
