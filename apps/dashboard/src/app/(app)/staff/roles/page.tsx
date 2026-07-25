@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { StaffDirectory } from "./staff-directory";
+import { RolesViewer } from "./roles-viewer";
 
 export default function Page() {
   return (
-    <PermissionGate permission="staff.view">
-      <StaffDirectory />
+    <PermissionGate permission="roles.view">
+      <RolesViewer />
     </PermissionGate>
   );
 }
