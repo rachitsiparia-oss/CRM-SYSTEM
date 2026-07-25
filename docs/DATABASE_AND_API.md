@@ -98,6 +98,8 @@ Columns:
 - `is_privileged BOOLEAN NOT NULL DEFAULT FALSE`
 - `last_login_at TIMESTAMPTZ NULL`
 - `timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata'`
+- `avatar_storage_path VARCHAR(500) NULL` — private Supabase Storage object path, never a public URL; added during Phase 3 implementation as a natural profile field, consistent with the file-security rules in `SECURITY_PERFORMANCE_AND_QUALITY.md` §9
+- `preferred_language VARCHAR(16) NULL` — added during Phase 3 implementation, mirroring the same field already present on `customers` (§6.1)
 - common audit and soft-delete columns
 
 Allowed `account_status` values:
@@ -107,6 +109,16 @@ Allowed `account_status` values:
 - `suspended`
 - `disabled`
 - `locked`
+- `archived`
+
+Fixed during Phase 3: this list previously omitted `archived`, while `SECURITY_PERFORMANCE_AND_QUALITY.md` §3.6 already listed it as an approved account state. `archived` is now included here so there is one enum, enforced by a single `CHECK` constraint, matching both documents. Like `disabled`, `suspended`, and `locked`, an `archived` account must not receive active CRM access.
+
+Allowed `employment_status` values (not previously enumerated; added during Phase 3 implementation):
+
+- `full_time`
+- `part_time`
+- `contract`
+- `intern`
 
 Indexes:
 
@@ -262,6 +274,33 @@ Scope types may include:
 - `assigned`
 - `self`
 - `none`
+
+Phase 3 evaluates the `all` and `none` scopes only, since no scoped business records (leads, orders, reservations, and so on) exist yet. `department`, `assigned`, and `self` scoping is enforced by the modules that own those records starting in later phases; the column exists now so those modules do not require a migration to add it.
+
+### 4.6 `staff_invitations` — added during Phase 3 implementation
+
+`PROJECT_PLAN.md` Phase 3 lists "Invitation records" as a database task without defining the table shape; this section is the definition, added when the invitation workflow was implemented.
+
+Purpose: track the CRM's own record of who was invited, to which role and department, and by whom — separate from Supabase Auth's own invitation-token delivery, which this table does not duplicate.
+
+Columns:
+
+- `id UUID PRIMARY KEY`
+- `email CITEXT NOT NULL`
+- `first_name VARCHAR(80) NOT NULL`
+- `last_name VARCHAR(80) NULL`
+- `department_id UUID NULL REFERENCES departments(id)`
+- `intended_role_id UUID NOT NULL REFERENCES roles(id)`
+- `invited_by UUID NOT NULL REFERENCES staff_users(id)`
+- `status VARCHAR(32) NOT NULL DEFAULT 'pending'` (`pending`, `accepted`, `revoked`, `expired`)
+- `invited_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+- `expires_at TIMESTAMPTZ NOT NULL`
+- `accepted_at TIMESTAMPTZ NULL`
+- `revoked_at TIMESTAMPTZ NULL`
+- `staff_user_id UUID NULL REFERENCES staff_users(id)` — filled in once the invitation is accepted and the `staff_users` row exists
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+
+Acceptance is provisioned on first authenticated request from the invited identity (see `ARCHITECTURE_AND_TECH_STACK.md` §10.1 step 6), not through a separate webhook, since the backend already verifies the token on every request.
 
 ## 5. RESTAURANT CONFIGURATION
 
