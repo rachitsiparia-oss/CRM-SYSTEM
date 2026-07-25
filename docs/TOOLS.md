@@ -454,7 +454,7 @@ Must not replace:
 - staff profile and role records in PostgreSQL
 - business-state validation
 
-Backend token verification (added during Phase 3 implementation): **PyJWT**, to verify Supabase-issued HS256 access tokens against `AUTH_JWT_SIGNING_SECRET` locally, without a network round trip per request. This is a small, narrowly-scoped verification library, not a competing identity provider — it does not replace Supabase Auth.
+Backend token verification (added during Phase 3 implementation): **PyJWT** (with its `crypto` extra, for `cryptography`-backed ES256/RS256 support), to verify Supabase-issued access tokens locally. Supabase projects sign tokens one of two ways — the legacy shared secret (HS256, against `AUTH_JWT_SIGNING_SECRET`) or the current default, JWT Signing Keys (ES256/RS256, verified via the project's published JWKS endpoint, cached in-process by `PyJWKClient`) — `apps/api` supports both, selecting by the token's own `alg` header. This is a small, narrowly-scoped verification library, not a competing identity provider — it does not replace Supabase Auth.
 
 ### 5.3 Supabase Storage
 

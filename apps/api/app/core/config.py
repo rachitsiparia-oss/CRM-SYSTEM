@@ -52,9 +52,16 @@ class Settings(BaseSettings):
     # Supabase Auth — required from Phase 3 onward. `supabase_service_role_key`
     # is server-only (SECURITY_PERFORMANCE_AND_QUALITY.md section 3.7,
     # section 5.2) and must never be sent to the browser or logged.
-    # `auth_jwt_signing_secret` is the HS256 shared secret Supabase issues
-    # access tokens with (Project Settings -> API -> JWT Settings); used to
-    # verify tokens locally without a network round trip on every request.
+    #
+    # Supabase projects sign access tokens one of two ways, and
+    # app.auth.tokens.decode_access_token supports both by reading the
+    # token's own `alg` header: the legacy shared secret (HS256, verified
+    # against `auth_jwt_signing_secret`) or the current default, JWT
+    # Signing Keys (ES256/RS256, asymmetric, verified via `supabase_url`'s
+    # published JWKS endpoint — `auth_jwt_signing_secret` is simply unused
+    # for a project on this mode). Both are required below regardless of
+    # which mode a given project actually uses, since either could still
+    # be needed and there is no cost to having both configured.
     supabase_url: str | None = None
     supabase_service_role_key: str | None = None
     auth_jwt_signing_secret: str | None = None

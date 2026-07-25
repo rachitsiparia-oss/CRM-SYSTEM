@@ -14,7 +14,7 @@ dependencies = [
   "httpx==0.28.1",
   "structlog==26.1.0",
   "sentry-sdk[fastapi]==2.66.1",
-  "pyjwt==2.10.1",
+  "pyjwt[crypto]==2.10.1",
 ]
 
 [dependency-groups]
