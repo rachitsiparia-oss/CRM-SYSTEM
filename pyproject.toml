@@ -8,6 +8,24 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
+# FastAPI's dependency-injection pattern is `param: T = Depends(callable)` —
+# bugbear's B008 (no function calls in argument defaults) otherwise flags
+# every protected endpoint, since Phase 3 is the first phase to use
+# Depends(require_permission(...)) and similar factory-style dependencies.
+# This is FastAPI's documented, idiomatic usage, not the mutable-default
+# antipattern B008 exists to catch.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Header",
+  "fastapi.Body",
+  "fastapi.Cookie",
+  "fastapi.Security",
+  "app.permissions.dependencies.require_permission",
+]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

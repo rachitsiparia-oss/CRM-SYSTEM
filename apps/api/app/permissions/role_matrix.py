@@ -1,0 +1,163 @@
+"""Default role -> permission-code grants, seeded once per role at
+migration/seed time and editable afterward through `roles.manage`
+(`role_permissions` is the live source once seeded; this module is only the
+initial matrix, not a second permission registry — every code referenced
+here must already exist in `app.permissions.registry`).
+
+DATABASE_AND_API.md and SECURITY_PERFORMANCE_AND_QUALITY.md define the
+permission codes and the 15 system roles, but neither document specifies
+which role gets which permission — that mapping is a Phase 3 implementation
+decision, made here.
+"""
+
+from app.permissions.registry import PERMISSION_CODES
+
+_ALL_VIEW = tuple(code for code in PERMISSION_CODES if code.endswith(".view"))
+
+ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
+    "owner": tuple(sorted(PERMISSION_CODES)),
+    "general_manager": tuple(sorted(PERMISSION_CODES - {"settings.integrations.update"})),
+    "operations_manager": (
+        "dashboard.view",
+        "customers.view",
+        "customers.create",
+        "customers.update",
+        "leads.view",
+        "leads.create",
+        "leads.update",
+        "leads.assign",
+        "leads.transition",
+        "orders.view",
+        "orders.create",
+        "orders.update",
+        "orders.transition",
+        "orders.cancel.request",
+        "orders.refund.request",
+        "menu.view",
+        "inventory.view",
+        "reservations.view",
+        "reservations.create",
+        "reservations.update",
+        "reservations.transition",
+        "communications.view",
+        "communications.send",
+        "staff.view",
+        "reports.view",
+        "reports.export",
+    ),
+    "finance_manager": (
+        "dashboard.view",
+        "orders.view",
+        "orders.refund.approve",
+        "orders.discount.apply",
+        "loyalty.view",
+        "loyalty.adjust",
+        "reports.view",
+        "reports.export",
+        "settings.view",
+        "audit.view",
+    ),
+    "kitchen_manager": (
+        "dashboard.view",
+        "menu.view",
+        "menu.manage",
+        "inventory.view",
+        "inventory.adjust",
+        "inventory.receive",
+        "orders.view",
+        "orders.transition",
+        "staff.view",
+    ),
+    "inventory_manager": (
+        "dashboard.view",
+        "inventory.view",
+        "inventory.adjust",
+        "inventory.receive",
+        "inventory.transfer",
+        "orders.view",
+        "staff.view",
+        "reports.view",
+    ),
+    "reservation_manager": (
+        "dashboard.view",
+        "reservations.view",
+        "reservations.create",
+        "reservations.update",
+        "reservations.approve",
+        "reservations.transition",
+        "customers.view",
+        "communications.view",
+        "communications.send",
+        "staff.view",
+    ),
+    "customer_support_agent": (
+        "dashboard.view",
+        "customers.view",
+        "customers.update",
+        "leads.view",
+        "orders.view",
+        "communications.view",
+        "communications.send",
+        "feedback.view",
+        "complaints.manage",
+    ),
+    "marketing_manager": (
+        "dashboard.view",
+        "campaigns.view",
+        "campaigns.create",
+        "campaigns.approve",
+        "campaigns.send",
+        "customers.view",
+        "leads.view",
+        "loyalty.view",
+        "reports.view",
+        "communications.view",
+        "communications.send",
+    ),
+    "hr_manager": (
+        "dashboard.view",
+        "staff.view",
+        "staff.manage",
+        "staff.hr_sensitive.read",
+        "roles.view",
+        "roles.manage",
+        "audit.view",
+    ),
+    "shift_supervisor": (
+        "dashboard.view",
+        "orders.view",
+        "orders.update",
+        "orders.transition",
+        "staff.view",
+        "reservations.view",
+        "inventory.view",
+    ),
+    "kitchen_staff": (
+        "dashboard.view",
+        "orders.view",
+        "orders.transition",
+        "menu.view",
+        "inventory.view",
+    ),
+    "front_of_house_staff": (
+        "dashboard.view",
+        "orders.view",
+        "orders.create",
+        "orders.update",
+        "reservations.view",
+        "customers.view",
+    ),
+    "delivery_coordinator": (
+        "dashboard.view",
+        "orders.view",
+        "orders.transition",
+        "communications.view",
+    ),
+    "read_only_auditor": tuple(sorted({*_ALL_VIEW, "audit.view"})),
+}
+
+_unknown_codes = {
+    code for codes in ROLE_PERMISSIONS.values() for code in codes if code not in PERMISSION_CODES
+}
+if _unknown_codes:
+    raise RuntimeError(f"role_matrix references unknown permission codes: {_unknown_codes!r}")

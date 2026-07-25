@@ -7,10 +7,12 @@ PROJECT_PLAN.md (restaurant profile, the 65-person dummy staff set, menu,
 inventory, suppliers, customer and lead examples) — DATABASE_AND_API.md
 section 38. Seed functions must be idempotent and safe to rerun.
 
-No tables exist yet to seed: staff_users/roles land in Phase 3, the menu
-and inventory schema lands in Phase 6/8, customers and leads in Phase 5.
-This module intentionally has nothing to do until those phases add their
-own `seed_*()` function here.
+Phase 3 adds departments, roles, the permission registry, and the default
+role-permission matrix. The dummy 65-person staff roster is intentionally
+not seeded here: every staff_user must be linked to a real Supabase Auth
+identity (`auth_user_id`), and no such identities exist until real accounts
+are created. The menu, inventory, customer, and lead schema lands in later
+phases and will add their own `seed_*()` calls here.
 """
 
 import asyncio
@@ -19,6 +21,12 @@ from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.db.session import get_session_factory
+from app.permissions.seed import (
+    seed_departments,
+    seed_permissions,
+    seed_role_permissions,
+    seed_roles,
+)
 
 logger = get_logger(__name__)
 
@@ -32,13 +40,16 @@ async def run_seed() -> None:
 
     session_factory = get_session_factory()
     async with session_factory() as session:
+        await seed_departments(session)
+        await seed_roles(session)
+        await seed_permissions(session)
+        await seed_role_permissions(session)
         # Future phases append their idempotent seed_*(session) calls here,
-        # in dependency order (staff/roles before customers, menu before
-        # recipes, etc.) — see PROJECT_PLAN.md section 16 (phase dependency
-        # rules).
+        # in dependency order (menu before recipes, etc.) — see
+        # PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
 
-    logger.info("seed_complete", note="no seed data defined yet — see module docstring")
+    logger.info("seed_complete", note="departments, roles, permissions, role_permissions seeded")
 
 
 def main() -> None:

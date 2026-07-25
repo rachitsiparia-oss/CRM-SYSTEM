@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, MetaData
+from sqlalchemy import DateTime, ForeignKey, MetaData, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -55,3 +55,30 @@ class AppendOnlyTimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class AuditedMixin:
+    """created_by/updated_by/version — DATABASE_AND_API.md section 3.1.
+
+    Nullable because the very first row in the system (the bootstrapped
+    owner) has no prior staff_user to attribute the action to.
+    """
+
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("staff_users.id"), nullable=True
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("staff_users.id"), nullable=True
+    )
+    version: Mapped[int] = mapped_column(nullable=False, default=1)
+
+
+class SoftDeleteMixin:
+    """deleted_at/deleted_by/deletion_reason — DATABASE_AND_API.md section
+    3.1, for soft-deletable entities."""
+
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("staff_users.id"), nullable=True
+    )
+    deletion_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
