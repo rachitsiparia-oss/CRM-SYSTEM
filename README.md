@@ -89,6 +89,7 @@ cp apps/worker/.env.example apps/worker/.env
 | Backend tests | `uv run --package rkpr-api pytest apps/api/tests` / `uv run --package rkpr-worker pytest apps/worker/tests` |
 | Run/create database migrations | `uv run --package rkpr-api alembic upgrade head` / `alembic revision --autogenerate -m "..."` (from `apps/api`) |
 | Run canonical seed data | `uv run --package rkpr-api python apps/api/app/db/seed.py` |
+| Bootstrap the first owner account | `uv run --package rkpr-api python -m app.db.bootstrap_owner --auth-user-id <uuid> --email <email> --first-name <name> --last-name <name>` (from `apps/api`, after creating that user in Supabase Auth) |
 
 > **Windows note:** always start the API via `apps/api/run.py`, not `uvicorn app.main:app` directly. psycopg 3's async mode requires a selector-based event loop; the plain `uvicorn` CLI creates Windows' default `ProactorEventLoop` before our app code ever runs, which is too late to fix. `run.py` sets the correct policy first. This is a no-op (and unnecessary, but harmless) on Linux/macOS/Railway.
 
@@ -100,4 +101,4 @@ cp apps/worker/.env.example apps/worker/.env
 
 ## Production status
 
-**Production deployment and third-party provider integration are deferred.** No production domains, payment provider, communication providers (WhatsApp/email/SMS final accounts), or AI provider credentials exist yet — see [`ROADMAP.md`](ROADMAP.md) for the phase each of these is scheduled in, and [`docs/DEPLOYMENT_AND_ENV.md`](docs/DEPLOYMENT_AND_ENV.md) for the full deployment model. This repository is currently in **Phase 1 — Repository and Development Foundation**.
+**Production deployment and third-party provider integration are deferred.** No production domains, payment provider, communication providers (WhatsApp/email/SMS final accounts), or AI provider credentials exist yet — see [`ROADMAP.md`](ROADMAP.md) for the phase each of these is scheduled in, and [`docs/DEPLOYMENT_AND_ENV.md`](docs/DEPLOYMENT_AND_ENV.md) for the full deployment model. This repository has completed **Phase 3 — Authentication, Users, Roles, and Permissions**; Phase 4 (Dashboard Shell and Shared UI System) has not started.
