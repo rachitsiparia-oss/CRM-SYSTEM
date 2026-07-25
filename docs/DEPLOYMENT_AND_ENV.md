@@ -552,6 +552,12 @@ Verify:
 
 The API should be deployed as a dedicated Railway service from `apps/api`.
 
+**Do not rely on Railway/Nixpacks auto-detection in this repository.** The repo root contains both `package.json` (pnpm workspace) and `pyproject.toml` (uv workspace); Nixpacks' auto-detect has been observed picking the Node/pnpm provider and trying to run the dashboard's build command for a service that should run the Python API instead. Use the committed root `railway.json` (`build.buildCommand` / `deploy.startCommand`), which installs `uv` directly via the official installer script (not `pip install uv`, since Nixpacks does not reliably provision `pip` for a mixed-language repo) and runs `uv sync --package rkpr-api` / `uv run --package rkpr-api uvicorn ...`.
+
+**Root Directory must stay unset (repository root) in the Railway service settings — do not set it to `apps/api`.** `apps/api` is a `uv` workspace member: its dependency resolution needs the workspace root `pyproject.toml` and `uv.lock` (and the sibling `apps/worker` member) to be present, which a scoped root directory would hide.
+
+When a second Railway service is created for `apps/worker` (Phase 17/18), it needs its own build/start commands (`uv sync --package rkpr-worker` / `uv run --package rkpr-worker arq worker.main.WorkerSettings`) — either via that service's own Railway-dashboard "Config File Path" pointing at a separate config, or via manual dashboard build/start command overrides, since one root `railway.json` only describes one service's defaults.
+
 ### 11.2 Runtime requirements
 
 - Python 3.12.x
