@@ -38,7 +38,7 @@ Deferred items: Docker (explicitly deferred to a later deployment/environment-ha
 
 ## Phase 1 — Repository and Development Foundation
 
-Status: IN PROGRESS
+Status: COMPLETED
 
 Scope:
 
@@ -48,9 +48,11 @@ Scope:
 - Add linting, formatting, type checking, and test foundations
 - Docker is intentionally deferred to a later phase — do not treat its absence as a defect
 
-Completion date:
+Completion date: 2026-07-25
 
-Completion notes:
+Completion notes: Scaffolded the pnpm workspace (`apps/dashboard`, `apps/api`, `apps/worker`, `packages/{ui,contracts,api-client,config}`) and the shared uv Python workspace for `apps/api`/`apps/worker`. Dashboard: Next.js 16 App Router, TypeScript strict, Tailwind CSS v4, shadcn/ui + Radix foundation, Lucide, TanStack Query provider, React Hook Form + Zod wiring, permission-aware nav placeholders for all twelve approved sections, global error/loading boundaries, non-sensitive `/health` page. API: FastAPI app factory, Pydantic settings validated at startup, structlog logging, request-ID correlation middleware, environment-scoped CORS, stable error-response shapes, pagination contracts, `/health/live` and `/health/ready` (verified live over HTTP), Sentry wiring (inactive without a DSN). Worker: ARQ entry point with cron scheduler foundation and one non-business heartbeat job proving the wiring. Added GitHub Actions CI (secret scan, dashboard lint/typecheck/test/build, backend ruff/mypy/pytest/startup-validation), root and per-app `.env.example` files, and the repository README. All verification commands were actually run and passed: `ruff check`, `ruff format --check`, `mypy` (both packages, strict), `pytest` (both packages), ESLint, `tsc --noEmit`, Vitest, Playwright e2e (against a real dev server), and `next build`. No database models exist yet — that is Phase 2. Repository initialized, connected to `github.com/rachitsiparia-oss/CRM-SYSTEM` as `origin`, and pushed.
+
+Deferred items: Docker (still deferred, see Phase 0 note), Supabase project linking (exists — project `CRM-SYSTEM` in `ap-south-1` — but not linked to this repo until Phase 2 needs it), Railway/Vercel service creation (accounts authenticated; no services created yet — that is Phase 17/18), all communication/payment/AI provider credentials.
 
 ## Phase 2 — Database Foundation and Migrations
 
