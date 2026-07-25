@@ -56,7 +56,7 @@ Deferred items: Docker (still deferred, see Phase 0 note), Supabase project link
 
 ## Phase 2 — Database Foundation and Migrations
 
-Status: NOT STARTED
+Status: COMPLETED
 
 Scope:
 
@@ -66,9 +66,15 @@ Scope:
 - Add constraints, indexes, history, audit, outbox, and job foundations
 - Add canonical development seed data (including the corrected 65-person dummy staff set)
 
-Completion date:
+Completion date: 2026-07-25
 
-Completion notes:
+Completion notes: Configured the dedicated Supabase PostgreSQL project (`CRM-SYSTEM`, `ap-south-1`) via the session-mode connection pooler — the direct `db.<ref>.supabase.co` host is IPv6-only and times out on networks without IPv6 egress, now documented in `DEPLOYMENT_AND_ENV.md` §7.1. Built `app/db/base.py` (declarative Base, stable constraint naming convention, UUID-primary-key and timestamp mixins) and `app/db/session.py` (async engine/session management, FastAPI dependency, connectivity check). Implemented the three foundation tables from `DATABASE_AND_API.md` §16.5-16.7 — `audit_events`, `outbox_events`, `job_records` — with check constraints on status enums and unique idempotency keys. Wired up Alembic under `app/db/migrations`; generated, applied, and round-trip tested (upgrade → downgrade → upgrade against the live database) the initial migration. Added an idempotent seed-data runner foundation (`app/db/seed.py`) with no seed data yet, since no business tables exist until Phase 3+. `/health/ready` now performs a real database connectivity check. Database-backed tests run in a SAVEPOINT that is always rolled back against the live database, and skip (not fail) when `DATABASE_URL` is unset, so CI stays green without a database secret configured there.
+
+Two latent bugs were found and fixed while wiring this up, both applicable beyond just the database: (1) `.env` resolution in both `apps/api` and `apps/worker` was relative to the process's working directory rather than the package's own location, silently loading the wrong (or no) `.env` depending on where the process was launched from; (2) Sentry initialization crashed startup on a `replace_me...` placeholder DSN (the normal pre-Sentry state) instead of treating it as unconfigured. Also fixed: psycopg 3's async mode requires a selector-based event loop, incompatible with Windows' default `ProactorEventLoop` — `apps/api/run.py` now sets the correct policy before starting uvicorn (documented in the README as the required way to run the API locally on Windows).
+
+Verified: `ruff check`, `ruff format --check`, `mypy --strict`, and the full Pytest suite (10/10 in `apps/api`, including all 6 database constraint tests against the live Supabase database, plus 1/1 in `apps/worker`) all pass. Migration applies cleanly from empty and is fully reversible.
+
+Deferred items: no business tables yet (staff/roles land in Phase 3, menu/inventory in Phase 6/8, customers/leads in Phase 5) — seed data stays empty until then. CI does not yet run the database-backed tests (no `DATABASE_URL` secret configured in GitHub Actions); they skip gracefully rather than fail.
 
 ## Phase 3 — Authentication, Users, Roles, and Permissions
 
