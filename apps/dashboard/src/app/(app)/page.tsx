@@ -1,14 +1,21 @@
+import { Construction } from "lucide-react";
+
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col gap-2 p-8">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-        Dashboard
-      </h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        The operational command center is not implemented yet — see
-        ROADMAP.md Phase 4 (Dashboard Shell and Shared UI System) and Phase 5
-        onward for module delivery order.
-      </p>
+    <div className="flex flex-1 flex-col gap-6">
+      <PageHeader
+        title="Dashboard"
+        description="The operational command center — role-scoped KPIs, activity, and alerts."
+      />
+      <EmptyState
+        icon={Construction}
+        title="Not implemented yet"
+        description="Real widgets are wired up once each contributing module ships its aggregation endpoints — see ROADMAP.md Phase 5 onward."
+        className="flex-1"
+      />
     </div>
   );
 }
