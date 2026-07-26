@@ -23,6 +23,7 @@ from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
 from app.leads.seed import seed_leads
+from app.menu.seed import seed_menu
 from app.permissions.seed import (
     seed_departments,
     seed_permissions,
@@ -48,14 +49,15 @@ async def run_seed() -> None:
         await seed_role_permissions(session)
         await seed_customers(session)
         await seed_leads(session)
+        await seed_menu(session)
         # Future phases append their idempotent seed_*(session) calls here,
-        # in dependency order (menu before recipes, etc.) — see
-        # PROJECT_PLAN.md section 16 (phase dependency rules).
+        # in dependency order (inventory/recipes reference menu products) —
+        # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
 
     logger.info(
         "seed_complete",
-        note="departments, roles, permissions, role_permissions, customers, leads seeded",
+        note="departments, roles, permissions, role_permissions, customers, leads, menu seeded",
     )
 
 
