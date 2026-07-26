@@ -20,19 +20,32 @@ describe("Sidebar", () => {
     window.localStorage.clear();
   });
 
-  it("shows all twelve approved sections for a user with staff.view", () => {
-    mockCurrentUser(["staff.view"]);
+  it("shows all twelve approved sections for a user with staff.view and menu.view", () => {
+    mockCurrentUser(["staff.view", "menu.view"]);
     render(<Sidebar />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
-    // Staff & HR's children start collapsed (current route is "/", not a
-    // staff route), so only the twelve top-level links render.
+    // Staff & HR's and Menu's children start collapsed (current route is
+    // "/", not one of their routes), so only the twelve top-level links
+    // render.
     expect(nav.querySelectorAll("a")).toHaveLength(12);
   });
 
   it("hides Staff & HR for a user without staff.view", () => {
-    mockCurrentUser([]);
+    // menu.view granted so this test isolates the Staff & HR gate rather
+    // than incidentally also exercising Menu's own permission gate.
+    mockCurrentUser(["menu.view"]);
     render(<Sidebar />);
     expect(screen.queryByRole("link", { name: /Staff & HR/ })).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(nav.querySelectorAll("a")).toHaveLength(11);
+  });
+
+  it("hides Menu, Products & Inventory for a user without menu.view", () => {
+    mockCurrentUser(["staff.view"]);
+    render(<Sidebar />);
+    expect(
+      screen.queryByRole("link", { name: /Menu, Products & Inventory/ }),
+    ).not.toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav.querySelectorAll("a")).toHaveLength(11);
   });
