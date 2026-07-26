@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { OrdersDashboard } from "./orders-dashboard";
+import { OrderDirectory } from "./order-directory";
 
 export default function Page() {
   return (
     <PermissionGate permission="orders.view">
-      <OrdersDashboard />
+      <OrderDirectory />
     </PermissionGate>
   );
 }
