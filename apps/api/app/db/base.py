@@ -20,6 +20,15 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+    # Without this, a server-computed column (created_at/updated_at's
+    # onupdate=func.now()) is marked expired after a flush instead of
+    # populated via Postgres RETURNING, so reading it later needs a lazy
+    # SQL refresh — a real bug this phase's tests caught: serializing
+    # updated_at right after an in-request UPDATE raised MissingGreenlet,
+    # since that refresh can't be awaited from inside Pydantic's synchronous
+    # model_validate. Phase 3's staff schemas never exposed updated_at, so
+    # this was already latent but never triggered until now.
+    __mapper_args__ = {"eager_defaults": True}
 
 
 class UUIDPrimaryKeyMixin:
