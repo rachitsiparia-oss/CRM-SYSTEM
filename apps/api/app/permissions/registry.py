@@ -79,7 +79,22 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("orders.refund.approve", "Approve an order refund.", is_sensitive=True),
     # Menu
     PermissionDef("menu.view", "View the menu catalogue."),
-    PermissionDef("menu.manage", "Manage the menu catalogue."),
+    # `menu.manage` (a Phase 3 placeholder anticipating this phase) is
+    # replaced, not kept as an alias, by the granular set below — this
+    # phase's own explicit instruction names these exact codes, and CLAUDE.md
+    # section 24 already forbids a vague `.manage` catch-all once specific
+    # actions exist to gate instead. Categories, modifiers, and images each
+    # get their own code since they are independently permissionable
+    # sub-areas (a role might manage products but not touch images, etc.).
+    PermissionDef("menu.create", "Create menu products."),
+    PermissionDef("menu.update", "Update menu products and variants."),
+    PermissionDef("menu.archive", "Archive menu products.", is_sensitive=True),
+    PermissionDef("menu.restore", "Restore archived menu products."),
+    PermissionDef("menu.categories.manage", "Create, edit, reorder, and archive categories."),
+    PermissionDef(
+        "menu.modifiers.manage", "Manage modifier groups, modifiers, and their mappings."
+    ),
+    PermissionDef("menu.images.manage", "Upload, delete, and reorder product images."),
     # Inventory
     PermissionDef("inventory.view", "View inventory."),
     PermissionDef("inventory.adjust", "Adjust inventory stock levels."),
