@@ -4,6 +4,8 @@ import type {
   FoodType,
   LeadPriority,
   LeadStatus,
+  OrderStatus,
+  PaymentStatus,
 } from "@rkpr/contracts";
 
 import type { StatusTone } from "@/components/status-badge";
@@ -105,4 +107,22 @@ export const PRODUCT_ACTIVE_TONE: Record<"active" | "inactive", StatusTone> = {
 export const PRODUCT_AVAILABILITY_TONE: Record<"available" | "unavailable", StatusTone> = {
   available: "success",
   unavailable: "warning",
+};
+
+export const ORDER_STATUS_TONES: Record<OrderStatus, StatusTone> = {
+  draft: "neutral",
+  pending_confirmation: "warning",
+  confirmed: "info",
+  preparing: "info",
+  ready: "success",
+  completed: "success",
+  cancelled: "danger",
+};
+
+export const PAYMENT_STATUS_TONES: Record<PaymentStatus, StatusTone> = {
+  pending: "warning",
+  partial: "warning",
+  paid: "success",
+  refunded: "info",
+  failed: "danger",
 };

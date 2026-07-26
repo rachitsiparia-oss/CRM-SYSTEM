@@ -590,3 +590,271 @@ export interface ProductImage {
   mime_type: string;
   signed_url: string;
 }
+
+// --- Phase 7: Orders and Order Lifecycle ---
+// Mirrors apps/api/app/orders/schemas.py.
+
+export type OrderSource =
+  | "pos"
+  | "walk_in"
+  | "website"
+  | "whatsapp"
+  | "phone_call"
+  | "zomato"
+  | "swiggy"
+  | "manual";
+export type OrderType = "dine_in" | "takeaway" | "delivery";
+export type OrderStatus =
+  | "draft"
+  | "pending_confirmation"
+  | "confirmed"
+  | "preparing"
+  | "ready"
+  | "completed"
+  | "cancelled";
+export type PaymentStatus = "pending" | "partial" | "paid" | "refunded" | "failed";
+export type PaymentMethod = "cash" | "card" | "upi" | "online";
+export type OrderDiscountType =
+  | "flat"
+  | "percentage"
+  | "manual"
+  | "coupon_placeholder"
+  | "manager_override";
+export type OrderChargeType = "packaging" | "delivery" | "service" | "other";
+export type OrderTimelineEventType =
+  | "created"
+  | "assigned"
+  | "status_changed"
+  | "payment_updated"
+  | "note_added"
+  | "cancelled"
+  | "completed"
+  | "manual_edit";
+
+export interface OrderItemModifierInput {
+  modifier_id: string;
+  quantity?: number;
+}
+
+export interface OrderItemInput {
+  product_id: string;
+  variant_id?: string | null;
+  quantity?: number;
+  modifiers?: OrderItemModifierInput[];
+  kitchen_note?: string | null;
+}
+
+export interface OrderDiscountInput {
+  discount_type: OrderDiscountType;
+  amount_minor?: number | null;
+  percentage?: number | null;
+  reason: string;
+  approved_by: string;
+}
+
+export interface OrderTaxInput {
+  tax_name: string;
+  rate_percentage?: number | null;
+  amount_minor?: number | null;
+}
+
+export interface OrderChargeInput {
+  charge_type: OrderChargeType;
+  amount_minor: number;
+}
+
+export interface OrderCreateInput {
+  customer_id?: string | null;
+  lead_id?: string | null;
+  source: OrderSource;
+  order_type: OrderType;
+  assigned_staff_id?: string | null;
+  items: OrderItemInput[];
+  discounts?: OrderDiscountInput[];
+  taxes?: OrderTaxInput[];
+  charges?: OrderChargeInput[];
+  internal_notes?: string | null;
+  customer_notes?: string | null;
+  estimated_completion_time?: string | null;
+  idempotency_key: string;
+}
+
+export interface OrderUpdateInput {
+  customer_id?: string | null;
+  lead_id?: string | null;
+  internal_notes?: string | null;
+  customer_notes?: string | null;
+  estimated_completion_time?: string | null;
+  expected_version?: number | null;
+}
+
+export interface OrderItemModifier {
+  id: string;
+  modifier_id: string | null;
+  modifier_name_snapshot: string;
+  price_minor_snapshot: number;
+  quantity: number;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  product_name_snapshot: string;
+  variant_name_snapshot: string | null;
+  product_code_snapshot: string | null;
+  quantity: number;
+  unit_price_minor: number;
+  discount_minor: number;
+  tax_minor: number;
+  final_price_minor: number;
+  kitchen_note: string | null;
+  status: "active" | "cancelled";
+  modifiers: OrderItemModifier[];
+}
+
+export interface OrderDiscount {
+  id: string;
+  discount_type: OrderDiscountType;
+  amount_minor: number;
+  percentage: number | null;
+  reason: string;
+  approved_by: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface OrderTax {
+  id: string;
+  tax_name: string;
+  rate_percentage: number | null;
+  amount_minor: number;
+  created_at: string;
+}
+
+export interface OrderCharge {
+  id: string;
+  charge_type: OrderChargeType;
+  amount_minor: number;
+  created_at: string;
+}
+
+export interface OrderPayment {
+  id: string;
+  order_id: string;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  amount_minor: number;
+  reference: string | null;
+  notes: string | null;
+  recorded_by: string;
+  recorded_at: string;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+export interface OrderNote {
+  id: string;
+  order_id: string;
+  content: string;
+  is_internal: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+export interface OrderTimelineEntry {
+  id: string;
+  order_id: string;
+  event_type: OrderTimelineEventType;
+  summary: string;
+  event_metadata: Record<string, unknown> | null;
+  performed_by: string | null;
+  occurred_at: string;
+}
+
+export interface OrderStatusHistoryEntry {
+  id: string;
+  order_id: string;
+  previous_status: OrderStatus | null;
+  new_status: OrderStatus;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface OrderAssignment {
+  id: string;
+  order_id: string;
+  staff_id: string;
+  assigned_by: string | null;
+  assigned_at: string;
+  unassigned_at: string | null;
+}
+
+export interface OrderListItem {
+  id: string;
+  order_number: string;
+  customer_id: string | null;
+  source: OrderSource;
+  order_type: OrderType;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  assigned_staff_id: string | null;
+  grand_total_minor: number;
+  estimated_completion_time: string | null;
+  created_at: string;
+}
+
+export interface OrderStatusCounts {
+  pending_confirmation: number;
+  preparing: number;
+  ready: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface RecentOrderActivity {
+  order_id: string;
+  order_number: string;
+  event_type: OrderTimelineEventType;
+  summary: string;
+  occurred_at: string;
+}
+
+export interface OrderDashboardStats {
+  today_order_count: number;
+  status_counts_today: OrderStatusCounts;
+  revenue_today_minor: number;
+  average_order_value_minor: number;
+  recent_activity: RecentOrderActivity[];
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  customer_id: string | null;
+  lead_id: string | null;
+  source: OrderSource;
+  order_type: OrderType;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  assigned_staff_id: string | null;
+  subtotal_minor: number;
+  discount_minor: number;
+  tax_minor: number;
+  charges_minor: number;
+  grand_total_minor: number;
+  internal_notes: string | null;
+  customer_notes: string | null;
+  estimated_completion_time: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  items: OrderItem[];
+  discounts: OrderDiscount[];
+  taxes: OrderTax[];
+  charges: OrderCharge[];
+}
