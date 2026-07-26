@@ -203,7 +203,7 @@ Representative capability families (the complete registry is represented in code
 - `customers.view`, `customers.create`, `customers.update`, `customers.merge`, `customers.export`
 - `leads.view`, `leads.create`, `leads.update`, `leads.assign`, `leads.transition`
 - `orders.view`, `orders.create`, `orders.update`, `orders.transition`, `orders.discount.apply`, `orders.cancel.request`, `orders.cancel.approve`, `orders.refund.request`, `orders.refund.approve`
-- `menu.view`, `menu.manage`
+- `menu.view`, `menu.create`, `menu.update`, `menu.archive`, `menu.restore`, `menu.categories.manage`, `menu.modifiers.manage`, `menu.images.manage`
 - `inventory.view`, `inventory.adjust`, `inventory.receive`, `inventory.transfer`
 - `reservations.view`, `reservations.create`, `reservations.update`, `reservations.approve`, `reservations.transition`
 - `communications.view`, `communications.send`
