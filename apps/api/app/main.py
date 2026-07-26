@@ -14,6 +14,7 @@ from app.core.request_context import RequestContextMiddleware
 from app.customers.router import router as customers_router
 from app.health.router import router as health_router
 from app.leads.router import router as leads_router
+from app.menu.router import router as menu_router
 from app.roles.router import router as roles_router
 from app.staff.router import router as staff_router
 
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(roles_router)
     app.include_router(customers_router)
     app.include_router(leads_router)
+    app.include_router(menu_router)
 
     return app
 
