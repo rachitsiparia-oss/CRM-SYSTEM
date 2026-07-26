@@ -120,7 +120,14 @@ export function DataTable<TData>({
     columnResizeMode: "onChange",
     state: {
       sorting,
-      rowSelection,
+      // Listing `rowSelection` in this controlled `state` object at all
+      // marks it as externally controlled to TanStack Table, regardless of
+      // whether the caller actually passed one — table.getState().rowSelection
+      // then stays `undefined` instead of falling back to TanStack's own
+      // default `{}`, and any row.getIsSelected() call throws. Every caller
+      // that doesn't use row selection (the common case) hit this the
+      // moment real data with at least one row rendered.
+      rowSelection: rowSelection ?? {},
     },
     onSortingChange,
     onRowSelectionChange,
