@@ -20,7 +20,9 @@ import asyncio
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
+from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
+from app.leads.seed import seed_leads
 from app.permissions.seed import (
     seed_departments,
     seed_permissions,
@@ -44,12 +46,17 @@ async def run_seed() -> None:
         await seed_roles(session)
         await seed_permissions(session)
         await seed_role_permissions(session)
+        await seed_customers(session)
+        await seed_leads(session)
         # Future phases append their idempotent seed_*(session) calls here,
         # in dependency order (menu before recipes, etc.) — see
         # PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
 
-    logger.info("seed_complete", note="departments, roles, permissions, role_permissions seeded")
+    logger.info(
+        "seed_complete",
+        note="departments, roles, permissions, role_permissions, customers, leads seeded",
+    )
 
 
 def main() -> None:

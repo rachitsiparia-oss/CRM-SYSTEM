@@ -11,7 +11,9 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
+from app.customers.router import router as customers_router
 from app.health.router import router as health_router
+from app.leads.router import router as leads_router
 from app.roles.router import router as roles_router
 from app.staff.router import router as staff_router
 
@@ -61,6 +63,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(staff_router)
     app.include_router(roles_router)
+    app.include_router(customers_router)
+    app.include_router(leads_router)
 
     return app
 

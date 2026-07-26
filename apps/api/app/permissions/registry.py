@@ -41,12 +41,32 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("customers.update", "Update customer records."),
     PermissionDef("customers.merge", "Merge duplicate customer records.", is_sensitive=True),
     PermissionDef("customers.export", "Export customer data.", is_sensitive=True),
+    # Added during Phase 5 implementation — DATABASE_AND_API.md section 4.4
+    # only lists the five above as representative examples ("the complete
+    # registry is represented in code"); Phase 5 needs distinct, auditable
+    # actions the coarse `customers.update` doesn't separately gate.
+    PermissionDef("customers.archive", "Archive customer records.", is_sensitive=True),
+    PermissionDef("customers.restore", "Restore archived customer records."),
+    PermissionDef("customers.assign", "Assign customers to staff."),
+    PermissionDef("customers.notes.manage", "Create and edit customer notes."),
+    PermissionDef(
+        "customers.notes.sensitive.read", "Read sensitive customer notes.", is_sensitive=True
+    ),
+    PermissionDef("customers.tags.manage", "Add and remove customer tags."),
     # Leads
     PermissionDef("leads.view", "View leads."),
     PermissionDef("leads.create", "Create leads."),
     PermissionDef("leads.update", "Update leads."),
     PermissionDef("leads.assign", "Assign leads to staff."),
     PermissionDef("leads.transition", "Transition lead status."),
+    # Added during Phase 5 implementation, same rationale as the customers
+    # group above.
+    PermissionDef("leads.archive", "Archive lead records.", is_sensitive=True),
+    PermissionDef("leads.restore", "Restore archived lead records."),
+    PermissionDef("leads.followup.manage", "Schedule, complete, and reschedule follow-ups."),
+    PermissionDef("leads.notes.manage", "Add lead activity notes."),
+    PermissionDef("leads.convert", "Convert a lead into a customer.", is_sensitive=True),
+    PermissionDef("leads.export", "Export lead data.", is_sensitive=True),
     # Orders
     PermissionDef("orders.view", "View orders."),
     PermissionDef("orders.create", "Create orders."),
