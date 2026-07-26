@@ -23,6 +23,8 @@ extend-immutable-calls = [
   "fastapi.Body",
   "fastapi.Cookie",
   "fastapi.Security",
+  "fastapi.File",
+  "fastapi.Form",
   "app.permissions.dependencies.require_permission",
 ]
 
