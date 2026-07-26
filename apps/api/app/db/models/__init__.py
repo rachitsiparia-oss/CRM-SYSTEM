@@ -16,6 +16,18 @@ from app.db.models.menu_category import MenuCategory
 from app.db.models.modifier import Modifier
 from app.db.models.modifier_group import ModifierGroup
 from app.db.models.modifier_group_item import ModifierGroupItem
+from app.db.models.order import Order
+from app.db.models.order_assignment import OrderAssignment
+from app.db.models.order_charge import OrderCharge
+from app.db.models.order_discount import OrderDiscount
+from app.db.models.order_item import OrderItem
+from app.db.models.order_item_modifier import OrderItemModifier
+from app.db.models.order_note import OrderNote
+from app.db.models.order_payment import OrderPayment
+from app.db.models.order_source_metadata import OrderSourceMetadata
+from app.db.models.order_status_history import OrderStatusHistory
+from app.db.models.order_tax import OrderTax
+from app.db.models.order_timeline import OrderTimeline
 from app.db.models.outbox_event import OutboxEvent
 from app.db.models.permission import Permission
 from app.db.models.product import Product
@@ -48,6 +60,18 @@ __all__ = [
     "Modifier",
     "ModifierGroup",
     "ModifierGroupItem",
+    "Order",
+    "OrderAssignment",
+    "OrderCharge",
+    "OrderDiscount",
+    "OrderItem",
+    "OrderItemModifier",
+    "OrderNote",
+    "OrderPayment",
+    "OrderSourceMetadata",
+    "OrderStatusHistory",
+    "OrderTax",
+    "OrderTimeline",
     "OutboxEvent",
     "Permission",
     "Product",
