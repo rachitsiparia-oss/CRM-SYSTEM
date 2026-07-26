@@ -1,5 +1,10 @@
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { PermissionGate } from "@/components/permission-gate";
+import { LeadPipeline } from "./lead-pipeline";
 
 export default function Page() {
-  return <ModulePlaceholder title="Leads" />;
+  return (
+    <PermissionGate permission="leads.view">
+      <LeadPipeline />
+    </PermissionGate>
+  );
 }
