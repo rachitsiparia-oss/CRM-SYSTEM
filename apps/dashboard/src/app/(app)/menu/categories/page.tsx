@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { ProductDirectory } from "./product-directory";
+import { CategoryDirectory } from "./category-directory";
 
 export default function Page() {
   return (
     <PermissionGate permission="menu.view">
-      <ProductDirectory />
+      <CategoryDirectory />
     </PermissionGate>
   );
 }

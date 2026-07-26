@@ -41,7 +41,17 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: "Customers", href: "/customers", icon: Users },
   { label: "Leads", href: "/leads", icon: UserPlus },
   { label: "Orders & Restaurant Operations", href: "/orders", icon: ShoppingCart },
-  { label: "Menu, Products & Inventory", href: "/menu", icon: UtensilsCrossed },
+  {
+    label: "Menu, Products & Inventory",
+    href: "/menu",
+    icon: UtensilsCrossed,
+    requiredPermission: "menu.view",
+    children: [
+      { label: "Products", href: "/menu" },
+      { label: "Categories", href: "/menu/categories" },
+      { label: "Modifier Groups", href: "/menu/modifier-groups" },
+    ],
+  },
   { label: "Reservations & Calendar", href: "/reservations", icon: CalendarDays },
   { label: "Communication Hub", href: "/communications", icon: MessageSquare },
   { label: "Lightweight Knowledge Base", href: "/knowledge-base", icon: BookOpen },
