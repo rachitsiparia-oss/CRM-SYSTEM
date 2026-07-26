@@ -12,8 +12,16 @@ from app.db.models.lead import Lead
 from app.db.models.lead_activity import LeadActivity
 from app.db.models.lead_follow_up import LeadFollowUp
 from app.db.models.lead_status_history import LeadStatusHistory
+from app.db.models.menu_category import MenuCategory
+from app.db.models.modifier import Modifier
+from app.db.models.modifier_group import ModifierGroup
+from app.db.models.modifier_group_item import ModifierGroupItem
 from app.db.models.outbox_event import OutboxEvent
 from app.db.models.permission import Permission
+from app.db.models.product import Product
+from app.db.models.product_image import ProductImage
+from app.db.models.product_modifier_group import ProductModifierGroup
+from app.db.models.product_variant import ProductVariant
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.staff_invitation import StaffInvitation
@@ -36,8 +44,16 @@ __all__ = [
     "LeadActivity",
     "LeadFollowUp",
     "LeadStatusHistory",
+    "MenuCategory",
+    "Modifier",
+    "ModifierGroup",
+    "ModifierGroupItem",
     "OutboxEvent",
     "Permission",
+    "Product",
+    "ProductImage",
+    "ProductModifierGroup",
+    "ProductVariant",
     "Role",
     "RolePermission",
     "StaffInvitation",
