@@ -7,6 +7,7 @@ import jwt
 import pytest
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
+from app.core.rate_limit import _limiter as _auth_rate_limiter
 from app.db.models import Role, StaffRole, StaffUser
 from app.db.session import get_db
 from app.main import create_app
@@ -18,6 +19,20 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # Must run before pytest-asyncio creates its event loop — see
 # app/core/asyncio_policy.py.
 configure_event_loop_policy()
+
+
+@pytest.fixture(autouse=True)
+def _reset_auth_rate_limiter() -> None:
+    """`app.core.rate_limit._limiter` is a module-level singleton shared by
+    the whole process (correct for a single API instance in production —
+    see that module's own docstring). Left alone, it also persists across
+    every test in a single pytest run: a test file that legitimately makes
+    many authenticated requests (any API test suite covering more than a
+    couple of endpoints) can trip the 60-requests/60-seconds bucket purely
+    from test-suite volume, failing with 429s that have nothing to do with
+    the behavior under test. Clearing it before each test is test-isolation
+    hygiene, not a change to the limiter's real behavior."""
+    _auth_rate_limiter._windows.clear()
 
 
 @pytest.fixture
