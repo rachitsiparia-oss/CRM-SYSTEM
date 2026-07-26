@@ -22,15 +22,19 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   const { body, accessToken, headers, ...rest } = options;
+  // FormData (file uploads) must be sent as-is — the browser sets its own
+  // multipart boundary in Content-Type, which JSON.stringify would break
+  // and an explicit "application/json" header would override incorrectly.
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {

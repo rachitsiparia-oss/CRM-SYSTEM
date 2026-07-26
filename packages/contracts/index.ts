@@ -459,3 +459,134 @@ export interface ConversionPreview {
   possible_customer_matches: CustomerListItem[];
   will_create_new_customer: boolean;
 }
+
+// --- Phase 6: Menu and Product Management ---
+// Mirrors apps/api/app/menu/schemas.py.
+
+export type FoodType = "vegetarian" | "non_vegetarian";
+export type SpiceLevel = "mild" | "medium" | "hot" | "extra_hot";
+export type AvailabilitySource =
+  | "manual"
+  | "inventory_derived"
+  | "schedule"
+  | "integration"
+  | "override";
+
+export interface MenuCategory {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  version: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  code: string;
+  name: string;
+  price_minor: number;
+  sort_order: number;
+  is_active: boolean;
+  is_available: boolean;
+  preparation_minutes: number | null;
+  version: number;
+}
+
+export interface ProductListItem {
+  id: string;
+  product_code: string;
+  name: string;
+  display_name: string | null;
+  category_id: string;
+  food_type: FoodType;
+  base_price_minor: number;
+  is_active: boolean;
+  is_available: boolean;
+  is_featured: boolean;
+  sort_order: number;
+  image_storage_path: string | null;
+}
+
+export interface Product {
+  id: string;
+  product_code: string;
+  barcode: string | null;
+  category_id: string;
+  name: string;
+  display_name: string | null;
+  slug: string;
+  description: string | null;
+  short_description: string | null;
+  food_type: FoodType;
+  is_jain_capable: boolean;
+  is_vegan_capable: boolean;
+  contains_egg: boolean;
+  contains_dairy: boolean;
+  contains_gluten: boolean;
+  contains_nuts: boolean;
+  contains_soy: boolean;
+  contains_alcohol: boolean;
+  spice_level: SpiceLevel | null;
+  preparation_minutes: number | null;
+  calories: number | null;
+  base_price_minor: number;
+  tax_category: string | null;
+  is_active: boolean;
+  is_available: boolean;
+  availability_source: AvailabilitySource;
+  manual_override_reason: string | null;
+  dine_in_available: boolean;
+  takeaway_available: boolean;
+  delivery_available: boolean;
+  image_storage_path: string | null;
+  sort_order: number;
+  is_featured: boolean;
+  is_chef_recommended: boolean;
+  version: number;
+}
+
+export interface ModifierGroup {
+  id: string;
+  name: string;
+  min_select: number;
+  max_select: number;
+  is_required: boolean;
+  sort_order: number;
+  version: number;
+}
+
+export interface Modifier {
+  id: string;
+  name: string;
+  default_price_minor: number;
+  is_active: boolean;
+  version: number;
+}
+
+export interface ModifierGroupItem {
+  modifier_group_id: string;
+  modifier_id: string;
+  price_minor_override: number | null;
+  sort_order: number;
+  is_available: boolean;
+}
+
+export interface ProductModifierGroupMapping {
+  product_id: string;
+  modifier_group_id: string;
+  sort_order: number;
+}
+
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_thumbnail: boolean;
+  file_size_bytes: number;
+  mime_type: string;
+  signed_url: string;
+}

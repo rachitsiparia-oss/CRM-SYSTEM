@@ -1,6 +1,7 @@
 import type {
   CustomerStatus,
   FollowUpStatus,
+  FoodType,
   LeadPriority,
   LeadStatus,
 } from "@rkpr/contracts";
@@ -90,3 +91,18 @@ export function isOverdue(scheduledAt: string | null | undefined): boolean {
   if (!scheduledAt) return false;
   return new Date(scheduledAt).getTime() < Date.now();
 }
+
+export const FOOD_TYPE_TONES: Record<FoodType, StatusTone> = {
+  vegetarian: "success",
+  non_vegetarian: "danger",
+};
+
+export const PRODUCT_ACTIVE_TONE: Record<"active" | "inactive", StatusTone> = {
+  active: "success",
+  inactive: "neutral",
+};
+
+export const PRODUCT_AVAILABILITY_TONE: Record<"available" | "unavailable", StatusTone> = {
+  available: "success",
+  unavailable: "warning",
+};
