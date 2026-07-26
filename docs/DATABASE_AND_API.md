@@ -1001,6 +1001,32 @@ Use `inventory_reservations` with:
 
 Reservation, consumption, and release must be transaction-safe.
 
+### 10.7 Phase 7 implementation notes and deviations
+
+Phase 7's own explicit instruction scoped this phase to the CRM side of orders only — no payment gateway integration, no kitchen-display/preparation-stage workflow, no inventory deduction, no delivery-partner tracking, no realtime — and gave its own exact status/source/type/table lists. Those lists differ from §10.1–§10.6 above; per `CLAUDE.md` §1.1 ("a document does not override... unless the user explicitly approves the change"), the phase's own explicit instruction governs this deliverable's actual schema, since implementing the fuller lifecycle documented above would require building the capabilities this exact phase forbids. §10.1–§10.6 remain the target for when payment-gateway integration (a later phase), real POS/Zomato/Swiggy import, delivery-partner tracking, and inventory reservation actually land; this section records every deviation the implementation actually shipped with.
+
+**Sources (8, not 9):** `pos`, `walk_in`, `website`, `whatsapp`, `phone_call`, `zomato`, `swiggy`, `manual` — this phase's own list, not §10.1's 9-value set. No `corporate`/`event` source exists as a distinct value (a corporate or event order is still placed through one of the 8 real sources).
+
+**Order type (3, not part of §10.1's fulfilment model):** `dine_in`, `takeaway`, `delivery` — a dedicated `order_type` column, this phase's own explicit field.
+
+**Status (7, not 16):** `draft`, `pending_confirmation`, `confirmed`, `preparing`, `ready`, `completed`, `cancelled`. No `pending_payment`/`payment_verification_pending` (no payment gateway to be pending on), no `quality_check` (no kitchen-display workflow), no `picked_up`/`out_for_delivery`/`delivered` (no delivery-partner tracking), no `refund_requested`/`refund_processing`/`refunded` as order statuses (refunds are tracked via `order_payments.status = 'refunded'` and the order's derived `payment_status`, not a separate status branch — this keeps refund state in one place instead of two). The allowed-transition table (`app/orders/states.py`) is this phase's own literal diagram: cancellation is reachable only from `pending_confirmation`, `preparing`, and `ready` — not from `draft` or `confirmed` — implemented exactly as given rather than widened with an assumed extra branch, since the instruction enumerated the alternative flows individually and precisely.
+
+**No `fulfilment_status`, `delivery_address_id`, `currency_code`, or per-status timestamp columns** (`accepted_at`/`preparing_at`/`ready_at`/`picked_up_at`/`out_for_delivery_at`/`delivered_at`/`cancelled_at`) on `orders` — those model capabilities (fulfilment tracking, delivery, multi-currency) out of scope for this phase. `estimated_completion_time` (this phase's own field) is the one completion-facing timestamp that exists. `lead_id` (nullable FK to `leads`) was added — this phase's own explicit "Lead (optional)" field, not documented above.
+
+**Money summary-plus-itemized-table pattern:** `orders.discount_minor`/`.tax_minor`/`.charges_minor` are running sums; `order_discounts`/`order_taxes`/`order_charges` hold the itemized lines that sum to them — the same pattern this phase's own instruction requests ("Only normalize where it actually improves the design"). `packaging_minor`/`delivery_minor`/`loyalty_discount_minor` as separate `orders` columns (§10.1) do not exist; packaging and delivery charges are itemized `order_charges` rows instead (`charge_type IN ('packaging', 'delivery', 'service', 'other')`), and there is no loyalty program yet (Phase 12) to discount against.
+
+**`order_item_modifiers` (a 12th table, not named in this phase's 11-table list):** required to store each item's "Modifiers" field (this phase's own instruction) as normalized rows rather than an unbounded JSON blob (`CLAUDE.md` §5.3) — the same table §10.3 already documents, added here as a normalization judgment call this phase's instruction explicitly authorized. Snapshots `modifier_name_snapshot`/`price_minor_snapshot` so later menu edits never alter historical orders, mirroring `order_items`' own product/variant snapshot fields (§10.2's `product_name_snapshot`/`variant_name_snapshot`, without `recipe_version` or `special_instructions` — no recipe module exists yet, and the equivalent free-text field is `order_items.kitchen_note`).
+
+**`order_items.status`** is `active`/`cancelled` (whether the line is still part of the order), not a kitchen-stage value — no kitchen-display/preparation-stage workflow exists yet (this phase's own "DO NOT BUILD" list).
+
+**Payments (`order_payments`, not the four-table `payments`/`payment_events`/`refunds`/`refund_events` set in §10.5):** one table, "recording only" per this phase's own instruction — `method` (`cash`/`card`/`upi`/`online`), `status` (`pending`/`partial`/`paid`/`refunded`/`failed`), `reference` (a staff-entered identifier, never a gateway callback), `recorded_by`. No provider IDs or webhook event IDs exist to deduplicate, since no gateway is integrated. The order's own `payment_status` is derived server-side from the sum of `paid` payments against `grand_total_minor` whenever a payment is added or its status changes.
+
+**No `order_source_metadata` 1:1 columns beyond `external_order_id`/`external_platform_reference`/`reconciliation_note`** — placeholders for a future real POS/Zomato/Swiggy import adapter to populate; no fabricated payload is stored (`CLAUDE.md` §16).
+
+**No `inventory_reservations` (§10.6):** inventory deduction is explicitly out of scope for this phase.
+
+**Permissions:** replaces the Phase 3 placeholder Orders permission set (`orders.transition`, `orders.cancel.request`/`.approve`, `orders.refund.request`/`.approve`, `orders.discount.apply`) with this phase's own explicit codes (`orders.view`/`.create`/`.update`/`.transition`/`.cancel`/`.complete`/`.assign`/`.payments.manage`/`.discount.override`/`.notes.manage`) — not kept as aliases, the same treatment Phase 6 gave `menu.manage`. There is no separate refund permission: refunds are recorded through `orders.payments.manage`, not a standalone approval workflow.
+
 ## 11. RESERVATIONS
 
 ### 11.1 `reservations`
@@ -1622,6 +1648,8 @@ Transition endpoint requires:
 Dummy lead fixtures must match `PROJECT_PLAN.md`.
 
 ## 24. ORDER API
+
+Phase 7 shipped its own narrower endpoint set matching §10.7's deviations (no cancel/refund-request/inventory-reservations endpoints — cancellation is a `transition` target, there is no refund workflow or inventory reservation) — see §10.7 for the full reasoning. The endpoints below remain the target once payment-gateway integration and inventory reservation exist. Phase 7's actual surface: `GET/POST /api/v1/orders`, `GET/PATCH /api/v1/orders/{order_id}`, `POST /api/v1/orders/{order_id}/transition`, `POST /api/v1/orders/{order_id}/assign`, `GET /api/v1/orders/{order_id}/timeline`, `GET /api/v1/orders/{order_id}/status-history`, `GET/POST /api/v1/orders/{order_id}/payments`, `PATCH /api/v1/orders/{order_id}/payments/{payment_id}`, `GET/POST /api/v1/orders/{order_id}/notes`, `GET /api/v1/orders/dashboard/stats`, `GET /api/v1/orders/search-customers`.
 
 ### 24.1 Endpoints
 
