@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, RotateCcw, Settings, User as UserIcon } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { apiFetchClient } from "@/lib/api/browser";
@@ -30,7 +30,7 @@ function initials(name: string): string {
 export function UserMenu() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useCurrentUser();
+  const { data: user, isLoading, isError, refetch } = useCurrentUser();
 
   async function handleLogout() {
     try {
@@ -47,6 +47,22 @@ export function UserMenu() {
 
   if (isLoading) {
     return <Skeleton className="size-9 rounded-full" />;
+  }
+  if (isError) {
+    // The profile call failed (network blip, cold connection) — showing
+    // nothing here used to look exactly like being logged out, with no way
+    // to tell. A visible retry affordance instead of silence.
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-9"
+        aria-label="Retry loading your profile"
+        onClick={() => void refetch()}
+      >
+        <RotateCcw className="size-4" />
+      </Button>
+    );
   }
   if (!user) {
     return null;
