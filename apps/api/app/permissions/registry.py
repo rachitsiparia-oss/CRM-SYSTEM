@@ -67,16 +67,31 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("leads.notes.manage", "Add lead activity notes."),
     PermissionDef("leads.convert", "Convert a lead into a customer.", is_sensitive=True),
     PermissionDef("leads.export", "Export lead data.", is_sensitive=True),
-    # Orders
+    # Orders. Replaces the Phase 3 placeholder set (orders.transition,
+    # orders.cancel.request/.approve, orders.refund.request/.approve,
+    # orders.discount.apply) — not kept as aliases, same treatment Phase 6
+    # gave menu.manage. This phase's own explicit instruction names
+    # orders.view/.create/.update/.cancel/.complete/.assign/
+    # .payments.manage/.discount.override/.notes.manage "as examples";
+    # orders.transition is kept alongside them (not one of the named
+    # examples) to separately gate ordinary happy-path progression
+    # (draft -> ... -> ready) from the more sensitive, individually-named
+    # orders.cancel and orders.complete actions. There is no separate
+    # refund permission: refunds are a payment_status value recorded
+    # through orders.payments.manage, not a standalone gateway workflow —
+    # this phase explicitly forbids payment gateway integration.
     PermissionDef("orders.view", "View orders."),
     PermissionDef("orders.create", "Create orders."),
-    PermissionDef("orders.update", "Update orders."),
-    PermissionDef("orders.transition", "Transition order status."),
-    PermissionDef("orders.discount.apply", "Apply discounts to orders.", is_sensitive=True),
-    PermissionDef("orders.cancel.request", "Request order cancellation."),
-    PermissionDef("orders.cancel.approve", "Approve order cancellation.", is_sensitive=True),
-    PermissionDef("orders.refund.request", "Request an order refund."),
-    PermissionDef("orders.refund.approve", "Approve an order refund.", is_sensitive=True),
+    PermissionDef("orders.update", "Update order details."),
+    PermissionDef("orders.transition", "Advance order status through the standard workflow."),
+    PermissionDef("orders.cancel", "Cancel an order.", is_sensitive=True),
+    PermissionDef("orders.complete", "Mark an order completed."),
+    PermissionDef("orders.assign", "Assign staff to an order."),
+    PermissionDef("orders.payments.manage", "Record and update order payments."),
+    PermissionDef(
+        "orders.discount.override", "Apply manual or manager-override discounts.", is_sensitive=True
+    ),
+    PermissionDef("orders.notes.manage", "Add and edit order notes."),
     # Menu
     PermissionDef("menu.view", "View the menu catalogue."),
     # `menu.manage` (a Phase 3 placeholder anticipating this phase) is
