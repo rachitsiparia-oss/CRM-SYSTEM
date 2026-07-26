@@ -135,7 +135,7 @@ Deferred, deliberately: dummy dashboard KPI widgets (see the PROJECT_PLAN.md dev
 
 ## Phase 5 — Customer and Lead CRM
 
-Status: NOT STARTED
+Status: COMPLETED
 
 Scope:
 
@@ -144,9 +144,19 @@ Scope:
 - Lead pipeline, qualification, assignment, follow-ups, conversion, and win/loss tracking
 - Duplicate detection and customer merge controls
 
-Completion date:
+Completion date: 2026-07-26
 
-Completion notes:
+Completion notes: Built the full customer and lead CRM end to end: 12 new tables (`customers`, `customer_addresses`, `customer_preferences`, `customer_notes`, `tags`/`customer_tags`, `customer_consents`, `customer_merge_events`, `leads`, `lead_activities`, `lead_status_history`, `lead_follow_ups`) in one migration (`523aed98ebd1_add_phase5_customers_and_leads`), each with RLS enabled per `SECURITY_PERFORMANCE_AND_QUALITY.md` §8.5. `docs/DATABASE_AND_API.md` §7.5 records every deviation this phase made from the pre-existing schema spec and why (forward-referenced FKs to not-yet-built `products`/`campaigns` tables replaced with interim free-text fields, the canonical 10-value lead status list, `do_not_contact` as a boolean rather than a status, extra columns `CORE_CRM_MODULES.md` required beyond the original column lists, the customer vs. lead archive mechanism difference, and the 5-event domain-event scope).
+
+Backend: `app/shared/normalization.py` (deterministic India-only phone/email/tag normalization, the single source both modules use), `app/customers/service.py` and `app/leads/service.py` (duplicate detection on exact normalized phone/email only — no fuzzy matching, per this phase's own instruction; transactional customer merge that re-points addresses/tags/notes/consents and blocks self-merge/double-merge; an explicit `app/leads/states.py` state machine where `won` is reachable only through `execute_conversion`, never the generic transition endpoint; idempotent lead-to-customer conversion keyed on `conversion_idempotency_key`, safe to retry). 11 new permissions added to the canonical registry (`customers.archive`/`.restore`/`.assign`/`.notes.manage`/`.notes.sensitive.read`/`.tags.manage`, `leads.archive`/`.restore`/`.followup.manage`/`.notes.manage`/`.convert`) and granted across the existing role matrix. Full REST surface: 16 customer endpoints, 18 lead endpoints, all backend-permission-checked (`require_permission`), all mutations audited (`record_audit_event`) and the 5 documented domain events recorded via the outbox (`customer.created`/`.updated`/`.merged`, `lead.created`/`.stage_changed` — no consumer wired yet, matching the documented contract). Idempotent seed data (8 customers, 9 leads including a deliberately overdue follow-up and a do-not-contact lead) verified to not duplicate on a second run.
+
+A real production bug was found and fixed while writing the API authorization tests: `Base` lacked `eager_defaults=True`, so a server-computed `onupdate=func.now()` column (`updated_at`) was marked expired after an UPDATE instead of populated via Postgres RETURNING — reading it immediately afterward (exactly what `CustomerOut`/`LeadOut` do on every mutation response) crashed with `MissingGreenlet`, since that refresh can't be awaited from inside Pydantic's synchronous `model_validate`. This was already latent in Phase 3 but never triggered because the staff schemas never exposed `updated_at` in a response built right after a mutation. Fixed with a one-line `__mapper_args__` change on the shared `Base` (`app/db/base.py`), benefiting every model, not just this phase's.
+
+Frontend: customer and lead directories (search, status/segment/source/priority filters, unassigned-only and overdue-follow-up filters, server-driven pagination via the `DataTable` component from Phase 4), create modals with live duplicate-match warnings as staff type a phone or email, customer detail (profile edit with optimistic-concurrency conflict handling, addresses, notes with sensitive-note gating, tags, audit timeline, archive/restore), lead detail (status transition control mirroring the backend's allowed-transitions table so `won` is never offered directly, do-not-contact toggle, follow-up scheduling/complete/reschedule, activity log, archive), and a conversion modal that previews duplicate customer matches, lets staff link to an existing one instead of creating a duplicate, and reuses one idempotency key across retries so a double-click can't create two customers.
+
+Verified: `ruff format --check`, `ruff check`, `mypy --strict` (97 source files) all pass; the full `apps/api` Pytest suite (136/136 — includes 31 new model/constraint tests, 42 new API authorization and workflow tests covering permission-denied paths, optimistic-concurrency 409s, merge self/double-merge rejection, the `won`-unreachable-via-transition invariant, do-not-contact blocking follow-ups, and conversion idempotency) passes against the live database. Frontend: ESLint (0 errors), `tsc --noEmit` (0 errors), Vitest (19/19 across 5 files, including permission-gating and the frontend's `ALLOWED_TRANSITIONS` mirror), `next build`, and Playwright e2e (5/5, including two new unauthenticated-redirect checks for `/customers` and `/leads`) all pass.
+
+Deferred, deliberately: authenticated manual browser click-through of the create/edit/transition/convert/merge flows was handed to the user rather than performed by Claude — entering a password into the login form is outside what Claude is permitted to do regardless of who provides the credentials; a checklist was provided instead. A dedicated merge UI page was not built (the merge preview/execute endpoints exist and are tested, but the frontend only exposes the create/edit/transition/convert flows through click-able UI) — flagged for the user to request if wanted. `favorite_product_id`/`campaign_id` real foreign keys, and the dummy 65-person staff roster, remain deferred to their respective later phases as already documented.
 
 ## Phase 6 — Menu and Product Management
 
