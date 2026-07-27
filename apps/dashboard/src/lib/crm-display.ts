@@ -1,4 +1,7 @@
 import type {
+  AdjustmentDirection,
+  BatchStatus,
+  CountStatus,
   CustomerStatus,
   FollowUpStatus,
   FoodType,
@@ -6,6 +9,9 @@ import type {
   LeadStatus,
   OrderStatus,
   PaymentStatus,
+  ReceiptStatus,
+  StockStatus,
+  TransferStatus,
 } from "@rkpr/contracts";
 
 import type { StatusTone } from "@/components/status-badge";
@@ -125,4 +131,62 @@ export const PAYMENT_STATUS_TONES: Record<PaymentStatus, StatusTone> = {
   paid: "success",
   refunded: "info",
   failed: "danger",
+};
+
+// --- Phase 8: Inventory ---
+
+/** Inventory quantities arrive as exact-decimal strings (the backend's
+ * `Qty` type — CLAUDE.md section 7's money rule applied to quantities).
+ * This only formats what the server already computed for display; never
+ * parse a quantity string back into a number for arithmetic. */
+export function formatQuantity(value: string | null | undefined, unitSymbol?: string): string {
+  if (value === null || value === undefined) return "—";
+  const trimmed = value.includes(".") ? value.replace(/\.?0+$/, "") : value;
+  return unitSymbol ? `${trimmed} ${unitSymbol}` : trimmed;
+}
+
+export const STOCK_STATUS_TONES: Record<StockStatus, StatusTone> = {
+  in_stock: "success",
+  low_stock: "warning",
+  critical_stock: "danger",
+  out_of_stock: "danger",
+  reserved: "info",
+  quarantined: "warning",
+  expired: "danger",
+  damaged: "danger",
+  under_count_review: "warning",
+  discontinued: "neutral",
+};
+
+export const RECEIPT_STATUS_TONES: Record<ReceiptStatus, StatusTone> = {
+  draft: "neutral",
+  posted: "success",
+  reversed: "danger",
+};
+
+export const TRANSFER_STATUS_TONES: Record<TransferStatus, StatusTone> = {
+  draft: "neutral",
+  posted: "success",
+  reversed: "danger",
+};
+
+export const COUNT_STATUS_TONES: Record<CountStatus, StatusTone> = {
+  draft: "neutral",
+  in_progress: "info",
+  submitted: "warning",
+  approved: "success",
+  cancelled: "danger",
+};
+
+export const BATCH_STATUS_TONES: Record<BatchStatus, StatusTone> = {
+  active: "success",
+  depleted: "neutral",
+  quarantined: "warning",
+  expired: "danger",
+  damaged: "danger",
+};
+
+export const ADJUSTMENT_DIRECTION_TONES: Record<AdjustmentDirection, StatusTone> = {
+  increase: "success",
+  decrease: "warning",
 };
