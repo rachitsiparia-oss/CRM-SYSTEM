@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { ReservationDashboard } from "./reservation-dashboard";
+import { WaitlistBoard } from "./waitlist-board";
 
 export default function Page() {
   return (
     <PermissionGate permission="reservations.view">
-      <ReservationDashboard />
+      <WaitlistBoard />
     </PermissionGate>
   );
 }

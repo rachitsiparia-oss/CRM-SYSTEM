@@ -78,7 +78,22 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Movement Ledger", href: "/inventory/movements" },
     ],
   },
-  { label: "Reservations & Calendar", href: "/reservations", icon: CalendarDays },
+  {
+    label: "Reservations & Calendar",
+    href: "/reservations",
+    icon: CalendarDays,
+    requiredPermission: "reservations.view",
+    children: [
+      { label: "Dashboard", href: "/reservations" },
+      { label: "Calendar", href: "/reservations/calendar" },
+      { label: "Reservations", href: "/reservations/list" },
+      { label: "Tables & Floor", href: "/reservations/tables" },
+      { label: "Dining Areas", href: "/reservations/dining-areas" },
+      { label: "Waitlist", href: "/reservations/waitlist" },
+      { label: "Business Hours", href: "/reservations/business-hours" },
+      { label: "Reservation Settings", href: "/reservations/settings" },
+    ],
+  },
   { label: "Communication Hub", href: "/communications", icon: MessageSquare },
   { label: "Lightweight Knowledge Base", href: "/knowledge-base", icon: BookOpen },
   {
