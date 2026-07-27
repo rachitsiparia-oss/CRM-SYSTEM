@@ -110,11 +110,61 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
         "menu.modifiers.manage", "Manage modifier groups, modifiers, and their mappings."
     ),
     PermissionDef("menu.images.manage", "Upload, delete, and reorder product images."),
-    # Inventory
-    PermissionDef("inventory.view", "View inventory."),
-    PermissionDef("inventory.adjust", "Adjust inventory stock levels."),
-    PermissionDef("inventory.receive", "Receive inventory from suppliers."),
-    PermissionDef("inventory.transfer", "Transfer inventory between locations."),
+    # Inventory. Replaces the Phase 3 placeholder set (inventory.adjust,
+    # inventory.receive, inventory.transfer) with the granular codes this
+    # phase's own instruction names — not kept as aliases, the same
+    # treatment Phase 6 gave menu.manage and Phase 7 gave the order
+    # placeholders. DATABASE_AND_API.md section 25.2 and
+    # CORE_CRM_MODULES.md section 8.19 both reference the old three as
+    # "and related" examples drawn from the registry, never as an
+    # exhaustive list, so replacing them narrows nothing that was
+    # documented as complete.
+    #
+    # The split is deliberate along the lines that matter operationally:
+    # *doing* a stock operation and *approving* it are separate grants
+    # (so a store hand can record waste but not sign it off), and reading
+    # costs is separate from reading stock levels (a kitchen hand needs
+    # quantities, not supplier pricing).
+    PermissionDef("inventory.view", "View inventory items, balances, and movements."),
+    PermissionDef("inventory.items.create", "Create inventory items."),
+    PermissionDef("inventory.items.update", "Update inventory items."),
+    PermissionDef("inventory.items.archive", "Archive inventory items.", is_sensitive=True),
+    PermissionDef("inventory.items.restore", "Restore archived inventory items."),
+    PermissionDef("inventory.suppliers.manage", "Create, edit, and archive suppliers."),
+    PermissionDef("inventory.units.manage", "Manage units of measure and conversions."),
+    PermissionDef("inventory.locations.manage", "Manage storage locations and their stock policy."),
+    PermissionDef("inventory.categories.manage", "Manage inventory categories."),
+    PermissionDef("inventory.recipes.view", "View recipes and their ingredients."),
+    PermissionDef("inventory.recipes.manage", "Create and edit recipes.", is_sensitive=True),
+    PermissionDef("inventory.receipts.create", "Create and edit draft goods receipts."),
+    PermissionDef("inventory.receipts.post", "Post a goods receipt into stock.", is_sensitive=True),
+    PermissionDef(
+        "inventory.receipts.reverse", "Reverse a posted goods receipt.", is_sensitive=True
+    ),
+    PermissionDef("inventory.adjustments.create", "Record a stock adjustment.", is_sensitive=True),
+    PermissionDef(
+        "inventory.adjustments.approve", "Approve a stock adjustment.", is_sensitive=True
+    ),
+    PermissionDef("inventory.wastage.create", "Record wastage."),
+    PermissionDef("inventory.wastage.approve", "Approve recorded wastage.", is_sensitive=True),
+    PermissionDef("inventory.transfers.create", "Create and edit draft stock transfers."),
+    PermissionDef("inventory.transfers.post", "Post a stock transfer."),
+    PermissionDef(
+        "inventory.transfers.reverse", "Reverse a posted stock transfer.", is_sensitive=True
+    ),
+    PermissionDef("inventory.counts.create", "Create and conduct stock counts."),
+    PermissionDef("inventory.counts.submit", "Submit a completed stock count for approval."),
+    PermissionDef(
+        "inventory.counts.approve",
+        "Approve a stock count and post its variance corrections.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "inventory.balances.rebuild",
+        "Rebuild the stock balance projection from the ledger.",
+        is_sensitive=True,
+    ),
+    PermissionDef("inventory.cost.view", "View inventory costs, valuation, and recipe costing."),
     # Reservations
     PermissionDef("reservations.view", "View reservations."),
     PermissionDef("reservations.create", "Create reservations."),

@@ -49,7 +49,16 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "orders.payments.manage",
         "orders.notes.manage",
         "menu.view",
+        # Operations manager oversees stock but is not the store keeper:
+        # full visibility (including cost, since they own operational
+        # spend) plus approval authority, without the day-to-day
+        # receipt/transfer/count data entry that inventory_manager does.
         "inventory.view",
+        "inventory.cost.view",
+        "inventory.recipes.view",
+        "inventory.adjustments.approve",
+        "inventory.wastage.approve",
+        "inventory.counts.approve",
         "reservations.view",
         "reservations.create",
         "reservations.update",
@@ -65,6 +74,12 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "orders.view",
         "orders.payments.manage",
         "orders.discount.override",
+        # Finance owns valuation and cost reporting, and signs off on
+        # adjustments that move stock value — but never records stock
+        # movements itself (no receipts/transfers/wastage/counts).
+        "inventory.view",
+        "inventory.cost.view",
+        "inventory.adjustments.approve",
         "loyalty.view",
         "loyalty.adjust",
         "reports.view",
@@ -82,19 +97,57 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "menu.categories.manage",
         "menu.modifiers.manage",
         "menu.images.manage",
+        # Kitchen manager owns recipes (they define what a dish consumes)
+        # and records kitchen-floor stock reality — wastage, counts,
+        # receipts into the kitchen — but does not approve their own
+        # wastage or adjustments, and has no supplier/unit/location
+        # administration.
         "inventory.view",
-        "inventory.adjust",
-        "inventory.receive",
+        "inventory.cost.view",
+        "inventory.recipes.view",
+        "inventory.recipes.manage",
+        "inventory.receipts.create",
+        "inventory.receipts.post",
+        "inventory.wastage.create",
+        "inventory.transfers.create",
+        "inventory.transfers.post",
+        "inventory.counts.create",
+        "inventory.counts.submit",
         "orders.view",
         "orders.transition",
         "staff.view",
     ),
     "inventory_manager": (
         "dashboard.view",
+        # The store keeper: full day-to-day stock operations and master
+        # data, and the approver for counts and wastage. Deliberately NOT
+        # granted inventory.adjustments.approve (a manual quantity
+        # correction is signed off by operations/finance, not by the
+        # person who recorded it) or inventory.balances.rebuild (a
+        # last-resort maintenance action reserved for owner/GM).
         "inventory.view",
-        "inventory.adjust",
-        "inventory.receive",
-        "inventory.transfer",
+        "inventory.cost.view",
+        "inventory.items.create",
+        "inventory.items.update",
+        "inventory.items.archive",
+        "inventory.items.restore",
+        "inventory.suppliers.manage",
+        "inventory.units.manage",
+        "inventory.locations.manage",
+        "inventory.categories.manage",
+        "inventory.recipes.view",
+        "inventory.receipts.create",
+        "inventory.receipts.post",
+        "inventory.receipts.reverse",
+        "inventory.adjustments.create",
+        "inventory.wastage.create",
+        "inventory.wastage.approve",
+        "inventory.transfers.create",
+        "inventory.transfers.post",
+        "inventory.transfers.reverse",
+        "inventory.counts.create",
+        "inventory.counts.submit",
+        "inventory.counts.approve",
         "orders.view",
         "staff.view",
         "reports.view",
@@ -163,14 +216,24 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "orders.assign",
         "staff.view",
         "reservations.view",
+        # A supervisor on shift needs to see stock and record what the
+        # floor consumed or wasted, but not approve it, not touch master
+        # data, and not see supplier costs.
         "inventory.view",
+        "inventory.wastage.create",
+        "inventory.counts.create",
+        "inventory.counts.submit",
     ),
     "kitchen_staff": (
         "dashboard.view",
         "orders.view",
         "orders.transition",
         "menu.view",
+        # Quantities and recipes only — no costs, no approvals, no master
+        # data. Recording wastage is the one stock write a line cook needs.
         "inventory.view",
+        "inventory.recipes.view",
+        "inventory.wastage.create",
     ),
     "front_of_house_staff": (
         "dashboard.view",
