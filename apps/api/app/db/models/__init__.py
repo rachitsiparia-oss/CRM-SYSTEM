@@ -7,6 +7,9 @@ from app.db.models.customer_note import CustomerNote
 from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
+from app.db.models.inventory_batch import InventoryBatch
+from app.db.models.inventory_category import InventoryCategory
+from app.db.models.inventory_item import InventoryItem
 from app.db.models.job_record import JobRecord
 from app.db.models.lead import Lead
 from app.db.models.lead_activity import LeadActivity
@@ -20,6 +23,7 @@ from app.db.models.order import Order
 from app.db.models.order_assignment import OrderAssignment
 from app.db.models.order_charge import OrderCharge
 from app.db.models.order_discount import OrderDiscount
+from app.db.models.order_inventory_state import OrderInventoryState
 from app.db.models.order_item import OrderItem
 from app.db.models.order_item_modifier import OrderItemModifier
 from app.db.models.order_note import OrderNote
@@ -34,12 +38,23 @@ from app.db.models.product import Product
 from app.db.models.product_image import ProductImage
 from app.db.models.product_modifier_group import ProductModifierGroup
 from app.db.models.product_variant import ProductVariant
+from app.db.models.recipe import Recipe, RecipeItem
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.staff_invitation import StaffInvitation
 from app.db.models.staff_role import StaffRole
 from app.db.models.staff_user import StaffUser
+from app.db.models.stock_adjustment import StockAdjustment
+from app.db.models.stock_balance import StockBalance
+from app.db.models.stock_count import StockCount, StockCountLine
+from app.db.models.stock_movement import StockMovement
+from app.db.models.stock_receipt import StockReceipt, StockReceiptItem
+from app.db.models.stock_transfer import StockTransfer, StockTransferItem
+from app.db.models.storage_location import StorageLocation
+from app.db.models.supplier import Supplier
 from app.db.models.tag import Tag
+from app.db.models.unit_of_measure import UnitOfMeasure
+from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
     "AuditEvent",
@@ -51,6 +66,9 @@ __all__ = [
     "CustomerPreference",
     "CustomerTag",
     "Department",
+    "InventoryBatch",
+    "InventoryCategory",
+    "InventoryItem",
     "JobRecord",
     "Lead",
     "LeadActivity",
@@ -64,6 +82,7 @@ __all__ = [
     "OrderAssignment",
     "OrderCharge",
     "OrderDiscount",
+    "OrderInventoryState",
     "OrderItem",
     "OrderItemModifier",
     "OrderNote",
@@ -78,10 +97,25 @@ __all__ = [
     "ProductImage",
     "ProductModifierGroup",
     "ProductVariant",
+    "Recipe",
+    "RecipeItem",
     "Role",
     "RolePermission",
     "StaffInvitation",
     "StaffRole",
     "StaffUser",
+    "StockAdjustment",
+    "StockBalance",
+    "StockCount",
+    "StockCountLine",
+    "StockMovement",
+    "StockReceipt",
+    "StockReceiptItem",
+    "StockTransfer",
+    "StockTransferItem",
+    "StorageLocation",
+    "Supplier",
     "Tag",
+    "UnitOfMeasure",
+    "WastageRecord",
 ]
