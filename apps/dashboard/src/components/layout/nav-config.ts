@@ -13,6 +13,8 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import type { CurrentUser } from "@rkpr/contracts";
+import { hasPermission } from "@/lib/hooks/use-current-user";
 
 export interface NavChild {
   label: string;
@@ -23,7 +25,12 @@ export interface NavSection {
   label: string;
   href: string;
   icon: LucideIcon;
-  requiredPermission?: string;
+  /** A single permission code, or a list checked with OR semantics — used
+   * by "Menu, Products & Inventory" (CLAUDE.md section 2's section 5 bundles
+   * both domains under one nav entry) so a staff member with only
+   * `inventory.view` still sees the section without also needing
+   * `menu.view`. */
+  requiredPermission?: string | string[];
   children?: NavChild[];
 }
 
@@ -55,11 +62,20 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Menu, Products & Inventory",
     href: "/menu",
     icon: UtensilsCrossed,
-    requiredPermission: "menu.view",
+    requiredPermission: ["menu.view", "inventory.view"],
     children: [
       { label: "Products", href: "/menu" },
       { label: "Categories", href: "/menu/categories" },
       { label: "Modifier Groups", href: "/menu/modifier-groups" },
+      { label: "Inventory Dashboard", href: "/inventory" },
+      { label: "Inventory Items", href: "/inventory/items" },
+      { label: "Recipes", href: "/inventory/recipes" },
+      { label: "Suppliers", href: "/inventory/suppliers" },
+      { label: "Receipts", href: "/inventory/receipts" },
+      { label: "Adjustments & Wastage", href: "/inventory/adjustments" },
+      { label: "Transfers", href: "/inventory/transfers" },
+      { label: "Stock Counts", href: "/inventory/stock-counts" },
+      { label: "Movement Ledger", href: "/inventory/movements" },
     ],
   },
   { label: "Reservations & Calendar", href: "/reservations", icon: CalendarDays },
@@ -79,6 +95,19 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: "Reports, Analytics & AI Center", href: "/reports", icon: BarChart3 },
   { label: "Integrations, Security & Settings", href: "/settings", icon: Settings },
 ];
+
+/** Shared by Sidebar and MobileNav so the two navigation surfaces can never
+ * disagree about which sections a signed-in user can see. */
+export function isNavSectionVisible(
+  section: NavSection,
+  user: CurrentUser | undefined,
+): boolean {
+  if (!section.requiredPermission) return true;
+  const codes = Array.isArray(section.requiredPermission)
+    ? section.requiredPermission
+    : [section.requiredPermission];
+  return codes.some((code) => hasPermission(user, code));
+}
 
 /** Flat lookup used by breadcrumbs to resolve a pathname segment back to
  * its human label without duplicating the section list. */

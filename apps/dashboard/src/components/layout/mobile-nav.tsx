@@ -8,8 +8,8 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useCurrentUser, hasPermission } from "@/lib/hooks/use-current-user";
-import { NAV_SECTIONS } from "./nav-config";
+import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import { NAV_SECTIONS, isNavSectionVisible } from "./nav-config";
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -23,9 +23,7 @@ export function MobileNav() {
   const { data: user } = useCurrentUser();
   const [open, setOpen] = useState(false);
 
-  const sections = NAV_SECTIONS.filter(
-    (section) => !section.requiredPermission || hasPermission(user, section.requiredPermission),
-  );
+  const sections = NAV_SECTIONS.filter((section) => isNavSectionVisible(section, user));
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

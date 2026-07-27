@@ -8,8 +8,8 @@ import { ChevronDown, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCurrentUser, hasPermission } from "@/lib/hooks/use-current-user";
-import { NAV_SECTIONS } from "./nav-config";
+import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import { NAV_SECTIONS, isNavSectionVisible } from "./nav-config";
 
 const COLLAPSE_STORAGE_KEY = "rkpr:sidebar-collapsed";
 
@@ -44,9 +44,7 @@ export function Sidebar({ className }: { className?: string }) {
     });
   }
 
-  const sections = NAV_SECTIONS.filter(
-    (section) => !section.requiredPermission || hasPermission(user, section.requiredPermission),
-  );
+  const sections = NAV_SECTIONS.filter((section) => isNavSectionVisible(section, user));
 
   return (
     <nav
