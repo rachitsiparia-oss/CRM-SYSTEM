@@ -1595,3 +1595,479 @@ export interface InventoryDashboardStats {
   transfers_in_progress: number;
   pending_stock_counts: number;
 }
+
+// --- Phase 9: Reservations, Tables & Calendar Management ---
+// Mirrors apps/api/app/reservations/schemas.py.
+
+export type ReservationSource = "phone" | "walk_in" | "online" | "whatsapp" | "staff";
+export type ReservationStatus =
+  | "requested"
+  | "pending_review"
+  | "needs_clarification"
+  | "approved"
+  | "rejected"
+  | "confirmation_sending"
+  | "confirmed"
+  | "reminder_scheduled"
+  | "arrived"
+  | "seated"
+  | "completed"
+  | "no_show"
+  | "cancelled_by_customer"
+  | "cancelled_by_restaurant"
+  | "expired";
+export type CancellationSource = "customer" | "restaurant";
+export type ReservationNoteType =
+  | "internal"
+  | "kitchen"
+  | "guest_preference"
+  | "allergy"
+  | "special_occasion"
+  | "accessibility"
+  | "celebration"
+  | "vip";
+export type TableStatus =
+  | "available"
+  | "reserved"
+  | "occupied"
+  | "cleaning"
+  | "blocked"
+  | "maintenance"
+  | "merged";
+export type TableShape = "round" | "square" | "rectangle" | "oval" | "booth" | "bar" | "custom";
+export type TableBlockType = "cleaning" | "maintenance" | "private_event" | "other";
+export type WaitlistStatus = "waiting" | "notified" | "promoted" | "cancelled" | "expired";
+
+export interface ReservationCreateInput {
+  customer_id?: string | null;
+  guest_name: string;
+  phone_e164?: string | null;
+  email?: string | null;
+  party_size: number;
+  reservation_date: string;
+  start_time: string;
+  end_time?: string | null;
+  dining_area_id?: string | null;
+  source: ReservationSource;
+  special_requests?: string | null;
+  deposit_required?: boolean;
+  deposit_amount_minor?: number | null;
+  idempotency_key: string;
+}
+
+export interface ReservationUpdateInput {
+  customer_id?: string | null;
+  guest_name?: string;
+  phone_e164?: string | null;
+  email?: string | null;
+  party_size?: number;
+  reservation_date?: string;
+  start_time?: string;
+  end_time?: string | null;
+  dining_area_id?: string | null;
+  special_requests?: string | null;
+  deposit_required?: boolean;
+  deposit_amount_minor?: number | null;
+  expected_version?: number | null;
+}
+
+export interface ReservationTransitionInput {
+  new_status: ReservationStatus;
+  reason?: string | null;
+}
+
+export interface ReservationApprovalInput {
+  approve: boolean;
+  reason?: string | null;
+}
+
+export interface ReservationNoteInput {
+  note_type?: ReservationNoteType;
+  content: string;
+  is_internal?: boolean;
+}
+
+export interface WalkInCreateInput {
+  guest_name: string;
+  phone_e164?: string | null;
+  email?: string | null;
+  party_size: number;
+  dining_area_id?: string | null;
+  special_requests?: string | null;
+}
+
+export interface Reservation {
+  id: string;
+  reservation_number: string;
+  customer_id: string | null;
+  guest_name: string;
+  phone_e164: string | null;
+  email: string | null;
+  party_size: number;
+  reservation_date: string;
+  start_time: string;
+  end_time: string | null;
+  dining_area_id: string | null;
+  status: ReservationStatus;
+  source: ReservationSource;
+  is_walk_in: boolean;
+  special_requests: string | null;
+  order_id: string | null;
+  assigned_staff_id: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  arrived_at: string | null;
+  seated_at: string | null;
+  completed_at: string | null;
+  no_show_at: string | null;
+  cancelled_at: string | null;
+  cancellation_source: CancellationSource | null;
+  cancellation_reason: string | null;
+  expires_at: string | null;
+  deposit_required: boolean;
+  deposit_amount_minor: number | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReservationStatusHistoryEntry {
+  id: string;
+  reservation_id: string;
+  previous_status: ReservationStatus | null;
+  new_status: ReservationStatus;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface ReservationTimelineEntry {
+  id: string;
+  reservation_id: string;
+  event_type: string;
+  summary: string;
+  event_metadata: Record<string, unknown> | null;
+  performed_by: string | null;
+  occurred_at: string;
+}
+
+export interface ReservationNote {
+  id: string;
+  reservation_id: string;
+  note_type: ReservationNoteType;
+  content: string;
+  is_internal: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+export interface DiningAreaCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface DiningAreaUpdateInput {
+  name?: string;
+  description?: string | null;
+  is_active?: boolean;
+  expected_version?: number | null;
+}
+
+export interface DiningArea {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  version: number;
+}
+
+export interface RestaurantTableCreateInput {
+  dining_area_id: string;
+  table_number: string;
+  capacity: number;
+  minimum_capacity?: number | null;
+  maximum_capacity?: number | null;
+  shape?: TableShape;
+  is_wheelchair_accessible?: boolean;
+  is_temporary?: boolean;
+  qr_identifier?: string | null;
+  notes?: string | null;
+  sort_order?: number;
+}
+
+export interface RestaurantTableUpdateInput {
+  dining_area_id?: string;
+  capacity?: number;
+  minimum_capacity?: number | null;
+  maximum_capacity?: number | null;
+  shape?: TableShape;
+  is_wheelchair_accessible?: boolean;
+  is_temporary?: boolean;
+  qr_identifier?: string | null;
+  notes?: string | null;
+  is_active?: boolean;
+  expected_version?: number | null;
+}
+
+export interface TableStatusTransitionInput {
+  new_status: TableStatus;
+  reason?: string | null;
+}
+
+export interface TableMergeInput {
+  secondary_table_ids: string[];
+  reason?: string | null;
+}
+
+export interface TableSplitInput {
+  reason?: string | null;
+}
+
+export interface TableBlockCreateInput {
+  block_type: TableBlockType;
+  starts_at: string;
+  ends_at: string;
+  reason?: string | null;
+}
+
+export interface RestaurantTable {
+  id: string;
+  dining_area_id: string;
+  table_number: string;
+  capacity: number;
+  minimum_capacity: number | null;
+  maximum_capacity: number | null;
+  shape: TableShape;
+  status: TableStatus;
+  is_wheelchair_accessible: boolean;
+  is_temporary: boolean;
+  merged_with_table_id: string | null;
+  qr_identifier: string | null;
+  notes: string | null;
+  is_active: boolean;
+  sort_order: number;
+  version: number;
+}
+
+export interface TableStatusHistoryEntry {
+  id: string;
+  restaurant_table_id: string;
+  previous_status: TableStatus | null;
+  new_status: TableStatus;
+  reason: string | null;
+  event_metadata: Record<string, unknown> | null;
+  changed_by: string | null;
+  created_at: string;
+}
+
+export interface TableBlock {
+  id: string;
+  restaurant_table_id: string;
+  block_type: TableBlockType;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
+  is_active: boolean;
+  released_by: string | null;
+  released_at: string | null;
+}
+
+export interface TableAssignInput {
+  table_ids: string[];
+}
+
+export interface ReservationTableAssignment {
+  id: string;
+  reservation_id: string;
+  restaurant_table_id: string;
+  assigned_at: string;
+  assigned_by: string | null;
+  unassigned_at: string | null;
+}
+
+export interface WaitlistCreateInput {
+  customer_id?: string | null;
+  guest_name: string;
+  phone_e164?: string | null;
+  email?: string | null;
+  party_size: number;
+  dining_area_id?: string | null;
+  priority?: number;
+  estimated_wait_minutes?: number | null;
+  notes?: string | null;
+}
+
+export interface WaitlistPromoteInput {
+  reservation_id: string;
+}
+
+export interface WaitlistCancelInput {
+  reason?: string | null;
+}
+
+export interface Waitlist {
+  id: string;
+  customer_id: string | null;
+  guest_name: string;
+  phone_e164: string | null;
+  email: string | null;
+  party_size: number;
+  dining_area_id: string | null;
+  priority: number;
+  status: WaitlistStatus;
+  requested_at: string;
+  estimated_wait_minutes: number | null;
+  notified_at: string | null;
+  promoted_reservation_id: string | null;
+  resolved_at: string | null;
+  notes: string | null;
+  version: number;
+}
+
+export interface CustomerReservationStats {
+  lifetime_visit_count: number;
+  no_show_count: number;
+  cancellation_count: number;
+  average_party_size: number | null;
+  last_visit_at: string | null;
+  preferred_dining_area_id: string | null;
+  preferred_table_id: string | null;
+  preferred_start_time: string | null;
+}
+
+export interface BusinessHoursUpdateInput {
+  is_closed: boolean;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  closes_next_day?: boolean;
+  break_starts_at?: string | null;
+  break_ends_at?: string | null;
+  notes?: string | null;
+  expected_version?: number | null;
+}
+
+export interface BusinessHours {
+  id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+  closes_next_day: boolean;
+  break_starts_at: string | null;
+  break_ends_at: string | null;
+  notes: string | null;
+  version: number;
+}
+
+export interface HolidayCalendarCreateInput {
+  holiday_date: string;
+  name: string;
+  is_closed?: boolean;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  notes?: string | null;
+}
+
+export interface HolidayCalendarUpdateInput {
+  name?: string;
+  is_closed?: boolean;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  notes?: string | null;
+  expected_version?: number | null;
+}
+
+export interface HolidayCalendarEntry {
+  id: string;
+  holiday_date: string;
+  name: string;
+  is_closed: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+  notes: string | null;
+  version: number;
+}
+
+export interface ReservationPoliciesUpdateInput {
+  deposit_required_by_default?: boolean;
+  default_deposit_amount_minor?: number | null;
+  advance_booking_limit_days?: number;
+  minimum_notice_minutes?: number;
+  cancellation_window_minutes?: number;
+  no_show_grace_minutes?: number;
+  buffer_before_minutes?: number;
+  buffer_after_minutes?: number;
+  default_minimum_party_size?: number;
+  default_maximum_party_size?: number;
+  large_party_threshold?: number;
+  expected_version?: number | null;
+}
+
+export interface ReservationPolicies {
+  id: string;
+  deposit_required_by_default: boolean;
+  default_deposit_amount_minor: number | null;
+  advance_booking_limit_days: number;
+  minimum_notice_minutes: number;
+  cancellation_window_minutes: number;
+  no_show_grace_minutes: number;
+  buffer_before_minutes: number;
+  buffer_after_minutes: number;
+  default_minimum_party_size: number;
+  default_maximum_party_size: number;
+  large_party_threshold: number;
+  version: number;
+}
+
+export interface ReservationSettingsUpdateInput {
+  default_reservation_duration_minutes?: number;
+  auto_assignment_enabled?: boolean;
+  waitlist_enabled?: boolean;
+  online_booking_enabled?: boolean;
+  walk_in_enabled?: boolean;
+  pending_request_expiry_minutes?: number | null;
+  reminder_lead_time_minutes?: number | null;
+  expected_version?: number | null;
+}
+
+export interface ReservationSettings {
+  id: string;
+  default_reservation_duration_minutes: number;
+  auto_assignment_enabled: boolean;
+  waitlist_enabled: boolean;
+  online_booking_enabled: boolean;
+  walk_in_enabled: boolean;
+  pending_request_expiry_minutes: number | null;
+  reminder_lead_time_minutes: number | null;
+  version: number;
+}
+
+export interface ReservationOrderLinkInput {
+  order_id: string;
+}
+
+export interface ReservationDashboardStats {
+  target_date: string;
+  total_count: number;
+  upcoming_count: number;
+  completed_count: number;
+  cancelled_count: number;
+  no_show_count: number;
+  walk_in_count: number;
+  average_party_size: number | null;
+  average_dining_duration_minutes: number | null;
+  conversion_rate: number | null;
+  hourly_reservation_counts: Record<string, number>;
+  dining_area_utilization: Record<string, number>;
+  table_utilization: Record<string, number>;
+}
