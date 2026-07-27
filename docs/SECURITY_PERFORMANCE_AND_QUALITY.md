@@ -204,7 +204,7 @@ Representative capability families (the complete registry is represented in code
 - `leads.view`, `leads.create`, `leads.update`, `leads.assign`, `leads.transition`
 - `orders.view`, `orders.create`, `orders.update`, `orders.transition`, `orders.discount.apply`, `orders.cancel.request`, `orders.cancel.approve`, `orders.refund.request`, `orders.refund.approve`
 - `menu.view`, `menu.create`, `menu.update`, `menu.archive`, `menu.restore`, `menu.categories.manage`, `menu.modifiers.manage`, `menu.images.manage`
-- `inventory.view`, `inventory.adjust`, `inventory.receive`, `inventory.transfer`
+- `inventory.view`, `inventory.items.create`, `inventory.receipts.create`, `inventory.receipts.post`, `inventory.adjustments.create`, `inventory.adjustments.approve`, `inventory.transfers.create`, `inventory.transfers.post`, `inventory.counts.approve`, `inventory.balances.rebuild` (26 codes total — see `DATABASE_AND_API.md` §9.8 for the full list)
 - `reservations.view`, `reservations.create`, `reservations.update`, `reservations.approve`, `reservations.transition`
 - `communications.view`, `communications.send`
 - `campaigns.view`, `campaigns.create`, `campaigns.approve`, `campaigns.send`

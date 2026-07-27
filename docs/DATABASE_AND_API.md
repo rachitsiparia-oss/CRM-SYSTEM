@@ -883,6 +883,56 @@ Use:
 
 All receipt operations must create stock movements transactionally.
 
+### 9.8 Phase 8 implementation notes and deviations
+
+Phase 8's own explicit instruction gave a 15-area functional scope (units, categories, locations, suppliers, items, batches, movements, balances, receipts, adjustments, wastage, transfers, stock counts, recipes, order integration) with its own non-negotiable ledger invariants and an explicit DO-NOT-BUILD list (no purchase orders, no supplier-invoice accounting, no multi-branch). Per `CLAUDE.md` §1.1, that instruction governs this deliverable's actual schema wherever it differs from §9.1–§9.7 above; every deviation actually shipped is recorded here.
+
+**19 tables, not the 7 named in §9.1–§9.6** (`units_of_measure`, `inventory_categories`, `storage_locations`, `suppliers`, `inventory_items`, `inventory_batches`, `stock_movements`, `stock_balances`, `stock_receipts`, `stock_receipt_items`, `stock_adjustments`, `wastage_records`, `stock_transfers`, `stock_transfer_items`, `stock_counts`, `stock_count_lines`, `recipes`, `recipe_items`, `order_inventory_state`), all with RLS enabled, in one migration (`b34d3dac8a82_add_phase8_inventory_recipes_and_stock_`).
+
+**`category`/`storage_zone`/`unit_of_measure` normalized into managed tables** (`inventory_categories`, `storage_locations`, `units_of_measure`), not the bare VARCHAR columns §9.1 documents — a functional requirement of this phase, not a stylistic choice: exact-decimal unit conversion, per-location balances, transfers between named locations, and per-location stock counts all need a real record to reference. `units_of_measure.conversion_factor` is "how many base units is one of this unit" (`NUMERIC(20,8)`, always exact Decimal, never binary float — this phase's own instruction applied to quantities the same way `CLAUDE.md` §7 applies it to money); only same-`unit_type` conversions are permitted, with no density-based weight↔volume conversion invented. A packaging purchase unit whose ratio is not universal (a box of buns vs. a box of napkins) is handled by `inventory_items.purchase_conversion_factor`, an explicit per-item override — `app.inventory.units.convert_purchase_quantity` only consults it when the purchase and base units are genuinely different `unit_type`s or the item sets it explicitly; a same-`unit_type` pair with no override silently uses the units' own generic factor, so any item purchased in an ambiguous packaging unit **must** set the override.
+
+**`stock_movements` is the sole source of truth, append-only at two levels**: application code writes it only through `app.inventory.ledger.post_movement`/`reverse_movement`, and a database trigger (`rkpr_stock_movements_append_only()`) independently rejects any `DELETE` and restricts `UPDATE` to `reversed_by_movement_id`/`reversed_at` only. Sign convention: `quantity_delta` is signed and always in the item's base unit — positive adds to on-hand, negative removes. `order_reservation`/`reservation_release` are the sole exception: positive magnitude, `affects_on_hand = FALSE`, moving quantity between `stock_balances.reserved_quantity` and implicit "available" on the same row without ever touching on-hand — enforced by a CHECK constraint pairing `movement_type` with `affects_on_hand`, not just application discipline. `stock_balances` (§9.1's `current_stock`/`reserved_stock` become per-item/per-location/optional-batch rows here, plus all-location roll-up columns kept on `inventory_items` for the same two fields) is transactionally updated alongside every ledger post via row-level locking and is never an independent source of truth — `app.inventory.balances.verify_balances` recomputes it from the ledger and reports drift without auto-correcting; `rebuild_balances` is the separate, permission-gated (`inventory.balances.rebuild`), audited correction path.
+
+**`inventory_items.stock_status`** is derived automatically from `current_stock` against `reorder_level` (`out_of_stock` at zero, `critical_stock` at or below half the reorder level, `low_stock` at or below the reorder level, otherwise `in_stock`) every time the ledger roll-up recomputes — but only when the item's *current* status is one of those four; the six operator-set states (`quarantined`/`expired`/`damaged`/`under_count_review`/`discontinued`, plus `reserved` which this phase deliberately never assigns automatically since reserved quantity is already precise on `stock_balances`) are never overwritten by the derivation pass. This automatic derivation was missing from the first implementation pass — caught only once the seed script was run against a live database and every item stayed `in_stock` regardless of quantity — and was added to both `refresh_item_rollup` and `rebuild_balances` before Phase 8 was considered complete.
+
+**Batch `remaining_quantity` and `stock_balances` rows are ledger projections, initialized at zero, never pre-filled with the posted amount** — a real bug caught the same way: `receipts.post_receipt` and `transfers.post_transfer` originally created a freshly-received/transferred-in batch with `remaining_quantity` pre-set to the received/transferred quantity, and then the immediately-following `ledger.post_movement` call added the same quantity again on top, silently doubling every batch's stock on first receipt. Fixed by starting every new batch at zero and letting the ledger post be its sole writer, exactly like `stock_balances`.
+
+**Adjustment and wastage records generate their id before posting the movement**, passing it directly as the movement's `reference_id` — not "post the movement, then update `reference_id` once the parent row exists," which the append-only trigger correctly rejects as an illegal post-facto edit. Receipts and transfers avoid this because their line rows (and therefore `reference_id`) already exist before the movement posts.
+
+**Costing policy** (§9.1's `average_unit_cost_minor` exists but this phase does not implement weighted-average costing — the column is reserved for a later phase): each ingredient's cost basis is `standard_cost_minor`, falling back to `latest_purchase_cost_minor` when no standard cost is set; nothing computes or reads a running weighted average, since doing so without being asked would be "inventing complex accounting behavior" this phase's own instruction forbids. Per-ingredient `waste_factor` inflates required quantity (`effective_quantity = base_quantity / (1 − waste_factor)`); the recipe's own `preparation_loss_percentage` reduces usable yield (`effective_yield = yield_quantity × (1 − loss% / 100)`); `cost_per_yield_minor = round(total_ingredient_cost_minor / effective_yield)`, rounded ROUND_HALF_UP on the final integer minor-unit figure only.
+
+**Recipe resolution policy** (§9.4/§9.5 as documented, with one explicit decision this phase's instruction left open): an exact `(product_id, variant_id)` match wins; otherwise the product's base recipe (`variant_id IS NULL`) applies; only a recipe whose `[effective_from, effective_to)` window contains the query instant is considered. No partial inheritance between a variant recipe and its base recipe exists — a variant either has its own complete recipe or uses the base recipe outright, per this phase's own fallback guidance ("if the documentation does not define inheritance, use one explicit resolved recipe... and document the decision").
+
+**Order-to-inventory integration is a wrapper, not a modification of Phase 7's state machine.** `app.inventory.order_integration.transition_order_with_inventory` calls the unmodified `app.orders.service.transition_order` with inventory side effects sequenced around it: reservation happens *before* the transition call for `confirmed` (so `InsufficientStockError` aborts before the order status ever changes), consumption and release happen *after* for `preparing`/`cancelled`. No canonical document defines an order-to-inventory lifecycle, so this phase's own conservative default governs, recorded here per its own instruction: `confirmed` → reserve (rejects with a clear stock-shortage error if any tracked ingredient cannot be reserved, no override policy); `preparing` → consume (releases the matching reservation and deducts on-hand in the same operation, replaying the exact batch allocation snapshotted at reservation time rather than re-resolving the recipe, so consumption can never draw from a different batch than what was reserved); cancellation before consumption → release, no on-hand change; cancellation after consumption → stock is **not** automatically restored (`post_consumption_note` records that a human decision — a positive adjustment if recoverable, or wastage otherwise — is outstanding); `completed` → no inventory effect, consumption already happened at `preparing`. Idempotency: `order_inventory_state` (unique per order, states `pending`/`reserved`/`consumed`/`released`/`skipped`) makes every function a no-op once the state already reflects the requested outcome, and every individual ledger post additionally carries a deterministic `idempotency_key` (e.g. `order-reserve-{order_id}-{item_id}-{location_id}`). A product with no active resolved recipe is treated as not inventory-tracked and its order lines are silently skipped, not errored — no `is_inventory_tracked` flag exists on `Product` (Phase 6 scope), so recipe presence is that flag. Phase 7's actual transition table only allows `cancelled` from `pending_confirmation`/`preparing`/`ready`, never from `confirmed`, so "cancel while reserved but not yet consumed" is reachable today only from `pending_confirmation` (where nothing was ever reserved) — the branch is still implemented unconditionally and correctly, both because the instruction requires it and because a future phase could widen the transition table.
+
+**Batch allocation is FEFO for expiry-tracked items, oldest-received-first otherwise** (`app.inventory.allocation.allocate_batches`, ordering active batches by `(expires_at IS NULL, expires_at ASC, received_at ASC)`), raising rather than silently substituting when an expired batch would need to be drawn from or when active non-expired batches don't sum to enough.
+
+**Negative stock is refused by default**; `storage_locations.allows_negative_stock` (default `FALSE`, expected to stay `FALSE` per this phase's own instruction — "only if explicitly approved") is the sole, per-location, audited override. Reserved quantity must never exceed on-hand after a decrease unless that same flag is set.
+
+**No purchase-order tables (§9.7's `purchase_orders`/`purchase_order_items`)** — `stock_receipts` are standalone, matching this phase's own 15-area scope (which omits purchase orders) and its explicit "do not build... procurement approval finance workflows" instruction. No supplier-invoice, accounts-payable, or accounting-journal tables exist for the same reason; `suppliers.payment_terms` is free descriptive text, not a posting rule.
+
+**Permissions:** replaces the Phase 3 placeholder inventory permission set with 26 explicit codes (`inventory.view`, `.cost.view`, `.units.manage`, `.categories.manage`, `.locations.manage`, `.suppliers.manage`, `.items.create/.update/.archive/.restore`, `.receipts.create/.post/.reverse`, `.adjustments.create/.approve`, `.wastage.create/.approve`, `.transfers.create/.post/.reverse`, `.counts.create/.submit/.approve`, `.recipes.view/.manage`, `.balances.rebuild`), splitting "do the work" from "approve the work" so day-to-day data entry and sensitive approval/rebuild authority are independently grantable.
+
+**Seed supplier deviation:** `PROJECT_PLAN.md` §9 documents exactly eight suppliers in full; several `PROJECT_PLAN.md` §8.2 catalogue rows name a supplier outside that list ("In-house production", "GreenGrain Foods", "FreshForm Foods", "Metro Grain Traders", "Metro Oil Traders", "Beverage Partner Demo", "ClearSpring Beverages", "SweetLine Desserts"). Rather than fabricating supplier records the canonical directory does not define (`CLAUDE.md` §16 / §24), `preferred_supplier_id` is left unset for those items.
+
+**Manual verification checklist (authenticated workflows, for when a test Supabase session/`storageState` fixture exists):** this project has never had authenticated Playwright coverage (Phases 5, 6, 7, and 8 all stopped at the unauthenticated-redirect boundary for the same reason — no test Supabase session). Until that infrastructure exists, verify the following by hand with a real `owner`-or-equivalent staff account against a non-production environment:
+
+1. Sign in and confirm "Menu, Products & Inventory" appears in the sidebar with the nine new Inventory children.
+2. `/inventory` — dashboard KPI cards render real, non-zero numbers matching the seeded data (41 active items, 1 critical, 1 out-of-stock, 1 batch expiring within 7 days).
+3. `/inventory/items` — create an item, confirm it appears in the list; open its detail page and confirm all four tabs (Overview, Stock by Location, Batches, Movements) render without error.
+4. `/inventory/suppliers` — create a supplier, edit it, archive it, restore it.
+5. `/inventory/receipts` — create a draft receipt, add a line for a non-batch-tracked item, post it, confirm the item's on-hand quantity increased on its detail page's Movements tab; create a second receipt for a batch-tracked item and confirm a batch appears on the Batches tab with the entered expiry date.
+6. Reverse a posted receipt and confirm the on-hand quantity returns to its prior value and the receipt becomes read-only.
+7. `/inventory/adjustments` — post a decrease adjustment and confirm the item's stock status updates accordingly (e.g. crosses into `low_stock`).
+8. `/inventory/adjustments` (Wastage tab) — record wastage and confirm a negative movement appears in `/inventory/movements` filtered to that item.
+9. `/inventory/transfers` — create a transfer between two locations, add a line, post it, confirm both the source and destination balances update on the item's Stock by Location tab.
+10. `/inventory/stock-counts` — start a count for a location, enter a counted quantity different from the system quantity for at least one line, submit, approve, and confirm a `stock_count_adjustment` movement appears with the correct variance.
+11. `/inventory/recipes` — create a recipe for a seeded menu product, add an ingredient, confirm the cost tab shows a computed cost and gross margin (or a clear "missing cost" message if the ingredient has no cost set).
+12. Place a real order (Phase 7) for a product with an active recipe; confirm ingredient stock is reserved on `confirmed`, consumed on `preparing` (reservation released, on-hand deducted by the exact recipe quantity), and unaffected by `completed`.
+13. Cancel an order at `pending_confirmation` (before any reservation exists) and confirm no stock movement is created.
+14. Sign in as a role without `inventory.adjustments.approve` (e.g. `inventory_manager`) and confirm the balance-rebuild action at `/inventory/balances/rebuild` returns 403 (there is no dedicated rebuild page; verify via the API directly or a future admin surface).
+15. Attempt to edit a posted receipt or transfer via the API directly and confirm it is rejected (`AlreadyPostedError` / 409-class response) — posted records must stay read-only in the UI as well.
+
 ## 10. ORDERS
 
 ### 10.1 `orders`
@@ -1712,24 +1762,20 @@ Invalid transitions return `409 invalid_state_transition`.
 
 ### 25.2 Inventory
 
-- `GET /api/v1/inventory/items`
-- `POST /api/v1/inventory/items`
-- `GET /api/v1/inventory/items/{id}`
-- `PATCH /api/v1/inventory/items/{id}`
-- `GET /api/v1/inventory/items/{id}/movements`
-- `POST /api/v1/inventory/items/{id}/adjustments`
-- `POST /api/v1/inventory/receipts`
-- `POST /api/v1/inventory/transfers`
-- `POST /api/v1/inventory/waste`
-- `POST /api/v1/inventory/cycle-counts`
-- `GET /api/v1/inventory/alerts`
-- `GET /api/v1/inventory/batches`
-- `GET /api/v1/suppliers`
-- `POST /api/v1/suppliers`
-- `GET /api/v1/suppliers/{id}`
-- `PATCH /api/v1/suppliers/{id}`
+Phase 8's actual router (`app/inventory/router.py`, 43 endpoints under `/api/v1/inventory`) — see §9.8 for the full set of implementation deviations this reflects. Suppliers live under `/api/v1/inventory/suppliers`, not the top-level `/api/v1/suppliers` this section previously documented.
 
-Every stock mutation requires permission (`inventory.adjust`, `inventory.receive`, `inventory.transfer`), reason where applicable, transaction safety, and an append-only movement record.
+- Reference data: `GET/POST /units`, `PATCH /units/{id}`; `GET/POST /categories`, `PATCH /categories/{id}`; `GET/POST /locations`, `PATCH /locations/{id}`; `GET/POST /suppliers`, `GET/PATCH/DELETE /suppliers/{id}`, `POST /suppliers/{id}/restore`
+- Items: `GET/POST /items`, `GET/PATCH/DELETE /items/{id}`, `POST /items/{id}/restore`, `GET /items/{id}/balances`, `GET /items/{id}/batches`, `GET /items/{id}/movements`
+- Global ledger: `GET /movements`; `GET /balances/verify`, `POST /balances/rebuild`
+- Receipts: `GET/POST /receipts`, `GET /receipts/{id}`, `POST /receipts/{id}/items`, `POST /receipts/{id}/post`, `POST /receipts/{id}/reverse`
+- Adjustments: `GET/POST /adjustments`
+- Wastage: `GET/POST /wastage`
+- Transfers: `GET/POST /transfers`, `GET /transfers/{id}`, `POST /transfers/{id}/items`, `POST /transfers/{id}/post`, `POST /transfers/{id}/reverse`
+- Stock counts: `GET/POST /counts`, `GET /counts/{id}`, `POST /counts/{id}/start`, `PATCH /counts/{id}/lines/{line_id}`, `POST /counts/{id}/submit`, `POST /counts/{id}/approve`, `POST /counts/{id}/cancel`
+- Recipes: `GET/POST /recipes`, `GET /recipes/resolve`, `GET/DELETE /recipes/{id}`, `GET /recipes/{id}/cost`, `POST /recipes/{id}/items`
+- Dashboard: `GET /dashboard/stats`
+
+Every stock mutation is permission-checked against the 26-code registry in §9.8 (`inventory.items.create`/`.update`/`.archive`/`.restore`, `.receipts.create`/`.post`/`.reverse`, `.adjustments.create`/`.approve`, `.wastage.create`/`.approve`, `.transfers.create`/`.post`/`.reverse`, `.counts.create`/`.submit`/`.approve`, `.recipes.view`/`.manage`, `.balances.rebuild`, plus `.view`/`.cost.view`/`.units.manage`/`.categories.manage`/`.locations.manage`/`.suppliers.manage`), audited, and posts through the append-only ledger transactionally.
 
 ## 26. RESERVATION API
 

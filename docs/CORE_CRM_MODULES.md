@@ -1802,6 +1802,8 @@ Bulk price changes require preview, permission, effective time, and audit.
 
 ## 8. INVENTORY & SUPPLIERS MODULE
 
+**Phase 8 implementation note:** this module was built per Phase 8's own explicit instruction, which scoped out purchase-order approval workflows (§8.15), supplier-invoice/accounts-payable tracking, and weighted-average valuation (§8.18 requires "a valuation method... explicitly configured"; the configured method is standard-cost-with-latest-purchase-fallback, not weighted average). The full, authoritative list of deviations from this section — including the actual 26-code permission set replacing §8.19, the actual stock-movement type codes replacing §8.7, and the order-to-inventory reservation/consumption lifecycle — is recorded in `docs/DATABASE_AND_API.md` §9.8. This section remains the target product-behavior description; §9.8 records what actually shipped and why.
+
 ### 8.1 Purpose
 
 This module controls ingredients, packaging, beverages, desserts, stock levels, batches, expiry, purchasing, receiving, waste, adjustments, recipe consumption, suppliers, and inventory risk.

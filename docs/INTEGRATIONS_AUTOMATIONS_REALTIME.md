@@ -487,6 +487,8 @@ Examples:
 - complaint.resolved
 - task.assigned
 - task.overdue
+
+Phase 8 implemented `inventory.receipt.posted`, `.adjustment.posted`, `.wastage.recorded`, `.transfer.posted`, `.stock_count.approved`, `.order.reserved`, `.order.consumed`, and `.order.released` — not the `inventory.low_stock`/`.critical_stock`/`.adjusted` examples above, which would require a background threshold-monitoring job this phase did not build (`stock_status` is derived synchronously on every ledger post instead; see `docs/DATABASE_AND_API.md` §9.8). No external consumers exist yet for any inventory event, and no event is duplicated on an idempotent retry.
 - report.completed
 - report.failed
 - integration.degraded
