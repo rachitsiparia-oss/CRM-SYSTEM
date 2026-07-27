@@ -22,6 +22,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
+from app.inventory.seed import seed_inventory
 from app.leads.seed import seed_leads
 from app.menu.seed import seed_menu
 from app.orders.seed import seed_orders
@@ -52,8 +53,8 @@ async def run_seed() -> None:
         await seed_leads(session)
         await seed_menu(session)
         await seed_orders(session)
-        # Future phases append their idempotent seed_*(session) calls here,
-        # in dependency order (inventory/recipes reference menu products) —
+        await seed_inventory(session)
+        # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
 
@@ -61,7 +62,7 @@ async def run_seed() -> None:
         "seed_complete",
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
-            "orders seeded"
+            "orders, inventory seeded"
         ),
     )
 
