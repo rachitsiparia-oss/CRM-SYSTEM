@@ -858,3 +858,740 @@ export interface Order {
   taxes: OrderTax[];
   charges: OrderCharge[];
 }
+
+// --- Phase 8: Inventory, Recipes & Stock Operations ---
+// Mirrors apps/api/app/inventory/schemas.py. Every inventory quantity is an
+// exact-decimal value on the wire (the backend's `Qty` type serializes
+// Decimal as a string) — never parse these as JS numbers for arithmetic,
+// only for display; the backend remains the sole calculation authority
+// (CLAUDE.md section 5.1 / section 7).
+
+export type UnitType = "weight" | "volume" | "count";
+export type LocationType =
+  | "kitchen"
+  | "dry_store"
+  | "chilled"
+  | "frozen"
+  | "bar"
+  | "packaging"
+  | "other";
+export type SupplierStatus = "active" | "inactive" | "archived";
+export type BatchStatus = "active" | "depleted" | "quarantined" | "expired" | "damaged";
+export type MovementType =
+  | "opening_balance"
+  | "purchase_receipt"
+  | "order_reservation"
+  | "reservation_release"
+  | "order_consumption"
+  | "wastage"
+  | "positive_adjustment"
+  | "negative_adjustment"
+  | "transfer_out"
+  | "transfer_in"
+  | "supplier_return"
+  | "customer_return"
+  | "stock_count_adjustment"
+  | "reversal";
+export type ReceiptStatus = "draft" | "posted" | "reversed";
+export type TransferStatus = "draft" | "posted" | "reversed";
+export type CountStatus = "draft" | "in_progress" | "submitted" | "approved" | "cancelled";
+export type AdjustmentDirection = "increase" | "decrease";
+export type AdjustmentReason =
+  | "count_difference"
+  | "data_correction"
+  | "damaged"
+  | "spoiled"
+  | "missing"
+  | "found"
+  | "unit_conversion_correction";
+export type WastageReason =
+  | "preparation_waste"
+  | "overproduction"
+  | "spoilage"
+  | "expiry"
+  | "customer_return"
+  | "quality_failure"
+  | "accidental_damage"
+  | "staff_error"
+  | "other";
+export type StockStatus =
+  | "in_stock"
+  | "low_stock"
+  | "critical_stock"
+  | "out_of_stock"
+  | "reserved"
+  | "quarantined"
+  | "expired"
+  | "damaged"
+  | "under_count_review"
+  | "discontinued";
+
+// --- Units of measure ---
+
+export interface UnitCreateInput {
+  code: string;
+  name: string;
+  symbol: string;
+  unit_type: UnitType;
+  base_unit_id?: string | null;
+  conversion_factor?: string;
+  decimal_places?: number;
+  sort_order?: number;
+}
+
+export interface UnitUpdateInput {
+  name?: string | null;
+  symbol?: string | null;
+  conversion_factor?: string | null;
+  decimal_places?: number | null;
+  sort_order?: number | null;
+  is_active?: boolean | null;
+  expected_version?: number | null;
+}
+
+export interface UnitOfMeasure {
+  id: string;
+  code: string;
+  name: string;
+  symbol: string;
+  unit_type: UnitType;
+  base_unit_id: string | null;
+  conversion_factor: string;
+  decimal_places: number;
+  is_active: boolean;
+  sort_order: number;
+  version: number;
+}
+
+// --- Categories / locations ---
+
+export interface InventoryCategoryCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+}
+
+export interface InventoryCategoryUpdateInput {
+  name?: string | null;
+  description?: string | null;
+  sort_order?: number | null;
+  is_active?: boolean | null;
+  expected_version?: number | null;
+}
+
+export interface InventoryCategory {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  version: number;
+}
+
+export interface StorageLocationCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  location_type?: LocationType;
+  allows_negative_stock?: boolean;
+  sort_order?: number;
+}
+
+export interface StorageLocationUpdateInput {
+  name?: string | null;
+  description?: string | null;
+  location_type?: LocationType | null;
+  allows_negative_stock?: boolean | null;
+  sort_order?: number | null;
+  is_active?: boolean | null;
+  expected_version?: number | null;
+}
+
+export interface StorageLocation {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  location_type: LocationType;
+  allows_negative_stock: boolean;
+  is_active: boolean;
+  sort_order: number;
+  version: number;
+}
+
+// --- Suppliers ---
+
+export interface SupplierCreateInput {
+  supplier_code: string;
+  name: string;
+  contact_person?: string | null;
+  phone_e164?: string | null;
+  email?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string;
+  supply_categories?: string[] | null;
+  normal_lead_time_days?: number | null;
+  payment_terms?: string | null;
+  minimum_order_value_minor?: number | null;
+  tax_identifier?: string | null;
+  notes?: string | null;
+}
+
+export interface SupplierUpdateInput {
+  name?: string | null;
+  contact_person?: string | null;
+  phone_e164?: string | null;
+  email?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  supply_categories?: string[] | null;
+  normal_lead_time_days?: number | null;
+  payment_terms?: string | null;
+  minimum_order_value_minor?: number | null;
+  tax_identifier?: string | null;
+  notes?: string | null;
+  status?: SupplierStatus | null;
+  expected_version?: number | null;
+}
+
+export interface Supplier {
+  id: string;
+  supplier_code: string;
+  name: string;
+  contact_person: string | null;
+  phone_e164: string | null;
+  email: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string;
+  supply_categories: string[] | null;
+  normal_lead_time_days: number | null;
+  payment_terms: string | null;
+  minimum_order_value_minor: number | null;
+  tax_identifier: string | null;
+  notes: string | null;
+  status: SupplierStatus;
+  version: number;
+}
+
+// --- Inventory items ---
+
+export interface InventoryItemCreateInput {
+  item_code?: string | null;
+  name: string;
+  description?: string | null;
+  category_id: string;
+  base_unit_id: string;
+  default_purchase_unit_id?: string | null;
+  purchase_conversion_factor?: string | null;
+  default_location_id?: string | null;
+  preferred_supplier_id?: string | null;
+  alternative_supplier_id?: string | null;
+  standard_cost_minor?: number | null;
+  reorder_level?: string;
+  reorder_quantity?: string;
+  target_stock?: string;
+  minimum_stock?: string;
+  maximum_stock?: string | null;
+  lead_time_days?: number | null;
+  shelf_life_days?: number | null;
+  is_perishable?: boolean;
+  requires_batch_tracking?: boolean;
+  requires_expiry_tracking?: boolean;
+  allergen_flags?: string[] | null;
+  brand?: string | null;
+  supplier_item_code?: string | null;
+  barcode?: string | null;
+  storage_instructions?: string | null;
+  notes?: string | null;
+}
+
+export interface InventoryItemUpdateInput {
+  name?: string | null;
+  description?: string | null;
+  category_id?: string | null;
+  default_purchase_unit_id?: string | null;
+  purchase_conversion_factor?: string | null;
+  default_location_id?: string | null;
+  preferred_supplier_id?: string | null;
+  alternative_supplier_id?: string | null;
+  standard_cost_minor?: number | null;
+  reorder_level?: string | null;
+  reorder_quantity?: string | null;
+  target_stock?: string | null;
+  minimum_stock?: string | null;
+  maximum_stock?: string | null;
+  lead_time_days?: number | null;
+  shelf_life_days?: number | null;
+  is_perishable?: boolean | null;
+  allergen_flags?: string[] | null;
+  brand?: string | null;
+  supplier_item_code?: string | null;
+  barcode?: string | null;
+  storage_instructions?: string | null;
+  notes?: string | null;
+  is_active?: boolean | null;
+  expected_version?: number | null;
+}
+
+export interface InventoryItemListItem {
+  id: string;
+  item_code: string;
+  name: string;
+  category_id: string;
+  current_stock: string;
+  reserved_stock: string;
+  reorder_level: string;
+  stock_status: StockStatus;
+  preferred_supplier_id: string | null;
+  is_active: boolean;
+  is_perishable: boolean;
+  requires_batch_tracking: boolean;
+  requires_expiry_tracking: boolean;
+}
+
+export interface InventoryItem {
+  id: string;
+  item_code: string;
+  name: string;
+  description: string | null;
+  category_id: string;
+  base_unit_id: string;
+  default_purchase_unit_id: string | null;
+  purchase_conversion_factor: string | null;
+  default_location_id: string | null;
+  preferred_supplier_id: string | null;
+  alternative_supplier_id: string | null;
+  current_stock: string;
+  reserved_stock: string;
+  reorder_level: string;
+  reorder_quantity: string;
+  target_stock: string;
+  minimum_stock: string;
+  maximum_stock: string | null;
+  standard_cost_minor: number | null;
+  latest_purchase_cost_minor: number | null;
+  average_unit_cost_minor: number | null;
+  lead_time_days: number | null;
+  shelf_life_days: number | null;
+  is_perishable: boolean;
+  requires_batch_tracking: boolean;
+  requires_expiry_tracking: boolean;
+  allergen_flags: string[] | null;
+  brand: string | null;
+  supplier_item_code: string | null;
+  barcode: string | null;
+  storage_instructions: string | null;
+  notes: string | null;
+  stock_status: StockStatus;
+  is_active: boolean;
+  last_counted_at: string | null;
+  last_received_at: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockBalance {
+  id: string;
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id: string | null;
+  on_hand_quantity: string;
+  reserved_quantity: string;
+  last_movement_at: string | null;
+  last_counted_at: string | null;
+}
+
+export interface InventoryBatch {
+  id: string;
+  inventory_item_id: string;
+  batch_code: string;
+  storage_location_id: string;
+  supplier_id: string | null;
+  received_quantity: string;
+  remaining_quantity: string;
+  received_at: string;
+  manufactured_at: string | null;
+  expires_at: string | null;
+  unit_cost_minor: number | null;
+  status: BatchStatus;
+}
+
+export interface StockMovement {
+  id: string;
+  movement_number: string;
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id: string | null;
+  movement_type: MovementType;
+  quantity_delta: string;
+  affects_on_hand: boolean;
+  unit_cost_minor: number | null;
+  total_value_minor: number | null;
+  reference_type: string | null;
+  reference_id: string | null;
+  source_movement_id: string | null;
+  reversed_by_movement_id: string | null;
+  reversed_at: string | null;
+  reason: string | null;
+  performed_by: string | null;
+  occurred_at: string;
+  created_at: string;
+}
+
+// --- Receipts ---
+
+export interface ReceiptCreateInput {
+  supplier_id: string;
+  storage_location_id: string;
+  received_date: string;
+  supplier_reference?: string | null;
+  notes?: string | null;
+}
+
+export interface ReceiptItemCreateInput {
+  inventory_item_id: string;
+  purchase_unit_id: string;
+  received_quantity: string;
+  accepted_quantity: string;
+  rejected_quantity?: string;
+  unit_cost_minor: number;
+  batch_code?: string | null;
+  manufactured_at?: string | null;
+  expires_at?: string | null;
+  notes?: string | null;
+}
+
+export interface ReceiptReverseInput {
+  reason: string;
+}
+
+export interface ReceiptItem {
+  id: string;
+  receipt_id: string;
+  inventory_item_id: string;
+  purchase_unit_id: string;
+  received_quantity: string;
+  accepted_quantity: string;
+  rejected_quantity: string;
+  base_quantity: string;
+  unit_cost_minor: number;
+  line_total_minor: number;
+  batch_code: string | null;
+  manufactured_at: string | null;
+  expires_at: string | null;
+  batch_id: string | null;
+  notes: string | null;
+}
+
+export interface ReceiptListItem {
+  id: string;
+  receipt_number: string;
+  supplier_id: string;
+  storage_location_id: string;
+  received_date: string;
+  status: ReceiptStatus;
+  total_value_minor: number;
+  created_at: string;
+}
+
+export interface Receipt extends ReceiptListItem {
+  supplier_reference: string | null;
+  notes: string | null;
+  posted_by: string | null;
+  posted_at: string | null;
+  reversed_by: string | null;
+  reversed_at: string | null;
+  reversal_reason: string | null;
+  version: number;
+  items: ReceiptItem[];
+}
+
+// --- Adjustments / wastage ---
+
+export interface AdjustmentCreateInput {
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id?: string | null;
+  direction: AdjustmentDirection;
+  quantity: string;
+  reason_category: AdjustmentReason;
+  reason: string;
+  approved_by?: string | null;
+  idempotency_key?: string | null;
+}
+
+export interface Adjustment {
+  id: string;
+  adjustment_number: string;
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id: string | null;
+  direction: AdjustmentDirection;
+  quantity: string;
+  reason_category: AdjustmentReason;
+  reason: string;
+  value_impact_minor: number | null;
+  movement_id: string;
+  recorded_by: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+export interface WastageCreateInput {
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id?: string | null;
+  quantity: string;
+  reason_category: WastageReason;
+  reason: string;
+  station?: string | null;
+  related_order_id?: string | null;
+  approved_by?: string | null;
+  idempotency_key?: string | null;
+}
+
+export interface Wastage {
+  id: string;
+  wastage_number: string;
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id: string | null;
+  quantity: string;
+  reason_category: WastageReason;
+  reason: string;
+  station: string | null;
+  related_order_id: string | null;
+  value_impact_minor: number | null;
+  movement_id: string;
+  recorded_by: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+// --- Transfers ---
+
+export interface TransferCreateInput {
+  source_location_id: string;
+  destination_location_id: string;
+  notes?: string | null;
+}
+
+export interface TransferItemCreateInput {
+  inventory_item_id: string;
+  batch_id?: string | null;
+  quantity: string;
+  notes?: string | null;
+}
+
+export interface TransferReverseInput {
+  reason: string;
+}
+
+export interface TransferItem {
+  id: string;
+  transfer_id: string;
+  inventory_item_id: string;
+  batch_id: string | null;
+  destination_batch_id: string | null;
+  quantity: string;
+  notes: string | null;
+}
+
+export interface TransferListItem {
+  id: string;
+  transfer_number: string;
+  source_location_id: string;
+  destination_location_id: string;
+  status: TransferStatus;
+  created_at: string;
+}
+
+export interface Transfer extends TransferListItem {
+  notes: string | null;
+  requested_by: string;
+  posted_by: string | null;
+  posted_at: string | null;
+  reversed_by: string | null;
+  reversed_at: string | null;
+  reversal_reason: string | null;
+  version: number;
+  items: TransferItem[];
+}
+
+// --- Stock counts ---
+
+export interface StockCountCreateInput {
+  storage_location_id: string;
+  scheduled_date?: string | null;
+  notes?: string | null;
+}
+
+export interface StockCountLineRecordInput {
+  counted_quantity: string;
+  reason?: string | null;
+  notes?: string | null;
+}
+
+export interface StockCountLine {
+  id: string;
+  count_id: string;
+  inventory_item_id: string;
+  batch_id: string | null;
+  system_quantity: string;
+  counted_quantity: string | null;
+  variance_quantity: string | null;
+  variance_value_minor: number | null;
+  reason: string | null;
+  notes: string | null;
+}
+
+export interface StockCountListItem {
+  id: string;
+  count_number: string;
+  storage_location_id: string;
+  status: CountStatus;
+  scheduled_date: string | null;
+  created_at: string;
+}
+
+export interface StockCount extends StockCountListItem {
+  started_at: string | null;
+  completed_at: string | null;
+  counted_by: string | null;
+  submitted_by: string | null;
+  submitted_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  cancelled_at: string | null;
+  notes: string | null;
+  version: number;
+  lines: StockCountLine[];
+}
+
+// --- Recipes ---
+
+export interface RecipeItemCreateInput {
+  inventory_item_id: string;
+  quantity_required: string;
+  unit_id: string;
+  waste_factor?: string;
+  storage_location_id?: string | null;
+  display_order?: number;
+  notes?: string | null;
+}
+
+export interface RecipeCreateInput {
+  product_id: string;
+  variant_id?: string | null;
+  yield_quantity?: string;
+  yield_unit_id?: string | null;
+  preparation_loss_percentage?: string;
+  effective_from?: string | null;
+  notes?: string | null;
+  items?: RecipeItemCreateInput[];
+}
+
+export interface RecipeItem {
+  id: string;
+  recipe_id: string;
+  inventory_item_id: string;
+  quantity_required: string;
+  unit_id: string;
+  base_quantity: string;
+  waste_factor: string;
+  storage_location_id: string | null;
+  display_order: number;
+  notes: string | null;
+}
+
+export interface RecipeListItem {
+  id: string;
+  recipe_code: string;
+  product_id: string;
+  variant_id: string | null;
+  yield_quantity: string;
+  is_active: boolean;
+  effective_from: string;
+  effective_to: string | null;
+}
+
+export interface Recipe extends RecipeListItem {
+  yield_unit_id: string | null;
+  preparation_loss_percentage: string;
+  notes: string | null;
+  version: number;
+  items: RecipeItem[];
+}
+
+export interface IngredientCost {
+  recipe_item_id: string;
+  inventory_item_id: string;
+  inventory_item_name: string;
+  base_quantity: string;
+  effective_quantity: string;
+  unit_cost_minor: number | null;
+  cost_minor: number | null;
+  cost_source: string | null;
+}
+
+export interface RecipeCost {
+  recipe_id: string;
+  ingredients: IngredientCost[];
+  total_ingredient_cost_minor: number | null;
+  effective_yield: string;
+  cost_per_yield_minor: number | null;
+  selling_price_minor: number | null;
+  gross_margin_minor: number | null;
+  gross_margin_percentage: string | null;
+  missing_cost_item_names: string[];
+}
+
+// --- Balance verification ---
+
+export interface BalanceDrift {
+  inventory_item_id: string;
+  storage_location_id: string;
+  batch_id: string | null;
+  projected_on_hand: string;
+  ledger_on_hand: string;
+  difference: string;
+}
+
+export interface BalanceRebuildResult {
+  coordinates: number;
+  created: number;
+  updated: number;
+}
+
+// --- Dashboard ---
+
+export interface InventoryDashboardStats {
+  total_active_items: number;
+  total_stock_value_minor: number;
+  low_stock_count: number;
+  critical_stock_count: number;
+  out_of_stock_count: number;
+  expiring_batches_7d: number;
+  expired_batches: number;
+  wastage_today_count: number;
+  wastage_today_value_minor: number;
+  receipts_today_count: number;
+  transfers_in_progress: number;
+  pending_stock_counts: number;
+}
