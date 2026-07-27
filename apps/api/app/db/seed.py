@@ -32,6 +32,7 @@ from app.permissions.seed import (
     seed_role_permissions,
     seed_roles,
 )
+from app.reservations.seed import seed_reservations
 
 logger = get_logger(__name__)
 
@@ -54,6 +55,7 @@ async def run_seed() -> None:
         await seed_menu(session)
         await seed_orders(session)
         await seed_inventory(session)
+        await seed_reservations(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -62,7 +64,7 @@ async def run_seed() -> None:
         "seed_complete",
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
-            "orders, inventory seeded"
+            "orders, inventory, reservations seeded"
         ),
     )
 
