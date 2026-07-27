@@ -59,10 +59,24 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "inventory.adjustments.approve",
         "inventory.wastage.approve",
         "inventory.counts.approve",
+        # Same approval-authority pattern as the inventory grants above:
+        # operations manager approves/cancels/completes reservations and
+        # oversees the floor, but reservation-policy configuration
+        # (business hours, holidays, deposit/notice rules) stays with
+        # owner/general_manager, the same restriction already applied to
+        # `settings.manage`.
         "reservations.view",
         "reservations.create",
         "reservations.update",
+        "reservations.approve",
         "reservations.transition",
+        "reservations.cancel",
+        "reservations.complete",
+        "reservations.assign",
+        "reservations.notes.manage",
+        "reservations.tags.manage",
+        "reservations.waitlist.manage",
+        "reservations.tables.manage",
         "communications.view",
         "communications.send",
         "staff.view",
@@ -154,11 +168,23 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     ),
     "reservation_manager": (
         "dashboard.view",
+        # The dedicated domain owner: full reservation lifecycle authority,
+        # including the one config surface operations_manager is
+        # deliberately withheld from (`.settings.manage` — business hours,
+        # holidays, deposit/notice policy).
         "reservations.view",
         "reservations.create",
         "reservations.update",
         "reservations.approve",
         "reservations.transition",
+        "reservations.cancel",
+        "reservations.complete",
+        "reservations.assign",
+        "reservations.notes.manage",
+        "reservations.tags.manage",
+        "reservations.waitlist.manage",
+        "reservations.tables.manage",
+        "reservations.settings.manage",
         "customers.view",
         "communications.view",
         "communications.send",
@@ -176,6 +202,7 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "leads.followup.manage",
         "leads.convert",
         "orders.view",
+        "reservations.view",
         "communications.view",
         "communications.send",
         "feedback.view",
@@ -215,7 +242,20 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "orders.complete",
         "orders.assign",
         "staff.view",
+        # On-shift floor authority: seat guests, run the waitlist, and
+        # adjust table state in real time — the same reach they already
+        # have over orders — but not approve advance-booking requests or
+        # touch policy/hours configuration, both reserved for
+        # reservation_manager/operations_manager.
         "reservations.view",
+        "reservations.create",
+        "reservations.update",
+        "reservations.transition",
+        "reservations.cancel",
+        "reservations.complete",
+        "reservations.assign",
+        "reservations.waitlist.manage",
+        "reservations.tables.manage",
         # A supervisor on shift needs to see stock and record what the
         # floor consumed or wasted, but not approve it, not touch master
         # data, and not see supplier costs.
@@ -243,7 +283,18 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "orders.transition",
         "orders.complete",
         "orders.notes.manage",
+        # Front-of-house seats guests and takes walk-ins directly — the
+        # same create/update/transition/complete reach they have over
+        # orders — but cannot cancel a reservation or approve an advance
+        # booking, both held back for a supervisor or above.
         "reservations.view",
+        "reservations.create",
+        "reservations.update",
+        "reservations.transition",
+        "reservations.complete",
+        "reservations.assign",
+        "reservations.waitlist.manage",
+        "reservations.notes.manage",
         "customers.view",
     ),
     "delivery_coordinator": (

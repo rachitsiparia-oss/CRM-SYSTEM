@@ -165,12 +165,45 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
         is_sensitive=True,
     ),
     PermissionDef("inventory.cost.view", "View inventory costs, valuation, and recipe costing."),
-    # Reservations
+    # Reservations. Replaces the Phase 3 placeholder set (reservations.view/
+    # .create/.update/.approve/.transition) with the granular codes this
+    # phase's own instruction names as examples
+    # (.view/.create/.update/.cancel/.complete/.assign/.waitlist/.tables/
+    # .settings) — not kept as aliases, the same treatment Phase 6, 7, and 8
+    # gave their own Phase 3 placeholders. `.approve` covers both approving
+    # and rejecting a pending request — PROJECT_PLAN.md section 11.2's "No
+    # automated approval is permitted" makes this the one mandatory
+    # human-in-the-loop gate every non-walk-in reservation must pass
+    # through, so it is marked sensitive like `orders.cancel`. `.transition`
+    # covers ordinary lifecycle progression (confirmed, arrived, seated,
+    # no_show) the same way `orders.transition` covers an order's happy
+    # path, separately from the individually-named `.cancel`/`.complete`.
+    # `.tables` covers dining-area and floor/table management (mirrors
+    # `inventory.locations.manage`); `.settings` covers business hours,
+    # holidays, and policy configuration (mirrors `settings.manage`).
     PermissionDef("reservations.view", "View reservations."),
     PermissionDef("reservations.create", "Create reservations."),
-    PermissionDef("reservations.update", "Update reservations."),
-    PermissionDef("reservations.approve", "Approve reservations."),
-    PermissionDef("reservations.transition", "Transition reservation status."),
+    PermissionDef("reservations.update", "Update reservation details."),
+    PermissionDef(
+        "reservations.approve",
+        "Approve or reject a pending reservation request.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "reservations.transition", "Advance reservation status through the standard workflow."
+    ),
+    PermissionDef("reservations.cancel", "Cancel a reservation.", is_sensitive=True),
+    PermissionDef("reservations.complete", "Mark a reservation completed."),
+    PermissionDef("reservations.assign", "Assign staff or tables to a reservation."),
+    PermissionDef("reservations.notes.manage", "Add and edit reservation notes."),
+    PermissionDef("reservations.tags.manage", "Add and remove reservation tags."),
+    PermissionDef("reservations.waitlist.manage", "Manage the reservation waitlist."),
+    PermissionDef("reservations.tables.manage", "Manage dining areas, tables, and table blocks."),
+    PermissionDef(
+        "reservations.settings.manage",
+        "Manage business hours, holidays, and reservation policies.",
+        is_sensitive=True,
+    ),
     # Communications
     PermissionDef("communications.view", "View communications."),
     PermissionDef("communications.send", "Send communications."),
