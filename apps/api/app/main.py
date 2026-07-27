@@ -17,6 +17,7 @@ from app.inventory.router import router as inventory_router
 from app.leads.router import router as leads_router
 from app.menu.router import router as menu_router
 from app.orders.router import router as orders_router
+from app.reservations.router import router as reservations_router
 from app.roles.router import router as roles_router
 from app.staff.router import router as staff_router
 
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
     app.include_router(menu_router)
     app.include_router(orders_router)
     app.include_router(inventory_router)
+    app.include_router(reservations_router)
 
     return app
 
