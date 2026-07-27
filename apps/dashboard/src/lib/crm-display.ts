@@ -10,8 +10,11 @@ import type {
   OrderStatus,
   PaymentStatus,
   ReceiptStatus,
+  ReservationStatus,
   StockStatus,
+  TableStatus,
   TransferStatus,
+  WaitlistStatus,
 } from "@rkpr/contracts";
 
 import type { StatusTone } from "@/components/status-badge";
@@ -190,3 +193,53 @@ export const ADJUSTMENT_DIRECTION_TONES: Record<AdjustmentDirection, StatusTone>
   increase: "success",
   decrease: "warning",
 };
+
+// --- Phase 9: Reservations, Tables & Calendar Management ---
+
+export const RESERVATION_STATUS_TONES: Record<ReservationStatus, StatusTone> = {
+  requested: "neutral",
+  pending_review: "warning",
+  needs_clarification: "warning",
+  approved: "info",
+  rejected: "danger",
+  confirmation_sending: "info",
+  confirmed: "success",
+  reminder_scheduled: "info",
+  arrived: "info",
+  seated: "success",
+  completed: "success",
+  no_show: "danger",
+  cancelled_by_customer: "neutral",
+  cancelled_by_restaurant: "neutral",
+  expired: "neutral",
+};
+
+export const TABLE_STATUS_TONES: Record<TableStatus, StatusTone> = {
+  available: "success",
+  reserved: "info",
+  occupied: "warning",
+  cleaning: "neutral",
+  blocked: "danger",
+  maintenance: "danger",
+  merged: "neutral",
+};
+
+export const WAITLIST_STATUS_TONES: Record<WaitlistStatus, StatusTone> = {
+  waiting: "warning",
+  notified: "info",
+  promoted: "success",
+  cancelled: "neutral",
+  expired: "neutral",
+};
+
+/** Reservation `start_time`/`end_time` arrive as "HH:MM:SS" (no date, no
+ * timezone conversion needed — it is already the restaurant's own local
+ * wall-clock booking time, not a UTC instant). */
+export function formatTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const [hoursStr, minutesStr = "00"] = value.split(":");
+  const hours = Number(hoursStr);
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${displayHours}:${minutesStr.padStart(2, "0")} ${period}`;
+}
