@@ -5,6 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.inventory.errors import InventoryError
+
 # Stable error categories — DATABASE_AND_API.md section 19.4. Every error
 # response uses one of these codes; never leak stack traces or SQL details.
 ErrorCode = Literal[
@@ -58,6 +60,20 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content=_error_body(code, str(exc.detail), request),
+        )
+
+    @app.exception_handler(InventoryError)
+    async def handle_inventory_error(request: Request, exc: InventoryError) -> JSONResponse:
+        # Domain errors from app.inventory (insufficient stock, incompatible
+        # unit, expired batch, etc.) map onto the same fixed ErrorCode set
+        # every other error uses; `exc.code` (e.g. "insufficient_stock") is
+        # a stable machine-readable label included in the message text —
+        # DATABASE_AND_API.md section 19.4's top-level ErrorCode list is
+        # closed, so a new per-domain code is not added there.
+        code = _STATUS_TO_CODE.get(exc.status_code, "validation_error")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_body(code, f"[{exc.code}] {exc.message}", request),
         )
 
     @app.exception_handler(RequestValidationError)

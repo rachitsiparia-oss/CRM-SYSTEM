@@ -18,6 +18,7 @@ from app.db.models import (
     StaffUser,
 )
 from app.db.session import get_db
+from app.inventory import order_integration as inventory_order_integration
 from app.orders import service
 from app.orders.schemas import (
     OrderAssignIn,
@@ -215,7 +216,10 @@ async def transition_order(
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[OrderOut]:
     order = await _get_order_or_404(session, order_id)
-    await service.transition_order(
+    # Runs the Phase 8 inventory side effect (reserve/consume/release)
+    # around the unmodified Phase 7 state machine — see
+    # app.inventory.order_integration's module docstring for the lifecycle.
+    await inventory_order_integration.transition_order_with_inventory(
         session,
         actor=actor,
         order=order,

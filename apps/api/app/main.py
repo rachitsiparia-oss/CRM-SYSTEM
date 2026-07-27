@@ -13,6 +13,7 @@ from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
 from app.customers.router import router as customers_router
 from app.health.router import router as health_router
+from app.inventory.router import router as inventory_router
 from app.leads.router import router as leads_router
 from app.menu.router import router as menu_router
 from app.orders.router import router as orders_router
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(leads_router)
     app.include_router(menu_router)
     app.include_router(orders_router)
+    app.include_router(inventory_router)
 
     return app
 
