@@ -1,4 +1,5 @@
 from app.db.models.audit_event import AuditEvent
+from app.db.models.business_hours import BusinessHours
 from app.db.models.customer import Customer
 from app.db.models.customer_address import CustomerAddress
 from app.db.models.customer_consent import CustomerConsent
@@ -7,6 +8,8 @@ from app.db.models.customer_note import CustomerNote
 from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
+from app.db.models.dining_area import DiningArea
+from app.db.models.holiday_calendar import HolidayCalendar
 from app.db.models.inventory_batch import InventoryBatch
 from app.db.models.inventory_category import InventoryCategory
 from app.db.models.inventory_item import InventoryItem
@@ -39,6 +42,17 @@ from app.db.models.product_image import ProductImage
 from app.db.models.product_modifier_group import ProductModifierGroup
 from app.db.models.product_variant import ProductVariant
 from app.db.models.recipe import Recipe, RecipeItem
+from app.db.models.reservation import Reservation
+from app.db.models.reservation_note import ReservationNote
+from app.db.models.reservation_policy import ReservationPolicies
+from app.db.models.reservation_setting import ReservationSettings
+from app.db.models.reservation_status_history import ReservationStatusHistory
+from app.db.models.reservation_table_assignment import ReservationTableAssignment
+from app.db.models.reservation_tag import ReservationTag
+from app.db.models.reservation_tag_link import ReservationTagLink
+from app.db.models.reservation_timeline import ReservationTimeline
+from app.db.models.reservation_waitlist import ReservationWaitlist
+from app.db.models.restaurant_table import RestaurantTable
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.staff_invitation import StaffInvitation
@@ -52,12 +66,15 @@ from app.db.models.stock_receipt import StockReceipt, StockReceiptItem
 from app.db.models.stock_transfer import StockTransfer, StockTransferItem
 from app.db.models.storage_location import StorageLocation
 from app.db.models.supplier import Supplier
+from app.db.models.table_block import TableBlock
+from app.db.models.table_status_history import TableStatusHistory
 from app.db.models.tag import Tag
 from app.db.models.unit_of_measure import UnitOfMeasure
 from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
     "AuditEvent",
+    "BusinessHours",
     "Customer",
     "CustomerAddress",
     "CustomerConsent",
@@ -66,6 +83,8 @@ __all__ = [
     "CustomerPreference",
     "CustomerTag",
     "Department",
+    "DiningArea",
+    "HolidayCalendar",
     "InventoryBatch",
     "InventoryCategory",
     "InventoryItem",
@@ -99,6 +118,17 @@ __all__ = [
     "ProductVariant",
     "Recipe",
     "RecipeItem",
+    "Reservation",
+    "ReservationNote",
+    "ReservationPolicies",
+    "ReservationSettings",
+    "ReservationStatusHistory",
+    "ReservationTableAssignment",
+    "ReservationTag",
+    "ReservationTagLink",
+    "ReservationTimeline",
+    "ReservationWaitlist",
+    "RestaurantTable",
     "Role",
     "RolePermission",
     "StaffInvitation",
@@ -115,6 +145,8 @@ __all__ = [
     "StockTransferItem",
     "StorageLocation",
     "Supplier",
+    "TableBlock",
+    "TableStatusHistory",
     "Tag",
     "UnitOfMeasure",
     "WastageRecord",
