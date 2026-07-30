@@ -204,9 +204,71 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
         "Manage business hours, holidays, and reservation policies.",
         is_sensitive=True,
     ),
-    # Communications
-    PermissionDef("communications.view", "View communications."),
-    PermissionDef("communications.send", "Send communications."),
+    # Communications. Replaces the Phase 3 placeholder pair (communications.
+    # view/.send) with the granular set this phase's own instruction names
+    # as suggested codes — not kept as aliases, the same treatment every
+    # prior phase gave its own Phase 3 placeholders. `.reply` is the
+    # customer-facing send (mirrors `.create` on other domains being the
+    # "do the main thing" action); `.notes.create` is the internal-note
+    # equivalent, never provider-sent. `.webhooks.manage` covers viewing/
+    # reprocessing the raw inbound/status webhook ledger for
+    # troubleshooting — distinct from `.channels.manage` (provider/channel
+    # configuration itself).
+    PermissionDef("communications.view", "View conversations and messages."),
+    PermissionDef("communications.create", "Start a new conversation."),
+    PermissionDef("communications.reply", "Send an outbound reply in a conversation."),
+    PermissionDef("communications.assign", "Assign conversations to staff."),
+    PermissionDef("communications.resolve", "Resolve a conversation."),
+    PermissionDef("communications.reopen", "Reopen a resolved or closed conversation."),
+    PermissionDef("communications.snooze", "Snooze a conversation."),
+    PermissionDef("communications.priority.manage", "Change a conversation's priority."),
+    PermissionDef("communications.notes.create", "Add internal notes to a conversation."),
+    PermissionDef("communications.templates.view", "View message templates."),
+    PermissionDef("communications.templates.manage", "Create and edit message templates."),
+    PermissionDef("communications.channels.view", "View communication channel configuration."),
+    PermissionDef(
+        "communications.channels.manage",
+        "Manage communication channel configuration.",
+        is_sensitive=True,
+    ),
+    PermissionDef("communications.preferences.view", "View customer communication preferences."),
+    PermissionDef(
+        "communications.preferences.manage", "Manage customer communication preferences."
+    ),
+    PermissionDef("communications.suppressions.view", "View the suppression list."),
+    PermissionDef(
+        "communications.suppressions.manage", "Manage the suppression list.", is_sensitive=True
+    ),
+    PermissionDef("communications.analytics.view", "View communication analytics."),
+    PermissionDef(
+        "communications.webhooks.manage",
+        "View and reprocess raw provider webhook events.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "communications.messages.redact", "Redact a message's content.", is_sensitive=True
+    ),
+    PermissionDef("communications.call_logs.create", "Log a manual phone call."),
+    PermissionDef("communications.call_logs.view", "View manual call logs."),
+    # Operational tasks — new in Phase 10 (PROJECT_PLAN.md's Phase 10 scope
+    # bullet "Operational tasks: creation sources, assignment, priority, due
+    # time, completion evidence, recurring tasks"). `.view` is scoped to a
+    # staff member's own assigned/created tasks; `.view_all` is the
+    # team-wide view (mirrors the `orders`/`reservations` "doing vs.
+    # overseeing" split).
+    PermissionDef("tasks.view", "View own and assigned tasks."),
+    PermissionDef("tasks.view_all", "View all staff and team tasks."),
+    PermissionDef("tasks.create", "Create tasks."),
+    PermissionDef("tasks.update", "Update task details."),
+    PermissionDef("tasks.assign", "Assign tasks to staff or a department."),
+    PermissionDef("tasks.complete", "Mark a task completed."),
+    PermissionDef("tasks.reopen", "Reopen a completed or cancelled task."),
+    PermissionDef("tasks.delete", "Cancel a task.", is_sensitive=True),
+    # Notifications — new in Phase 10. Viewing one's own notifications
+    # requires no separate grant (same "own record" principle as a staff
+    # member's own profile); `.manage` is only for staff-initiated broadcast
+    # notifications, not for reading one's own inbox.
+    PermissionDef("notifications.manage", "Create broadcast staff notifications."),
     # Campaigns
     PermissionDef("campaigns.view", "View marketing campaigns."),
     PermissionDef("campaigns.create", "Create marketing campaigns."),
