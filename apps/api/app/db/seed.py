@@ -24,6 +24,7 @@ from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
 from app.inventory.seed import seed_inventory
+from app.knowledge.seed import seed_knowledge_articles
 from app.leads.seed import seed_leads
 from app.menu.seed import seed_menu
 from app.orders.seed import seed_orders
@@ -34,6 +35,7 @@ from app.permissions.seed import (
     seed_roles,
 )
 from app.reservations.seed import seed_reservations
+from app.staff_operations.seed import seed_staff_operations
 
 logger = get_logger(__name__)
 
@@ -58,6 +60,8 @@ async def run_seed() -> None:
         await seed_inventory(session)
         await seed_reservations(session)
         await seed_communications(session)
+        await seed_staff_operations(session)
+        await seed_knowledge_articles(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -66,7 +70,8 @@ async def run_seed() -> None:
         "seed_complete",
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
-            "orders, inventory, reservations, communications seeded"
+            "orders, inventory, reservations, communications, staff operations, knowledge "
+            "base seeded"
         ),
     )
 
