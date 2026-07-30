@@ -1318,6 +1318,28 @@ Stores version number, private storage path, MIME type, size, checksum, uploaded
 
 No embeddings, pgvector, semantic search, or RAG tables are allowed.
 
+### 13.4 Phase 11 implementation notes and deviations
+
+Phase 11's own explicit instruction gave a much larger functional scope than §13.1–§13.3's 3-table sketch — a 33-numbered-section Knowledge Base and Staff Operations brief (categories, versioned articles, a draft→in_review→changes_requested→approved→published→superseded→archived lifecycle, review/approval, scoped visibility, tags/relationships, attachments, PostgreSQL-only search, version-bound read/acknowledgement tracking, and assignments integrated with the existing Phase 10 task/notification engine). Per `CLAUDE.md` §1.1, that instruction governs this deliverable's actual schema wherever it differs from what is documented above; every deviation actually shipped is recorded here (and, symmetrically, in §14.6 for Staff Operations).
+
+**10 tables, not the 3 named in §13.1–§13.3** (`knowledge_categories`, `knowledge_articles`, `knowledge_article_versions`, `knowledge_article_tags`, `knowledge_article_relations`, `knowledge_visibility_rules`, `knowledge_attachments`, `knowledge_reviews`, `knowledge_assignments`, `knowledge_acknowledgements`), all with RLS enabled, in one migration shared with Staff Operations (`e718e5a70d10_add_phase11_knowledge_base_and_staff_`). `knowledge_folders`/`knowledge_documents` become `knowledge_categories`/`knowledge_articles` — renamed, not added alongside, to match the instruction's own "article" vocabulary and its `article_type` enum (`sop`/`policy`/`procedure`/`checklist`/`guide`/`troubleshooting`/`training_material`/`emergency_instruction`/`announcement`).
+
+**No separate `knowledge_tags` catalog table** — `knowledge_article_tags` is a join table against the single global `tags` table Phase 5 already established for customer/lead tagging, not a second parallel tag vocabulary. The instruction's "reusable tags" requirement is met by reuse, not duplication.
+
+**`KnowledgeArticleRelation` is polymorphic and doubles as the training-course link** (`relation_type` IN `related`/`prerequisite`/`superseded_by`/`referenced_by_training`, with a CHECK constraint rejecting self-relations and a unique constraint rejecting duplicate pairs) — no separate `training_course_articles` join table exists in Staff Operations; a training course referencing supporting articles is the same polymorphic relation with `relation_type = 'referenced_by_training'`.
+
+**Visibility resolution is role-based, not department-based, for `kitchen_only`/`front_of_house_only` scopes** — `app.permissions.seed.DEPARTMENTS` has no dedicated front-of-house department code, so `knowledge_visibility_rules` (scope IN `all_staff`/`department`/`role`/`specific_staff`/`management_only`/`hr_only`/`kitchen_only`/`front_of_house_only`) resolves those two scopes against each staff member's assigned roles rather than a department column that doesn't exist.
+
+**Article versioning is a true immutable snapshot table** (`knowledge_article_versions`: version number, full content/title/summary snapshot, author, published/superseded timestamps) — every material change to a published article creates a new version row rather than mutating the live article; `KnowledgeArticle.published_version_id` always points at the currently live snapshot. Acknowledgements (`knowledge_acknowledgements`) are version-bound (`article_version_id`, not `article_id`) so a new mandatory version automatically invalidates prior acknowledgements — `app.knowledge.assignments` reads "still needs to acknowledge" as "no acknowledgement row for the article's *current* published version," not a separate revocation write.
+
+**Search is PostgreSQL full-text only** — `KnowledgeArticle.search_vector` (a generated `TSVECTOR` column over title/summary/content) with a GIN index, queried through `app.knowledge.search`. No embeddings, pgvector, semantic search, or RAG table exists anywhere in this schema, per `CLAUDE.md` §17's explicit prohibition and this phase's own instruction confirming it.
+
+**Attachments (`knowledge_attachments`) reuse the same private-storage-plus-signed-URL pattern Phase 8's inventory photos and Phase 10's message attachments already established** — no new upload/scanning pipeline was built; `app.knowledge.attachments` is a thin domain wrapper over the existing Supabase Storage adapter.
+
+**Permissions:** 13 new `knowledge.*` codes (`view`, `create`, `update`, `review`, `approve`, `publish`, `archive`, `categories.manage`, `tags.manage`, `visibility.manage`, `assign`, `acknowledge`, `analytics.view`) — there was no Phase 3 placeholder pair to replace (Knowledge Base had no permission codes before this phase).
+
+**Not built in this phase (deferred, not hidden):** no automatic reminder/expiry-warning dispatch — `app.knowledge` exposes deterministic, idempotent query functions only (e.g. articles due for review), matching `CLAUDE.md` §14's "engine, not scheduler" principle already established in Phase 10; automatic dispatch through a live `apps/worker` ARQ schedule is Phase 15's scope. No authenticated Playwright coverage (the same limitation every phase since 5 has documented — no test Supabase session).
+
 ## 14. STAFF AND HR
 
 ### 14.1 `staff_profiles`
@@ -1357,6 +1379,28 @@ Stores training type, provider, completion date, expiry date, status, and remind
 ### 14.5 `shift_assignments`
 
 Stores date, start, end, role, location, and assignment state.
+
+### 14.6 Phase 11 implementation notes and deviations
+
+Phase 11's own instruction gave Staff Operations a much larger scope than §14.1–§14.5's 5-table sketch — employment profile extension (8-status lifecycle, reporting structure, work location, probation/confirmation dates), staff documents, onboarding/offboarding transition plans, shift templates/rosters/change requests, attendance with corrections, leave management, a training catalogue with attempts and max-attempts enforcement, certifications with expiry/renewal, a skills matrix, performance reviews, disciplinary records, and lightweight availability windows. Every deviation actually shipped is recorded here.
+
+**24 tables, not the 5 named in §14.1–§14.5** (`staff_employment_profiles`, `staff_status_history`, `staff_reporting_history`, `staff_documents`, `staff_transition_templates`, `staff_transition_template_steps`, `staff_transition_plans`, `staff_transition_steps`, `shift_templates`, `staff_shifts`, `shift_change_requests`, `attendance_records`, `attendance_corrections`, `leave_types`, `leave_requests`, `training_courses`, `training_assignments`, `training_attempts`, `staff_certifications`, `skills`, `staff_skills`, `performance_reviews`, `performance_review_goals`, `staff_disciplinary_records`, `staff_availability_windows`), all with RLS enabled, in the same migration as Knowledge Base (`e718e5a70d10_add_phase11_knowledge_base_and_staff_`) — 34 tables total across both domains in this one phase.
+
+**`staff_employment_profiles.lifecycle_status` is deliberately distinct from two pre-existing Phase 3 columns on `staff_users`** — `account_status` (system-login access: active/suspended/etc.) and `employment_status` (actually an employment *type* — full_time/part_time/contract/intern, a Phase 3 naming choice not renamed here to avoid an unrelated breaking migration). `lifecycle_status` is the new 8-state HR lifecycle the instruction asks for (`invited`→`onboarding`→`active`→`on_leave`→`suspended`→`notice_period`→`inactive`→`terminated`), living on the new one-to-one profile table, not on `staff_users` itself.
+
+**Onboarding and offboarding are one `transition_type`-discriminated template/plan/step pair, not two separate schemas** — `staff_transition_templates`/`staff_transition_template_steps`/`staff_transition_plans`/`staff_transition_steps` all carry a `transition_type` (`onboarding`/`offboarding`) column rather than duplicating four tables into eight; the two flows share every structural need (ordered steps, dependencies, approval gates, Phase 10 task integration) and differ only in their step content, which lives in data, not schema.
+
+**`performance_review_cycles` does not exist as a separate table** — cycle fields (`cycle_label`, `period_start_date`, `period_end_date`) are inlined directly onto `performance_reviews`, the same "don't add a table for a 1:1 relationship with no independent lifecycle" judgment Phase 10 made for message template versions.
+
+**Shift overlap detection uses full timestamp ranges, not time-of-day comparison** — `staff_shifts.start_at`/`end_at` are `TIMESTAMPTZ`, so an overnight shift (e.g. 22:00–06:00) needs no special-casing at the midnight boundary; the overlap check is a standard range-intersection query.
+
+**Circular-FK migration pattern used twice** — `staff_employment_profiles.reporting_manager_id` (self-referencing `staff_users`) and the versions↔articles/articles↔categories pairs in Knowledge Base each needed one FK added via `op.create_foreign_key()` after both tables existed, rather than inline in `CREATE TABLE`, and dropped via `op.drop_constraint()` before either table drops in `downgrade()` — a documented Alembic pattern, not a data-model compromise.
+
+**Permissions:** 33 new `staff.*` codes extending (not replacing) the Phase 3 `staff.view`/`staff.manage`/`staff.hr_sensitive.read` triple, which stays scoped to staff *account* administration: `profile.view`/`.manage`, `documents.view`/`.manage`, `onboarding.view`/`.manage`, `offboarding.manage`, `shifts.view`/`.manage`/`.publish`, `shift_changes.request`/`.approve`, `attendance.view`/`.manage`/`.correct`, `leave.view`/`.request`/`.approve`, `training.view`/`.manage`/`.assign`/`.review`, `certifications.view`/`.manage`, `skills.view`/`.manage`, `reviews.view`/`.manage`, `disciplinary.view`/`.manage` (deliberately separate from the broader `staff.hr_sensitive.read`, per `PROJECT_PLAN.md`'s own narrower "strict permissions" bullet for disciplinary records), `availability.view`/`.manage`, and `analytics.view`. Combined with Knowledge Base's 13 codes, the permission registry grew by 46 codes in this phase (152 total).
+
+**Self-service routing bugs found and fixed during API testing:** several endpoints that should allow a staff member to act on their *own* record (complete their own transition step, review their own performance-review self-section, list/create their own availability windows) were initially gated on a broad "view all" permission that self-service roles don't hold; fixed by switching their base dependency to a plain authenticated-user check and adding an internal `_require_self_or_permission(actor, target_staff_id, permission_code)` helper that always allows self-access and falls back to the permission check only for viewing someone else's record. A related over-broad grant (`staff.availability.manage` given to self-service roles for "manage my own availability," which also let them manage everyone else's) was corrected by removing that grant from self-service roles entirely — self-access needs no permission at all — and keeping it only on `hr_manager`.
+
+**Not built in this phase (deferred, not hidden):** no biometric attendance hardware integration (manual and roster-derived attendance only, per this phase's own instruction). No automatic document/certification expiry-warning dispatch — `app.staff_operations` exposes deterministic query functions (`list_documents_expiring_within`, `list_certifications_expiring_within`); automatic dispatch is Phase 15's scope, the same "engine, not scheduler" split as Knowledge Base above. No payroll settlement in offboarding (out of this phase's scope per `PROJECT_PLAN.md`). No complex leave-accrual engine — leave types carry a simple annual `max_consecutive_days` cap, not an accrual ledger. No dummy 65-person staff roster was seeded — every `staff_users` row needs a real Supabase Auth identity and only the bootstrapped owner account exists in this environment (consistent with `PROJECT_PLAN.md` §4's canonical dummy total remaining a documented target figure, not seeded data). No authenticated Playwright coverage (the same limitation every phase since 5 has documented).
 
 ## 15. LOYALTY, MARKETING, FEEDBACK, AND COMPLAINTS
 
@@ -1930,39 +1974,38 @@ Sending a message must:
 
 ## 28. KNOWLEDGE BASE API
 
-- `GET /api/v1/knowledge/folders`
-- `POST /api/v1/knowledge/folders`
-- `PATCH /api/v1/knowledge/folders/{id}`
-- `GET /api/v1/knowledge/documents`
-- `POST /api/v1/knowledge/documents`
-- `GET /api/v1/knowledge/documents/{id}`
-- `PATCH /api/v1/knowledge/documents/{id}`
-- `POST /api/v1/knowledge/documents/{id}/versions`
-- `GET /api/v1/knowledge/documents/{id}/versions`
-- `POST /api/v1/knowledge/documents/{id}/archive`
-- `POST /api/v1/knowledge/documents/{id}/restore`
-- `GET /api/v1/knowledge/search`
+All under `/api/v1/knowledge`, per §13.4's actual 10-table schema:
 
-Uploads use a quarantine and scanning pipeline. Download URLs are short-lived and permission checked.
+- Categories: `GET/POST /categories`, `PATCH /categories/{id}`
+- Search and analytics: `GET /search`, `GET /analytics`
+- Articles: `GET/POST /articles`, `GET/PATCH /articles/{id}`, `POST /articles/{id}/submit`, `POST /articles/{id}/review`, `POST /articles/{id}/publish`, `POST /articles/{id}/transition`, `GET /articles/{id}/versions`, `GET /articles/{id}/timeline`
+- Tags: `POST /articles/{id}/tags`, `DELETE /articles/{id}/tags/{tag_id}`
+- Relations: `GET/POST /articles/{id}/relations`, `DELETE /articles/{id}/relations/{relation_id}`
+- Visibility rules: `GET/POST /articles/{id}/visibility-rules`, `DELETE /articles/{id}/visibility-rules/{rule_id}`
+- Attachments: `GET/POST /articles/{id}/attachments`, `GET /articles/{id}/attachments/{attachment_id}/signed-url`, `DELETE /articles/{id}/attachments/{attachment_id}`
+- Assignments and acknowledgement: `GET/POST /articles/{id}/assignments`, `POST /articles/{id}/assignments/{assignment_id}/cancel`, `POST /articles/{id}/acknowledge`, `GET /acknowledgements/mine`
+
+32 endpoints total. Uploads use the existing Supabase Storage adapter's quarantine and scanning pipeline. Download URLs are short-lived and permission checked. Every mutation is checked against the 13-code `knowledge.*` registry in §13.4.
 
 ## 29. STAFF AND HR API
 
-- `GET /api/v1/staff`
-- `POST /api/v1/staff`
-- `GET /api/v1/staff/{id}`
-- `PATCH /api/v1/staff/{id}`
-- `GET /api/v1/staff/{id}/documents`
-- `POST /api/v1/staff/{id}/documents`
-- `GET /api/v1/leave-requests`
-- `POST /api/v1/leave-requests`
-- `POST /api/v1/leave-requests/{id}/approve`
-- `POST /api/v1/leave-requests/{id}/reject`
-- `GET /api/v1/training-records`
-- `POST /api/v1/training-records`
-- `GET /api/v1/shifts`
-- `POST /api/v1/shifts`
+All under `/api/v1/staff-operations`, per §14.6's actual 24-table schema (in addition to the pre-existing Phase 3 `/api/v1/staff-users` administration endpoints, which this router does not replace):
 
-HR-sensitive fields require the dedicated `staff.hr_sensitive.read` permission and must not be included in ordinary staff list responses.
+- Employment profiles: `GET/POST /profiles`, `GET /profiles/{staff_user_id}`, `PATCH /profiles/{staff_user_id}`, `POST /profiles/{staff_user_id}/transition`
+- Documents: `GET/POST /documents`, `POST /documents/{id}/verify`
+- Onboarding/offboarding: `GET/POST /transition-templates`, `POST /transition-templates/{id}/steps`, `GET/POST /transition-plans`, `GET /transition-plans/{id}/steps`, `POST /transition-steps/{id}/complete`, `POST /transition-steps/{id}/approve`
+- Shifts and roster: `GET/POST /shift-templates`, `GET/POST /shifts`, `PATCH /shifts/{id}`, `POST /shifts/{id}/publish`, `GET/POST /shift-change-requests`, `POST /shift-change-requests/{id}/decide`
+- Attendance: `GET/POST /attendance`, `POST /attendance/{id}/correct`
+- Leave: `GET/POST /leave-types`, `GET/POST /leave-requests`, `POST /leave-requests/{id}/decide`, `POST /leave-requests/{id}/withdraw`
+- Training: `GET/POST /training/courses`, `GET/POST /training/assignments`, `POST /training/assignments/{id}/attempts`, `GET /training/assignments/{id}/attempts`, `POST /training/attempts/{id}/complete`
+- Certifications: `GET/POST /certifications`, `POST /certifications/{id}/verify`
+- Skills: `GET/POST /skills`, `GET /staff-skills/{staff_user_id}`, `PUT /staff-skills/{staff_user_id}`
+- Performance reviews: `GET/POST /reviews`, `PATCH /reviews/{id}`, `POST /reviews/{id}/transition`
+- Disciplinary: `GET/POST /disciplinary-records`
+- Availability: `GET/POST /availability/{staff_user_id}`
+- Analytics: `GET /analytics`
+
+58 endpoints total. HR-sensitive fields (address, restricted notes) require `staff.documents.view`/the dedicated Phase 3 `staff.hr_sensitive.read` permission and are excluded from ordinary profile responses via a separate `EmploymentProfileSensitive` schema. Self-service endpoints (a staff member's own transition steps, availability windows, review self-section, training attempts) use `_require_self_or_permission` rather than a blanket "view all" permission — see §14.6. Every mutation is checked against the 33-code `staff.*` registry in §14.6.
 
 ## 30. MARKETING, LOYALTY, FEEDBACK, AND COMPLAINT API
 
