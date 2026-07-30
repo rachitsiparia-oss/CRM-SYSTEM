@@ -11,6 +11,32 @@ import {
 } from "@/lib/hooks/use-staff";
 import { useRoles } from "@/lib/hooks/use-roles";
 import { hasPermission, useCurrentUser } from "@/lib/hooks/use-current-user";
+import {
+  useAttendanceList,
+  useCertifications,
+  useEmploymentProfile,
+  useLeaveRequests,
+  usePerformanceReviews,
+  useShiftList,
+  useStaffDocuments,
+  useStaffSkills,
+  useTrainingAssignments,
+} from "@/lib/hooks/use-staff-operations";
+import {
+  ATTENDANCE_STATUS_TONES,
+  LEAVE_STATUS_TONES,
+  LIFECYCLE_STATUS_TONES,
+  PERFORMANCE_REVIEW_STATUS_TONES,
+  SHIFT_STATUS_TONES,
+  TRAINING_ASSIGNMENT_STATUS_TONES,
+  VERIFICATION_STATUS_TONES,
+  formatDate,
+  formatDateTime,
+  humanize,
+} from "@/lib/crm-display";
+import { SectionCard } from "@/components/section-card";
+import { StatusBadge } from "@/components/status-badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/errors";
 
@@ -75,6 +101,28 @@ export function StaffDetail({ staffId }: { staffId: string }) {
   const canManageStaff = hasPermission(currentUser, "staff.manage");
   const canManageRoles = hasPermission(currentUser, "roles.manage");
   const isSelf = currentUser?.id === staffId;
+
+  const canViewProfile = isSelf || hasPermission(currentUser, "staff.profile.view");
+  const canViewDocuments = isSelf || hasPermission(currentUser, "staff.documents.view");
+  const canViewShifts = isSelf || hasPermission(currentUser, "staff.shifts.view");
+  const canViewAttendance = isSelf || hasPermission(currentUser, "staff.attendance.view");
+  const canViewLeave = isSelf || hasPermission(currentUser, "staff.leave.view");
+  const canViewTraining = isSelf || hasPermission(currentUser, "staff.training.view");
+  const canViewCertifications = isSelf || hasPermission(currentUser, "staff.certifications.view");
+  const canViewSkills = isSelf || hasPermission(currentUser, "staff.skills.view");
+  const canViewReviews = isSelf || hasPermission(currentUser, "staff.reviews.view");
+
+  const { data: profile } = useEmploymentProfile(canViewProfile ? staffId : undefined);
+  const { data: documents } = useStaffDocuments(canViewDocuments ? staffId : undefined);
+  const { data: shifts } = useShiftList(canViewShifts ? { staffUserId: staffId } : {});
+  const { data: attendance } = useAttendanceList(canViewAttendance ? { staffUserId: staffId } : {});
+  const { data: leaveRequests } = useLeaveRequests(canViewLeave ? { staffUserId: staffId } : {});
+  const { data: trainingAssignments } = useTrainingAssignments(
+    canViewTraining ? { staffUserId: staffId } : {},
+  );
+  const { data: certifications } = useCertifications(canViewCertifications ? staffId : undefined);
+  const { data: skills } = useStaffSkills(canViewSkills ? staffId : undefined);
+  const { data: reviews } = usePerformanceReviews(canViewReviews ? staffId : undefined);
 
   function handleError(error: unknown) {
     setActionError(error instanceof ApiError ? error.message : "That action could not be completed.");
@@ -220,6 +268,220 @@ export function StaffDetail({ staffId }: { staffId: string }) {
           </div>
         )}
       </div>
+
+      <Tabs defaultValue="employment">
+        <TabsList>
+          {canViewProfile && <TabsTrigger value="employment">Employment</TabsTrigger>}
+          {canViewShifts && <TabsTrigger value="schedule">Schedule</TabsTrigger>}
+          {canViewAttendance && <TabsTrigger value="attendance">Attendance</TabsTrigger>}
+          {canViewLeave && <TabsTrigger value="leave">Leave</TabsTrigger>}
+          {canViewTraining && <TabsTrigger value="training">Training</TabsTrigger>}
+          {canViewCertifications && <TabsTrigger value="certifications">Certifications</TabsTrigger>}
+          {canViewSkills && <TabsTrigger value="skills">Skills</TabsTrigger>}
+          {canViewDocuments && <TabsTrigger value="documents">Documents</TabsTrigger>}
+          {canViewReviews && <TabsTrigger value="reviews">Reviews</TabsTrigger>}
+        </TabsList>
+
+        {canViewProfile && (
+          <TabsContent value="employment" className="pt-4">
+            <SectionCard title="Employment profile">
+              {profile ? (
+                <div className="grid gap-1 text-sm sm:grid-cols-2">
+                  <div>
+                    <span className="text-zinc-500">Lifecycle status: </span>
+                    <StatusBadge
+                      label={humanize(profile.lifecycle_status)}
+                      tone={LIFECYCLE_STATUS_TONES[profile.lifecycle_status]}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Joining date: </span>
+                    <span>{formatDate(profile.joining_date)}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Work location: </span>
+                    <span>{profile.work_location ?? "Not set"}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Probation end: </span>
+                    <span>{profile.probation_end_date ? formatDate(profile.probation_end_date) : "N/A"}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No employment profile on record.</p>
+              )}
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewShifts && (
+          <TabsContent value="schedule" className="pt-4">
+            <SectionCard title="Shifts">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(shifts ?? []).map((shift) => (
+                  <li key={shift.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {formatDate(shift.shift_date)} · {formatDateTime(shift.start_at)} –{" "}
+                      {formatDateTime(shift.end_at)}
+                    </span>
+                    <StatusBadge label={humanize(shift.status)} tone={SHIFT_STATUS_TONES[shift.status]} />
+                  </li>
+                ))}
+                {!shifts?.length && <li className="text-muted-foreground">No shifts scheduled.</li>}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewAttendance && (
+          <TabsContent value="attendance" className="pt-4">
+            <SectionCard title="Attendance">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(attendance ?? []).map((record) => (
+                  <li key={record.id} className="flex items-center justify-between gap-2">
+                    <span>{formatDate(record.attendance_date)}</span>
+                    <StatusBadge
+                      label={humanize(record.status)}
+                      tone={ATTENDANCE_STATUS_TONES[record.status]}
+                    />
+                  </li>
+                ))}
+                {!attendance?.length && (
+                  <li className="text-muted-foreground">No attendance records.</li>
+                )}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewLeave && (
+          <TabsContent value="leave" className="pt-4">
+            <SectionCard title="Leave requests">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(leaveRequests ?? []).map((request) => (
+                  <li key={request.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {formatDate(request.start_date)} – {formatDate(request.end_date)}
+                    </span>
+                    <StatusBadge
+                      label={humanize(request.status)}
+                      tone={LEAVE_STATUS_TONES[request.status]}
+                    />
+                  </li>
+                ))}
+                {!leaveRequests?.length && (
+                  <li className="text-muted-foreground">No leave requests.</li>
+                )}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewTraining && (
+          <TabsContent value="training" className="pt-4">
+            <SectionCard title="Training assignments">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(trainingAssignments ?? []).map((assignment) => (
+                  <li key={assignment.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {assignment.due_at ? `Due ${formatDate(assignment.due_at)}` : "No due date"}
+                    </span>
+                    <StatusBadge
+                      label={humanize(assignment.status)}
+                      tone={TRAINING_ASSIGNMENT_STATUS_TONES[assignment.status]}
+                    />
+                  </li>
+                ))}
+                {!trainingAssignments?.length && (
+                  <li className="text-muted-foreground">No training assigned.</li>
+                )}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewCertifications && (
+          <TabsContent value="certifications" className="pt-4">
+            <SectionCard title="Certifications">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(certifications ?? []).map((cert) => (
+                  <li key={cert.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {cert.certification_type} · issued {formatDate(cert.issue_date)}
+                    </span>
+                    <StatusBadge
+                      label={humanize(cert.verification_status)}
+                      tone={VERIFICATION_STATUS_TONES[cert.verification_status]}
+                    />
+                  </li>
+                ))}
+                {!certifications?.length && (
+                  <li className="text-muted-foreground">No certifications recorded.</li>
+                )}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewSkills && (
+          <TabsContent value="skills" className="pt-4">
+            <SectionCard title="Skills">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(skills ?? []).map((skill) => (
+                  <li key={skill.id} className="flex items-center justify-between gap-2">
+                    <span>{humanize(skill.proficiency_level)}</span>
+                    {skill.is_verified && <StatusBadge label="Verified" tone="success" />}
+                  </li>
+                ))}
+                {!skills?.length && <li className="text-muted-foreground">No skills recorded.</li>}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewDocuments && (
+          <TabsContent value="documents" className="pt-4">
+            <SectionCard title="Documents">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(documents ?? []).map((doc) => (
+                  <li key={doc.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {humanize(doc.document_type)} · {doc.file_name}
+                    </span>
+                    <StatusBadge
+                      label={humanize(doc.verification_status)}
+                      tone={VERIFICATION_STATUS_TONES[doc.verification_status]}
+                    />
+                  </li>
+                ))}
+                {!documents?.length && <li className="text-muted-foreground">No documents uploaded.</li>}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+
+        {canViewReviews && (
+          <TabsContent value="reviews" className="pt-4">
+            <SectionCard title="Performance reviews">
+              <ul className="flex flex-col gap-2 text-sm">
+                {(reviews ?? []).map((review) => (
+                  <li key={review.id} className="flex items-center justify-between gap-2">
+                    <span>
+                      {review.cycle_label} · {formatDate(review.period_start_date)} –{" "}
+                      {formatDate(review.period_end_date)}
+                    </span>
+                    <StatusBadge
+                      label={humanize(review.status)}
+                      tone={PERFORMANCE_REVIEW_STATUS_TONES[review.status]}
+                    />
+                  </li>
+                ))}
+                {!reviews?.length && <li className="text-muted-foreground">No reviews on record.</li>}
+              </ul>
+            </SectionCard>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
