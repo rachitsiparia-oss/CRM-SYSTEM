@@ -17,6 +17,7 @@ phases and will add their own `seed_*()` calls here.
 
 import asyncio
 
+from app.communications.seed import seed_communications
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -56,6 +57,7 @@ async def run_seed() -> None:
         await seed_orders(session)
         await seed_inventory(session)
         await seed_reservations(session)
+        await seed_communications(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -64,7 +66,7 @@ async def run_seed() -> None:
         "seed_complete",
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
-            "orders, inventory, reservations seeded"
+            "orders, inventory, reservations, communications seeded"
         ),
     )
 
