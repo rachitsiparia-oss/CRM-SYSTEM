@@ -15,6 +15,7 @@ from app.core.request_context import RequestContextMiddleware
 from app.customers.router import router as customers_router
 from app.health.router import router as health_router
 from app.inventory.router import router as inventory_router
+from app.knowledge.router import router as knowledge_router
 from app.leads.router import router as leads_router
 from app.menu.router import router as menu_router
 from app.notifications.router import router as notifications_router
@@ -22,6 +23,7 @@ from app.orders.router import router as orders_router
 from app.reservations.router import router as reservations_router
 from app.roles.router import router as roles_router
 from app.staff.router import router as staff_router
+from app.staff_operations.router import router as staff_operations_router
 from app.tasks.router import router as tasks_router
 
 # Must run before uvicorn (or anything else) creates an event loop — see
@@ -79,6 +81,8 @@ def create_app() -> FastAPI:
     app.include_router(communications_router)
     app.include_router(tasks_router)
     app.include_router(notifications_router)
+    app.include_router(knowledge_router)
+    app.include_router(staff_operations_router)
 
     return app
 
