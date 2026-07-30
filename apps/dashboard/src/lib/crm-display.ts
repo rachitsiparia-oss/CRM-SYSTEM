@@ -1,24 +1,32 @@
 import type {
   AdjustmentDirection,
+  ArticleStatus,
+  AttendanceStatus,
   BatchStatus,
   ConversationPriority,
   ConversationStatus,
   CountStatus,
   CustomerStatus,
+  DisciplinarySeverity,
   FollowUpStatus,
   FoodType,
   LeadPriority,
   LeadStatus,
+  LeaveStatus,
+  LifecycleStatus,
   NotificationPriority,
   OrderStatus,
   PaymentStatus,
+  PerformanceReviewStatus,
   ReceiptStatus,
   ReservationStatus,
   ScheduledMessageStatus,
+  ShiftStatus,
   StockStatus,
   TableStatus,
   TaskPriority,
   TaskStatus,
+  TrainingAssignmentStatus,
   TransferStatus,
   WaitlistStatus,
 } from "@rkpr/contracts";
@@ -286,6 +294,87 @@ export const NOTIFICATION_PRIORITY_TONES: Record<NotificationPriority, StatusTon
   normal: "info",
   high: "warning",
   urgent: "danger",
+};
+
+export const ARTICLE_STATUS_TONES: Record<ArticleStatus, StatusTone> = {
+  draft: "neutral",
+  in_review: "info",
+  changes_requested: "warning",
+  approved: "info",
+  published: "success",
+  superseded: "neutral",
+  archived: "neutral",
+};
+
+export const LIFECYCLE_STATUS_TONES: Record<LifecycleStatus, StatusTone> = {
+  invited: "neutral",
+  onboarding: "info",
+  active: "success",
+  on_leave: "warning",
+  suspended: "danger",
+  notice_period: "warning",
+  inactive: "neutral",
+  terminated: "neutral",
+};
+
+export const SHIFT_STATUS_TONES: Record<ShiftStatus, StatusTone> = {
+  scheduled: "neutral",
+  published: "info",
+  completed: "success",
+  cancelled: "neutral",
+  no_show: "danger",
+};
+
+export const ATTENDANCE_STATUS_TONES: Record<AttendanceStatus, StatusTone> = {
+  present: "success",
+  absent: "danger",
+  late: "warning",
+  half_day: "warning",
+  on_leave: "info",
+  weekly_off: "neutral",
+  holiday: "neutral",
+  missed_punch: "danger",
+};
+
+export const LEAVE_STATUS_TONES: Record<LeaveStatus, StatusTone> = {
+  draft: "neutral",
+  submitted: "info",
+  approved: "success",
+  rejected: "danger",
+  cancelled: "neutral",
+  withdrawn: "neutral",
+};
+
+export const TRAINING_ASSIGNMENT_STATUS_TONES: Record<TrainingAssignmentStatus, StatusTone> = {
+  assigned: "neutral",
+  in_progress: "info",
+  completed: "success",
+  failed: "danger",
+  overdue: "danger",
+  waived: "neutral",
+  cancelled: "neutral",
+};
+
+export const PERFORMANCE_REVIEW_STATUS_TONES: Record<PerformanceReviewStatus, StatusTone> = {
+  draft: "neutral",
+  in_progress: "info",
+  submitted: "info",
+  reviewed: "warning",
+  finalized: "success",
+  acknowledged: "success",
+};
+
+export const DISCIPLINARY_SEVERITY_TONES: Record<DisciplinarySeverity, StatusTone> = {
+  minor: "neutral",
+  moderate: "warning",
+  severe: "danger",
+};
+
+export const VERIFICATION_STATUS_TONES: Record<"pending" | "verified" | "rejected" | "expired", StatusTone> = {
+  pending: "neutral",
+  verified: "success",
+  rejected: "danger",
+  expired: "warning",
 };
 
 /** Reservation `start_time`/`end_time` arrive as "HH:MM:SS" (no date, no
