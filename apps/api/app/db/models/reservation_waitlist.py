@@ -41,9 +41,7 @@ class ReservationWaitlist(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Bas
         Index("ix_reservation_waitlist_dining_area_id", "dining_area_id"),
     )
 
-    customer_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("customers.id"), nullable=True
-    )
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
     guest_name: Mapped[str] = mapped_column(String(180), nullable=False)
     phone_e164: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(CITEXT, nullable=True)

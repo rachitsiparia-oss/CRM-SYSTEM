@@ -55,9 +55,7 @@ class RestaurantTable(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, SoftDel
             "maximum_capacity IS NULL OR maximum_capacity >= capacity",
             name="valid_maximum_capacity",
         ),
-        CheckConstraint(
-            "minimum_capacity <= capacity", name="minimum_capacity_not_above_capacity"
-        ),
+        CheckConstraint("minimum_capacity <= capacity", name="minimum_capacity_not_above_capacity"),
         CheckConstraint("sort_order >= 0", name="valid_sort_order"),
         Index("ix_restaurant_tables_dining_area_id", "dining_area_id"),
         Index("ix_restaurant_tables_status", "status"),
@@ -75,18 +73,14 @@ class RestaurantTable(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, SoftDel
         ),
     )
 
-    dining_area_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("dining_areas.id"), nullable=False
-    )
+    dining_area_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dining_areas.id"), nullable=False)
     table_number: Mapped[str] = mapped_column(String(20), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     minimum_capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     maximum_capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     shape: Mapped[str] = mapped_column(String(16), nullable=False, default="square")
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="available")
-    is_wheelchair_accessible: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    is_wheelchair_accessible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_temporary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Set while this table is combined with another under one reservation —
     # both tables in a merge point at each other's merge group via a shared

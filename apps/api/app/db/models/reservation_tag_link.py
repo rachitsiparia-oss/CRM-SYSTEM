@@ -16,9 +16,7 @@ class ReservationTagLink(Base):
         PrimaryKeyConstraint("reservation_id", "tag_id", name="pk_reservation_tag_links"),
     )
 
-    reservation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("reservations.id"), nullable=False
-    )
+    reservation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reservations.id"), nullable=False)
     tag_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reservation_tags.id"), nullable=False)
     assigned_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("staff_users.id"), nullable=True

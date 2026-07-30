@@ -50,9 +50,7 @@ class ReservationTimeline(UUIDPrimaryKeyMixin, Base):
         Index("ix_reservation_timeline_reservation_id", "reservation_id"),
     )
 
-    reservation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("reservations.id"), nullable=False
-    )
+    reservation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reservations.id"), nullable=False)
     event_type: Mapped[str] = mapped_column(String(32), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     event_metadata: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB, nullable=True)

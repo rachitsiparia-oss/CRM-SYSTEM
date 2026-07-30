@@ -1,5 +1,13 @@
 from app.db.models.audit_event import AuditEvent
 from app.db.models.business_hours import BusinessHours
+from app.db.models.communication_channel import CommunicationChannel
+from app.db.models.communication_consent import CommunicationConsent
+from app.db.models.communication_preference import CommunicationPreference
+from app.db.models.communication_suppression import CommunicationSuppression
+from app.db.models.conversation import Conversation
+from app.db.models.conversation_assignment import ConversationAssignment
+from app.db.models.conversation_link import ConversationLink
+from app.db.models.conversation_status_history import ConversationStatusHistory
 from app.db.models.customer import Customer
 from app.db.models.customer_address import CustomerAddress
 from app.db.models.customer_consent import CustomerConsent
@@ -10,6 +18,7 @@ from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
 from app.db.models.dining_area import DiningArea
 from app.db.models.holiday_calendar import HolidayCalendar
+from app.db.models.inbound_webhook_event import InboundWebhookEvent
 from app.db.models.inventory_batch import InventoryBatch
 from app.db.models.inventory_category import InventoryCategory
 from app.db.models.inventory_item import InventoryItem
@@ -18,10 +27,17 @@ from app.db.models.lead import Lead
 from app.db.models.lead_activity import LeadActivity
 from app.db.models.lead_follow_up import LeadFollowUp
 from app.db.models.lead_status_history import LeadStatusHistory
+from app.db.models.manual_call_log import ManualCallLog
 from app.db.models.menu_category import MenuCategory
+from app.db.models.message import Message
+from app.db.models.message_attachment import MessageAttachment
+from app.db.models.message_delivery_attempt import MessageDeliveryAttempt
+from app.db.models.message_status_history import MessageStatusHistory
+from app.db.models.message_template import MessageTemplate
 from app.db.models.modifier import Modifier
 from app.db.models.modifier_group import ModifierGroup
 from app.db.models.modifier_group_item import ModifierGroupItem
+from app.db.models.notification import Notification
 from app.db.models.order import Order
 from app.db.models.order_assignment import OrderAssignment
 from app.db.models.order_charge import OrderCharge
@@ -41,6 +57,7 @@ from app.db.models.product import Product
 from app.db.models.product_image import ProductImage
 from app.db.models.product_modifier_group import ProductModifierGroup
 from app.db.models.product_variant import ProductVariant
+from app.db.models.provider_status_event import ProviderStatusEvent
 from app.db.models.recipe import Recipe, RecipeItem
 from app.db.models.reservation import Reservation
 from app.db.models.reservation_note import ReservationNote
@@ -55,6 +72,7 @@ from app.db.models.reservation_waitlist import ReservationWaitlist
 from app.db.models.restaurant_table import RestaurantTable
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
+from app.db.models.scheduled_message import ScheduledMessage
 from app.db.models.staff_invitation import StaffInvitation
 from app.db.models.staff_role import StaffRole
 from app.db.models.staff_user import StaffUser
@@ -69,12 +87,23 @@ from app.db.models.supplier import Supplier
 from app.db.models.table_block import TableBlock
 from app.db.models.table_status_history import TableStatusHistory
 from app.db.models.tag import Tag
+from app.db.models.task_assignment import TaskAssignment
+from app.db.models.task_record import TaskRecord
+from app.db.models.task_status_history import TaskStatusHistory
 from app.db.models.unit_of_measure import UnitOfMeasure
 from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
     "AuditEvent",
     "BusinessHours",
+    "CommunicationChannel",
+    "CommunicationConsent",
+    "CommunicationPreference",
+    "CommunicationSuppression",
+    "Conversation",
+    "ConversationAssignment",
+    "ConversationLink",
+    "ConversationStatusHistory",
     "Customer",
     "CustomerAddress",
     "CustomerConsent",
@@ -85,6 +114,7 @@ __all__ = [
     "Department",
     "DiningArea",
     "HolidayCalendar",
+    "InboundWebhookEvent",
     "InventoryBatch",
     "InventoryCategory",
     "InventoryItem",
@@ -93,10 +123,17 @@ __all__ = [
     "LeadActivity",
     "LeadFollowUp",
     "LeadStatusHistory",
+    "ManualCallLog",
     "MenuCategory",
+    "Message",
+    "MessageAttachment",
+    "MessageDeliveryAttempt",
+    "MessageStatusHistory",
+    "MessageTemplate",
     "Modifier",
     "ModifierGroup",
     "ModifierGroupItem",
+    "Notification",
     "Order",
     "OrderAssignment",
     "OrderCharge",
@@ -116,6 +153,7 @@ __all__ = [
     "ProductImage",
     "ProductModifierGroup",
     "ProductVariant",
+    "ProviderStatusEvent",
     "Recipe",
     "RecipeItem",
     "Reservation",
@@ -131,6 +169,7 @@ __all__ = [
     "RestaurantTable",
     "Role",
     "RolePermission",
+    "ScheduledMessage",
     "StaffInvitation",
     "StaffRole",
     "StaffUser",
@@ -148,6 +187,9 @@ __all__ = [
     "TableBlock",
     "TableStatusHistory",
     "Tag",
+    "TaskAssignment",
+    "TaskRecord",
+    "TaskStatusHistory",
     "UnitOfMeasure",
     "WastageRecord",
 ]

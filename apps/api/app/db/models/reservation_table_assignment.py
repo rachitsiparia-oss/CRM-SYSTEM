@@ -35,9 +35,7 @@ class ReservationTableAssignment(UUIDPrimaryKeyMixin, Base):
         ),
     )
 
-    reservation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("reservations.id"), nullable=False
-    )
+    reservation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reservations.id"), nullable=False)
     restaurant_table_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("restaurant_tables.id"), nullable=False
     )

@@ -36,9 +36,7 @@ class ReservationNote(UUIDPrimaryKeyMixin, Base):
         Index("ix_reservation_notes_reservation_id", "reservation_id"),
     )
 
-    reservation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("reservations.id"), nullable=False
-    )
+    reservation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reservations.id"), nullable=False)
     note_type: Mapped[str] = mapped_column(String(32), nullable=False, default="internal")
     content: Mapped[str] = mapped_column(Text, nullable=False)
     is_internal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
