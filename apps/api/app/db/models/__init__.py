@@ -1,3 +1,5 @@
+from app.db.models.attendance_correction import AttendanceCorrection
+from app.db.models.attendance_record import AttendanceRecord
 from app.db.models.audit_event import AuditEvent
 from app.db.models.business_hours import BusinessHours
 from app.db.models.communication_channel import CommunicationChannel
@@ -23,10 +25,22 @@ from app.db.models.inventory_batch import InventoryBatch
 from app.db.models.inventory_category import InventoryCategory
 from app.db.models.inventory_item import InventoryItem
 from app.db.models.job_record import JobRecord
+from app.db.models.knowledge_acknowledgement import KnowledgeAcknowledgement
+from app.db.models.knowledge_article import KnowledgeArticle
+from app.db.models.knowledge_article_relation import KnowledgeArticleRelation
+from app.db.models.knowledge_article_tag import KnowledgeArticleTag
+from app.db.models.knowledge_article_version import KnowledgeArticleVersion
+from app.db.models.knowledge_assignment import KnowledgeAssignment
+from app.db.models.knowledge_attachment import KnowledgeAttachment
+from app.db.models.knowledge_category import KnowledgeCategory
+from app.db.models.knowledge_review import KnowledgeReview
+from app.db.models.knowledge_visibility_rule import KnowledgeVisibilityRule
 from app.db.models.lead import Lead
 from app.db.models.lead_activity import LeadActivity
 from app.db.models.lead_follow_up import LeadFollowUp
 from app.db.models.lead_status_history import LeadStatusHistory
+from app.db.models.leave_request import LeaveRequest
+from app.db.models.leave_type import LeaveType
 from app.db.models.manual_call_log import ManualCallLog
 from app.db.models.menu_category import MenuCategory
 from app.db.models.message import Message
@@ -52,6 +66,8 @@ from app.db.models.order_status_history import OrderStatusHistory
 from app.db.models.order_tax import OrderTax
 from app.db.models.order_timeline import OrderTimeline
 from app.db.models.outbox_event import OutboxEvent
+from app.db.models.performance_review import PerformanceReview
+from app.db.models.performance_review_goal import PerformanceReviewGoal
 from app.db.models.permission import Permission
 from app.db.models.product import Product
 from app.db.models.product_image import ProductImage
@@ -73,8 +89,24 @@ from app.db.models.restaurant_table import RestaurantTable
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.scheduled_message import ScheduledMessage
+from app.db.models.shift_change_request import ShiftChangeRequest
+from app.db.models.shift_template import ShiftTemplate
+from app.db.models.skill import Skill
+from app.db.models.staff_availability_window import StaffAvailabilityWindow
+from app.db.models.staff_certification import StaffCertification
+from app.db.models.staff_disciplinary_record import StaffDisciplinaryRecord
+from app.db.models.staff_document import StaffDocument
+from app.db.models.staff_employment_profile import StaffEmploymentProfile
 from app.db.models.staff_invitation import StaffInvitation
+from app.db.models.staff_reporting_history import StaffReportingHistory
 from app.db.models.staff_role import StaffRole
+from app.db.models.staff_shift import StaffShift
+from app.db.models.staff_skill import StaffSkill
+from app.db.models.staff_status_history import StaffStatusHistory
+from app.db.models.staff_transition_plan import StaffTransitionPlan
+from app.db.models.staff_transition_step import StaffTransitionStep
+from app.db.models.staff_transition_template import StaffTransitionTemplate
+from app.db.models.staff_transition_template_step import StaffTransitionTemplateStep
 from app.db.models.staff_user import StaffUser
 from app.db.models.stock_adjustment import StockAdjustment
 from app.db.models.stock_balance import StockBalance
@@ -90,10 +122,15 @@ from app.db.models.tag import Tag
 from app.db.models.task_assignment import TaskAssignment
 from app.db.models.task_record import TaskRecord
 from app.db.models.task_status_history import TaskStatusHistory
+from app.db.models.training_assignment import TrainingAssignment
+from app.db.models.training_attempt import TrainingAttempt
+from app.db.models.training_course import TrainingCourse
 from app.db.models.unit_of_measure import UnitOfMeasure
 from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
+    "AttendanceCorrection",
+    "AttendanceRecord",
     "AuditEvent",
     "BusinessHours",
     "CommunicationChannel",
@@ -119,10 +156,22 @@ __all__ = [
     "InventoryCategory",
     "InventoryItem",
     "JobRecord",
+    "KnowledgeAcknowledgement",
+    "KnowledgeArticle",
+    "KnowledgeArticleRelation",
+    "KnowledgeArticleTag",
+    "KnowledgeArticleVersion",
+    "KnowledgeAssignment",
+    "KnowledgeAttachment",
+    "KnowledgeCategory",
+    "KnowledgeReview",
+    "KnowledgeVisibilityRule",
     "Lead",
     "LeadActivity",
     "LeadFollowUp",
     "LeadStatusHistory",
+    "LeaveRequest",
+    "LeaveType",
     "ManualCallLog",
     "MenuCategory",
     "Message",
@@ -148,6 +197,8 @@ __all__ = [
     "OrderTax",
     "OrderTimeline",
     "OutboxEvent",
+    "PerformanceReview",
+    "PerformanceReviewGoal",
     "Permission",
     "Product",
     "ProductImage",
@@ -170,8 +221,24 @@ __all__ = [
     "Role",
     "RolePermission",
     "ScheduledMessage",
+    "ShiftChangeRequest",
+    "ShiftTemplate",
+    "Skill",
+    "StaffAvailabilityWindow",
+    "StaffCertification",
+    "StaffDisciplinaryRecord",
+    "StaffDocument",
+    "StaffEmploymentProfile",
     "StaffInvitation",
+    "StaffReportingHistory",
     "StaffRole",
+    "StaffShift",
+    "StaffSkill",
+    "StaffStatusHistory",
+    "StaffTransitionPlan",
+    "StaffTransitionStep",
+    "StaffTransitionTemplate",
+    "StaffTransitionTemplateStep",
     "StaffUser",
     "StockAdjustment",
     "StockBalance",
@@ -190,6 +257,9 @@ __all__ = [
     "TaskAssignment",
     "TaskRecord",
     "TaskStatusHistory",
+    "TrainingAssignment",
+    "TrainingAttempt",
+    "TrainingCourse",
     "UnitOfMeasure",
     "WastageRecord",
 ]

@@ -8,10 +8,10 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 NOTIFICATION_PRIORITIES = ("low", "normal", "high", "urgent")
 
-# Polymorphic — same tradeoff as `TaskRecord.related_type`. Not restricted
-# to a closed list (unlike `TASK_RELATED_TYPES`): a notification's
-# `record_type` is stamped by whichever domain emits it, and new domains
-# will add new values over time without needing a schema change here.
+# Polymorphic — same tradeoff as `TaskRecord.related_type`. Widened in the
+# Phase 11 migration (`ALTER TABLE ... DROP/ADD CONSTRAINT`) when
+# `app.knowledge`/`app.staff_operations` started emitting notifications
+# with a stable back-reference (this phase's own instruction section 30).
 NOTIFICATION_RECORD_TYPES = (
     "reservation",
     "order",
@@ -20,6 +20,14 @@ NOTIFICATION_RECORD_TYPES = (
     "conversation",
     "task",
     "inventory_item",
+    "knowledge_article",
+    "staff_shift",
+    "leave_request",
+    "staff_certification",
+    "staff_document",
+    "performance_review",
+    "training_assignment",
+    "shift_change_request",
 )
 
 
