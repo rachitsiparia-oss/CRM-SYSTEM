@@ -1243,6 +1243,52 @@ Stores private storage path, filename, MIME type, size, scan status, and permiss
 
 Stores channel, provider template ID, language, category, active state, body structure, and version.
 
+### 12.5 Phase 10 implementation notes and deviations
+
+Phase 10's own explicit instruction gave a much larger functional scope than §12.1–§12.4 sketch — 23 numbered Communication Hub domains (unified conversations, message lifecycle, provider adapters, templates, consent/suppression, inbound/status webhooks, scheduling, business hours, analytics, and more), plus, per the user's own explicit choice after the instruction's scope was found to omit two of `PROJECT_PLAN.md`'s own Phase 10 scope bullets, the full Operational Tasks and Notifications Center scope in the same pass. Per `CLAUDE.md` §1.1, that combined instruction governs this deliverable's actual schema wherever it differs from what is documented above; every deviation actually shipped is recorded here.
+
+**21 tables, not the 4 named in §12.1–§12.4** (`communication_channels`, `conversations`, `conversation_status_history`, `conversation_assignments`, `conversation_links`, `messages`, `message_delivery_attempts`, `message_status_history`, `message_attachments`, `message_templates`, `scheduled_messages`, `communication_preferences`, `communication_consents`, `communication_suppressions`, `inbound_webhook_events`, `provider_status_events`, `manual_call_logs`, `task_records`, `task_assignments`, `task_status_history`, `notifications`), all with RLS enabled, in one migration (`0ad5d0f1ece4_add_phase10_communication_hub_tasks_and_`). `notifications` replaces (not extends in a separate table) the sketch already at DATABASE_AND_API.md §16.4 — see below.
+
+**`Message.delivery_status` carries both the outbound and inbound lifecycles the instruction itself documents separately** (outbound: `draft`/`queued`/`processing`/`sent`/`delivered`/`read`/`failed`/`cancelled`/`suppressed`; inbound: `received`/`processed`/`assigned`/`replied`/`resolved`/`spam`; internal notes: `created`) — the same collapse `Reservation.status` made of its own two documented columns in Phase 9. Which subset is valid for a given row is enforced by `app.communications.states`, keyed on `direction`, not by a second column; the transition graph itself is the "no regression on an out-of-order webhook" guarantee the instruction requires (`delivered` has no edge back to `queued`, `read` has no edge back to `delivered`, etc.).
+
+**No stored `conversation_timeline_events` table** — the conversation timeline the instruction names is a read-time union over `messages` + `conversation_status_history` + `conversation_assignments` (`app.communications.service.get_conversation_timeline`), the same read-time-aggregation-over-existing-tables pattern Phase 9's Customer-360 reservation statistics established, rather than a fourth dual-written ledger.
+
+**No `message_template_versions` table** — `MessageTemplate.version` (from the standard `AuditedMixin`) is optimistic concurrency only. A template edit does not need its own historical row because every message a template ever produced keeps its own rendered snapshot (`Message.body_text` + `Message.rendered_template_variables`), which is what the instruction's own auditability requirement ("store the rendered content actually sent") actually needs.
+
+**`ConversationLink` is polymorphic** (`linked_type` IN `reservation`/`order`/`waitlist_entry`/`feedback_case`, `linked_id` with no FK) rather than a set of nullable FK columns on `Conversation` — a conversation can accumulate links to more than one order over its life (a repeat customer messaging about a second order in the same thread), which a single `order_id` column cannot represent. `TaskRecord.related_type`/`related_id` make the identical tradeoff for the same reason.
+
+**`communication_channels` folds provider configuration into the channel row itself** — no separate `communication_provider_configs` table exists. Provider selection, sender identity, rate limits, template requirement, business-hours restriction, and a self-referencing `fallback_channel_id` are all columns on `communication_channels`; no provider secret is ever stored there (CLAUDE.md §16) — real credentials live only in environment configuration, referenced by a `provider_config_key` string.
+
+**Operational Tasks recurrence is embedded, not a `task_recurrence_rules` table** — `TaskRecord.is_recurring_template`/`recurrence_rule` (JSONB: frequency/interval/days-of-week/end-date)/`parent_task_id`/`next_occurrence_generated_at` on the same table. A recurring task is a template row that `app.tasks.service.generate_due_recurring_tasks` reads and spawns dated instances from (each instance idempotency-keyed `{template_id}:{due_date}` so re-invoking the generator never double-spawns), which needs no independent lifecycle of its own.
+
+**`notifications` extends, not replaces, the existing §16.4 sketch** — added `priority`, `dismissed_at`, `actioned_at`, and a `dedup_key` whose partial unique index is the DB-level enforcement of "avoid generating duplicate notifications for repeated events." No `notification_preferences` table was built in this phase — every staff member sees notifications relevant to their own assignments by default; per-user muting is deferred, not hidden.
+
+**A real SQLAlchemy JSONB gotcha, caught by a model-constraint test and fixed**: SQLAlchemy's `JSON`/`JSONB` column type defaults to `none_as_null=False`, meaning a Python `None` assigned to a nullable JSONB column is stored as a JSON `null` *value*, not SQL `NULL` — so `recurrence_rule IS NOT NULL` was silently `TRUE` even for a non-recurring task, defeating the `recurring_template_requires_rule` CHECK constraint's protection for the one case it exists to catch (a recurring template created with no rule). Fixed by setting `JSONB(none_as_null=True)` on `TaskRecord.recurrence_rule`, `Message.rendered_template_variables`, and `ScheduledMessage.template_variables` — a Python-side SQLAlchemy behavior flag, not a DDL/migration change.
+
+**A migration-generation tooling bug, caught by the seed script and fixed before this phase was considered complete**: the first pass at wrapping ruff's 100-character line limit for long multi-value `CHECK` constraint strings used a custom line-splitting script that dropped the separating `", "` at several line-wrap boundaries, silently merging two enum values into one malformed array element (e.g. `'web_chat''manual_call'` instead of `'web_chat', 'manual_call'`) in the generated migration — a real correctness bug that would have quietly narrowed several CHECK constraints' accepted value sets. Caught when seeding `communication_channels` raised `CheckViolation` for a legitimately-valid `web_chat` code. The migration was regenerated from a clean `alembic revision --autogenerate` and the still-too-long lines were resolved with trailing `# noqa: E501` comments instead of any further string manipulation.
+
+**Provider abstraction ships with exactly one adapter, `InternalMockProvider`** — `app.communications.providers.ProviderAdapter` defines the stable capability surface (send text/template, parse inbound/status webhook, validate signature); no real WhatsApp Cloud API/Twilio/SendGrid adapter exists, matching `docs/TOOLS.md` §10's "final provider approval required" status and this project's own earlier env-var research (no provider chosen, no environment variable names locked in). Every seeded `communication_channels` row's `provider` is `internal_mock`. Registering a real provider later means adding one adapter class and a `provider` value on the channel row — no change to any caller of `send_text`/`parse_inbound_webhook`/etc.
+
+**Permissions:** replaces the Phase 3 placeholder pair (`communications.view`/`.send`) with 21 explicit codes (not kept as aliases, the same treatment every prior phase gave its own Phase 3 placeholders), and adds 8 new `tasks.*` codes and 1 new `notifications.manage` code — none of which existed as placeholders anywhere.
+
+**Not built in this phase (deferred, not hidden):** no automated recurring/timed invocation of `app.communications.scheduling.process_due_scheduled_messages` or `app.communications.integrations.process_pending_communication_events` exists — both are real, tested, idempotent processing functions a future `apps/worker` ARQ schedule can call, but nothing currently invokes them on a timer. This is intentional: `CLAUDE.md` §14's "engine, not scheduler" principle means this phase provides the deterministic mechanism, not the automatic trigger — the same split Phase 9 left for reservation reminder dispatch, and Phase 15 ("Integrations, Automations, Jobs, and Realtime") is where the worker schedule itself is built. No real provider credentials, no per-staff notification preferences/muting, and no authenticated Playwright coverage (the same limitation every phase since 5 has documented — no test Supabase session).
+
+**Manual verification checklist (authenticated workflows, for when a test Supabase session/`storageState` fixture exists):**
+
+1. Sign in and confirm "Communication Hub" appears in the sidebar with its eleven children.
+2. `/communications` — dashboard KPI cards render real numbers matching the seeded data.
+3. `/communications/inbox` — start a new conversation with an opening message; confirm it appears with an outbound "sent" message (the mock provider accepts every send).
+4. Open the conversation, reply with a template selected, and confirm the rendered variables appear correctly; add an internal note and confirm it never appears with an external recipient.
+5. Assign the conversation to another staff member and change its priority; confirm both persist and appear in the timeline.
+6. Move the conversation through `waiting_on_staff` → `resolved` → `closed`; confirm `reopen` is required to leave `closed` and that an invalid direct transition (e.g. `open` → `closed`) is rejected with 409.
+7. `/communications/templates` — create a template referencing an undeclared variable and confirm it is rejected; preview an existing template and confirm the rendered output.
+8. `/communications/suppressions` — add a phone number as suppressed, then send a message to that number from a conversation and confirm the message ends in `suppressed` status rather than `sent`.
+9. `/communications/preferences` — search for a seeded customer, toggle `do_not_contact`, and confirm a subsequent send attempt is suppressed for that reason.
+10. `/communications/channels` — disable a channel's outbound toggle and confirm sends against it are blocked.
+11. `/communications/tasks` — create a task, assign it, and step it through `open` → `in_progress` → `blocked` (confirm a reason is required) → `in_progress` → `completed`; confirm `tasks.complete`/`tasks.delete` are enforced for a role without them.
+12. `/communications/notifications` — confirm a notification created by a task assignment appears, can be marked read/dismissed, and that "mark all read" clears the unread count.
+13. Sign in as a role without `communications.resolve` (e.g. `kitchen_staff`) and confirm resolve/close actions are unavailable and the API returns 403 if called directly.
+
 ## 13. KNOWLEDGE BASE
 
 ### 13.1 `knowledge_folders`
@@ -1396,6 +1442,8 @@ Seed dummy recipients must match `PROJECT_PLAN.md` and remain configurable:
 Stores requester, export type, filters, status, private file path, expiry, row count, failure reason, and audit metadata.
 
 ### 16.4 `notifications`
+
+Shipped in Phase 10 with the extensions (`priority`, `dismissed_at`, `actioned_at`, `dedup_key`) recorded in §12.5 — this sketch remains the base shape.
 
 - `id UUID PRIMARY KEY`
 - `recipient_staff_id UUID NOT NULL REFERENCES staff_users(id)`
