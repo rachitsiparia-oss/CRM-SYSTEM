@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { CommunicationDashboard } from "./communication-dashboard";
+import { NotificationsView } from "./notifications-view";
 
 export default function Page() {
   return (
     <PermissionGate permission="communications.view">
-      <CommunicationDashboard />
+      <NotificationsView />
     </PermissionGate>
   );
 }

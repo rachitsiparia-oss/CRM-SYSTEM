@@ -1,10 +1,10 @@
 import { PermissionGate } from "@/components/permission-gate";
-import { CommunicationDashboard } from "./communication-dashboard";
+import { ScheduledView } from "./scheduled-view";
 
 export default function Page() {
   return (
     <PermissionGate permission="communications.view">
-      <CommunicationDashboard />
+      <ScheduledView />
     </PermissionGate>
   );
 }
