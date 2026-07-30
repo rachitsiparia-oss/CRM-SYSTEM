@@ -2071,3 +2071,531 @@ export interface ReservationDashboardStats {
   dining_area_utilization: Record<string, number>;
   table_utilization: Record<string, number>;
 }
+
+// --- Phase 10: Communication Hub ---------------------------------------------
+
+export type ConversationStatus =
+  | "open"
+  | "pending"
+  | "waiting_on_customer"
+  | "waiting_on_staff"
+  | "snoozed"
+  | "resolved"
+  | "closed"
+  | "spam";
+export type ConversationPriority = "low" | "normal" | "high" | "urgent";
+export type MessageDirection = "inbound" | "outbound" | "internal";
+export type MessageType =
+  | "text"
+  | "email"
+  | "sms"
+  | "whatsapp"
+  | "system_event"
+  | "template"
+  | "internal_note"
+  | "attachment"
+  | "reservation_update"
+  | "order_update"
+  | "feedback_request";
+export type TemplateCategory =
+  | "reservation_confirmation"
+  | "reservation_reminder"
+  | "reservation_cancellation"
+  | "reservation_modification"
+  | "waitlist_update"
+  | "table_ready"
+  | "order_confirmation"
+  | "order_ready"
+  | "order_cancellation"
+  | "feedback_request"
+  | "lead_follow_up"
+  | "birthday"
+  | "anniversary"
+  | "general";
+export type TemplateStatus = "draft" | "active" | "archived";
+export type ScheduledMessagePurpose =
+  | "reservation_reminder"
+  | "feedback_request"
+  | "lead_follow_up"
+  | "manual";
+export type ScheduledMessageStatus = "scheduled" | "processing" | "sent" | "cancelled" | "failed";
+export type SuppressionDestinationType = "email" | "phone";
+export type SuppressionReason =
+  | "hard_bounce"
+  | "spam_complaint"
+  | "invalid_destination"
+  | "manual_block"
+  | "customer_request"
+  | "unsubscribed";
+export type SuppressionScope = "all" | "promotional_only";
+export type CallDirection = "inbound" | "outbound";
+export type CallOutcome = "connected" | "no_answer" | "voicemail" | "busy" | "wrong_number" | "other";
+
+export interface CommunicationChannel {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  provider: string | null;
+  default_sender_identity: string | null;
+  is_enabled: boolean;
+  inbound_enabled: boolean;
+  outbound_enabled: boolean;
+  requires_template: boolean;
+  business_hours_restricted: boolean;
+  rate_limit_per_minute: number | null;
+  fallback_channel_id: string | null;
+  sort_order: number;
+}
+
+export interface CommunicationChannelUpdateInput {
+  is_enabled?: boolean;
+  inbound_enabled?: boolean;
+  outbound_enabled?: boolean;
+  default_sender_identity?: string | null;
+  rate_limit_per_minute?: number | null;
+  fallback_channel_id?: string | null;
+}
+
+export interface ConversationCreateInput {
+  channel_id: string;
+  customer_id?: string | null;
+  lead_id?: string | null;
+  guest_name?: string | null;
+  phone_e164?: string | null;
+  email?: string | null;
+  subject?: string | null;
+  priority?: ConversationPriority;
+  initial_message_body?: string | null;
+}
+
+export interface ConversationTransitionInput {
+  target_status: ConversationStatus;
+  reason?: string | null;
+  snoozed_until?: string | null;
+  spam_reason?: string | null;
+}
+
+export interface ConversationAssignInput {
+  assignee_id?: string | null;
+  reason?: string | null;
+}
+
+export interface ConversationPriorityInput {
+  priority: ConversationPriority;
+}
+
+export interface Conversation {
+  id: string;
+  conversation_number: string;
+  channel_id: string;
+  customer_id: string | null;
+  lead_id: string | null;
+  guest_name: string | null;
+  phone_e164: string | null;
+  email: string | null;
+  subject: string | null;
+  status: ConversationStatus;
+  priority: ConversationPriority;
+  source: string;
+  assigned_staff_id: string | null;
+  last_inbound_at: string | null;
+  last_outbound_at: string | null;
+  last_activity_at: string | null;
+  first_response_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  snoozed_until: string | null;
+  unread_count: number;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessageCreateInput {
+  body_text?: string | null;
+  subject?: string | null;
+  message_type?: MessageType;
+  template_id?: string | null;
+  template_variables?: Record<string, unknown> | null;
+  recipient_reference?: string | null;
+  idempotency_key: string;
+}
+
+export interface InternalNoteCreateInput {
+  body_text: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  channel_id: string;
+  direction: MessageDirection;
+  message_type: MessageType;
+  sender_reference: string | null;
+  recipient_reference: string | null;
+  subject: string | null;
+  body_text: string | null;
+  template_id: string | null;
+  provider_message_id: string | null;
+  reply_to_message_id: string | null;
+  delivery_status: string;
+  failure_code: string | null;
+  failure_reason: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
+  received_at: string | null;
+  retry_count: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface MessageAttachment {
+  id: string;
+  message_id: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  upload_status: string;
+  scan_status: string;
+  created_at: string;
+}
+
+export interface ConversationTimelineEntry {
+  entry_type: "message" | "status_change" | "assignment_change";
+  occurred_at: string;
+  payload: Record<string, unknown>;
+}
+
+export interface MessageTemplateCreateInput {
+  name: string;
+  code: string;
+  channel_id: string;
+  category: TemplateCategory;
+  language?: string;
+  subject?: string | null;
+  body: string;
+  variables?: string[];
+  is_transactional?: boolean;
+  effective_from?: string | null;
+  effective_to?: string | null;
+}
+
+export interface MessageTemplateUpdateInput {
+  name?: string;
+  subject?: string | null;
+  body?: string;
+  variables?: string[];
+  status?: TemplateStatus;
+  is_transactional?: boolean;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  version: number;
+}
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  code: string;
+  channel_id: string;
+  category: TemplateCategory;
+  language: string;
+  subject: string | null;
+  body: string;
+  variables: string[];
+  status: TemplateStatus;
+  provider_template_id: string | null;
+  is_transactional: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplatePreviewInput {
+  variables: Record<string, unknown>;
+}
+
+export interface TemplatePreviewOutput {
+  subject: string | null;
+  body: string;
+}
+
+export interface ScheduledMessageCreateInput {
+  purpose: ScheduledMessagePurpose;
+  template_id?: string | null;
+  conversation_id?: string | null;
+  customer_id?: string | null;
+  lead_id?: string | null;
+  channel_id: string;
+  recipient_reference: string;
+  scheduled_for: string;
+  timezone?: string;
+  template_variables?: Record<string, unknown> | null;
+  idempotency_key: string;
+}
+
+export interface ScheduledMessage {
+  id: string;
+  purpose: ScheduledMessagePurpose;
+  template_id: string | null;
+  conversation_id: string | null;
+  customer_id: string | null;
+  lead_id: string | null;
+  channel_id: string;
+  recipient_reference: string;
+  scheduled_for: string;
+  timezone: string;
+  status: ScheduledMessageStatus;
+  cancelled_at: string | null;
+  attempt_count: number;
+  last_error: string | null;
+  result_message_id: string | null;
+  created_at: string;
+}
+
+export interface CommunicationPreferenceUpdateInput {
+  preferred_channel_id?: string | null;
+  allow_transactional_email?: boolean;
+  allow_transactional_sms?: boolean;
+  allow_transactional_whatsapp?: boolean;
+  allow_promotional_email?: boolean;
+  allow_promotional_sms?: boolean;
+  allow_promotional_whatsapp?: boolean;
+  do_not_contact?: boolean;
+  quiet_hours_start?: string | null;
+  quiet_hours_end?: string | null;
+  language_preference?: string;
+}
+
+export interface CommunicationPreference {
+  id: string;
+  customer_id: string;
+  preferred_channel_id: string | null;
+  allow_transactional_email: boolean;
+  allow_transactional_sms: boolean;
+  allow_transactional_whatsapp: boolean;
+  allow_promotional_email: boolean;
+  allow_promotional_sms: boolean;
+  allow_promotional_whatsapp: boolean;
+  do_not_contact: boolean;
+  quiet_hours_start: string | null;
+  quiet_hours_end: string | null;
+  language_preference: string;
+}
+
+export interface CommunicationConsentCreateInput {
+  customer_id: string;
+  consent_type: string;
+  consent_given: boolean;
+  source: string;
+  consent_version?: string | null;
+}
+
+export interface CommunicationConsent {
+  id: string;
+  customer_id: string;
+  consent_type: string;
+  consent_given: boolean;
+  source: string;
+  consent_version: string | null;
+  actor_id: string | null;
+  created_at: string;
+}
+
+export interface CommunicationSuppressionCreateInput {
+  destination_type: SuppressionDestinationType;
+  destination_value: string;
+  reason: SuppressionReason;
+  scope?: SuppressionScope;
+  suppressed_until?: string | null;
+  customer_id?: string | null;
+  notes?: string | null;
+}
+
+export interface CommunicationSuppression {
+  id: string;
+  destination_type: SuppressionDestinationType;
+  destination_value: string;
+  reason: SuppressionReason;
+  scope: SuppressionScope;
+  suppressed_until: string | null;
+  is_active: boolean;
+  customer_id: string | null;
+  notes: string | null;
+  lifted_at: string | null;
+  created_at: string;
+}
+
+export interface ManualCallLogCreateInput {
+  customer_id?: string | null;
+  lead_id?: string | null;
+  conversation_id?: string | null;
+  direction: CallDirection;
+  started_at: string;
+  ended_at?: string | null;
+  outcome: CallOutcome;
+  notes?: string | null;
+  follow_up_required?: boolean;
+  related_reservation_id?: string | null;
+  related_order_id?: string | null;
+}
+
+export interface ManualCallLog {
+  id: string;
+  customer_id: string | null;
+  lead_id: string | null;
+  conversation_id: string | null;
+  staff_user_id: string;
+  direction: CallDirection;
+  started_at: string;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  outcome: CallOutcome;
+  notes: string | null;
+  follow_up_required: boolean;
+  created_at: string;
+}
+
+export interface CommunicationAnalytics {
+  open_conversations: number;
+  unread_conversations: number;
+  waiting_on_staff: number;
+  waiting_on_customer: number;
+  resolved_today: number;
+  average_first_response_seconds: number | null;
+  average_resolution_seconds: number | null;
+  messages_by_channel: Record<string, number>;
+  inbound_count: number;
+  outbound_count: number;
+  delivery_rate: number | null;
+  failure_rate: number | null;
+  suppression_count: number;
+}
+
+export interface CustomerCommunicationStats {
+  open_conversation_count: number;
+  total_inbound_messages: number;
+  total_outbound_messages: number;
+  last_contact_at: string | null;
+  preferred_channel_id: string | null;
+  average_response_seconds: number | null;
+  unresolved_conversation_count: number;
+}
+
+// --- Phase 10: Operational Tasks ---------------------------------------------
+
+export type TaskSource =
+  | "manual"
+  | "reservation_followup"
+  | "order_issue"
+  | "lead_followup"
+  | "inventory_alert"
+  | "system"
+  | "recurring";
+export type TaskPriority = "low" | "normal" | "high" | "urgent";
+export type TaskStatus = "open" | "in_progress" | "blocked" | "completed" | "cancelled";
+export type TaskRelatedType =
+  | "customer"
+  | "lead"
+  | "order"
+  | "reservation"
+  | "conversation"
+  | "inventory_item";
+
+export interface RecurrenceRule {
+  frequency: "daily" | "weekly" | "monthly";
+  interval?: number;
+  days_of_week?: number[] | null;
+  end_date?: string | null;
+}
+
+export interface TaskCreateInput {
+  title: string;
+  description?: string | null;
+  source?: TaskSource;
+  priority?: TaskPriority;
+  due_at?: string | null;
+  assigned_staff_id?: string | null;
+  assigned_department_id?: string | null;
+  related_type?: TaskRelatedType | null;
+  related_id?: string | null;
+  is_recurring_template?: boolean;
+  recurrence_rule?: RecurrenceRule | null;
+  idempotency_key?: string | null;
+}
+
+export interface TaskUpdateInput {
+  title?: string;
+  description?: string | null;
+  priority?: TaskPriority;
+  due_at?: string | null;
+  version: number;
+}
+
+export interface TaskTransitionInput {
+  target_status: TaskStatus;
+  reason?: string | null;
+  completion_notes?: string | null;
+  blocked_reason?: string | null;
+}
+
+export interface TaskAssignInput {
+  assigned_staff_id?: string | null;
+  assigned_department_id?: string | null;
+  reason?: string | null;
+}
+
+export interface Task {
+  id: string;
+  task_number: string;
+  title: string;
+  description: string | null;
+  source: TaskSource;
+  priority: TaskPriority;
+  status: TaskStatus;
+  due_at: string | null;
+  assigned_staff_id: string | null;
+  assigned_department_id: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
+  completion_notes: string | null;
+  blocked_reason: string | null;
+  related_type: TaskRelatedType | null;
+  related_id: string | null;
+  is_recurring_template: boolean;
+  recurrence_rule: RecurrenceRule | null;
+  parent_task_id: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Phase 10: Notifications --------------------------------------------------
+
+export type NotificationPriority = "low" | "normal" | "high" | "urgent";
+
+export interface Notification {
+  id: string;
+  recipient_staff_id: string;
+  notification_type: string;
+  title: string;
+  body: string | null;
+  priority: NotificationPriority;
+  record_type: string | null;
+  record_id: string | null;
+  read_at: string | null;
+  dismissed_at: string | null;
+  actioned_at: string | null;
+  created_at: string;
+}
+
+export interface NotificationBroadcastInput {
+  recipient_staff_ids: string[];
+  title: string;
+  body?: string | null;
+  priority?: NotificationPriority;
+}
