@@ -1,18 +1,24 @@
 import type {
   AdjustmentDirection,
   BatchStatus,
+  ConversationPriority,
+  ConversationStatus,
   CountStatus,
   CustomerStatus,
   FollowUpStatus,
   FoodType,
   LeadPriority,
   LeadStatus,
+  NotificationPriority,
   OrderStatus,
   PaymentStatus,
   ReceiptStatus,
   ReservationStatus,
+  ScheduledMessageStatus,
   StockStatus,
   TableStatus,
+  TaskPriority,
+  TaskStatus,
   TransferStatus,
   WaitlistStatus,
 } from "@rkpr/contracts";
@@ -230,6 +236,56 @@ export const WAITLIST_STATUS_TONES: Record<WaitlistStatus, StatusTone> = {
   promoted: "success",
   cancelled: "neutral",
   expired: "neutral",
+};
+
+// --- Phase 10: Communication Hub, Operational Tasks & Notifications ---
+
+export const CONVERSATION_STATUS_TONES: Record<ConversationStatus, StatusTone> = {
+  open: "info",
+  pending: "warning",
+  waiting_on_customer: "warning",
+  waiting_on_staff: "danger",
+  snoozed: "neutral",
+  resolved: "success",
+  closed: "neutral",
+  spam: "neutral",
+};
+
+export const CONVERSATION_PRIORITY_TONES: Record<ConversationPriority, StatusTone> = {
+  low: "neutral",
+  normal: "info",
+  high: "warning",
+  urgent: "danger",
+};
+
+export const SCHEDULED_MESSAGE_STATUS_TONES: Record<ScheduledMessageStatus, StatusTone> = {
+  scheduled: "info",
+  processing: "warning",
+  sent: "success",
+  cancelled: "neutral",
+  failed: "danger",
+};
+
+export const TASK_STATUS_TONES: Record<TaskStatus, StatusTone> = {
+  open: "info",
+  in_progress: "warning",
+  blocked: "danger",
+  completed: "success",
+  cancelled: "neutral",
+};
+
+export const TASK_PRIORITY_TONES: Record<TaskPriority, StatusTone> = {
+  low: "neutral",
+  normal: "info",
+  high: "warning",
+  urgent: "danger",
+};
+
+export const NOTIFICATION_PRIORITY_TONES: Record<NotificationPriority, StatusTone> = {
+  low: "neutral",
+  normal: "info",
+  high: "warning",
+  urgent: "danger",
 };
 
 /** Reservation `start_time`/`end_time` arrive as "HH:MM:SS" (no date, no
