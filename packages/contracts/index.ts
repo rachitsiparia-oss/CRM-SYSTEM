@@ -2599,3 +2599,839 @@ export interface NotificationBroadcastInput {
   body?: string | null;
   priority?: NotificationPriority;
 }
+
+// --- Phase 11: Knowledge Base -------------------------------------------------
+
+export type ArticleType =
+  | "sop"
+  | "policy"
+  | "procedure"
+  | "checklist"
+  | "guide"
+  | "troubleshooting"
+  | "training_material"
+  | "emergency_instruction"
+  | "announcement";
+export type ArticleStatus =
+  | "draft"
+  | "in_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "superseded"
+  | "archived";
+export type VisibilityScope =
+  | "all_staff"
+  | "department"
+  | "role"
+  | "specific_staff"
+  | "management_only"
+  | "hr_only"
+  | "kitchen_only"
+  | "front_of_house_only";
+export type KnowledgeRelatedType =
+  | "knowledge_article"
+  | "menu_item"
+  | "inventory_item"
+  | "reservation_policy"
+  | "order_workflow"
+  | "training_course"
+  | "operational_task";
+export type KnowledgeAssigneeType = "staff" | "department" | "role";
+
+export interface KnowledgeCategory {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  code: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KnowledgeCategoryCreateInput {
+  name: string;
+  code: string;
+  description?: string | null;
+  parent_id?: string | null;
+  sort_order?: number;
+}
+
+export interface KnowledgeCategoryUpdateInput {
+  name?: string;
+  description?: string | null;
+  parent_id?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  version: number;
+}
+
+export interface KnowledgeArticle {
+  id: string;
+  article_number: string;
+  title: string;
+  summary: string | null;
+  content: string;
+  article_type: ArticleType;
+  category_id: string | null;
+  owner_staff_id: string | null;
+  department_id: string | null;
+  visibility_scope: VisibilityScope;
+  status: ArticleStatus;
+  latest_version_number: number;
+  published_version_id: string | null;
+  effective_at: string | null;
+  review_at: string | null;
+  expiry_at: string | null;
+  estimated_reading_minutes: number | null;
+  requires_acknowledgement: boolean;
+  requires_training: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KnowledgeArticleCreateInput {
+  title: string;
+  summary?: string | null;
+  content: string;
+  article_type: ArticleType;
+  category_id?: string | null;
+  owner_staff_id?: string | null;
+  department_id?: string | null;
+  visibility_scope?: VisibilityScope;
+  effective_at?: string | null;
+  review_at?: string | null;
+  expiry_at?: string | null;
+  estimated_reading_minutes?: number | null;
+  requires_acknowledgement?: boolean;
+  requires_training?: boolean;
+}
+
+export interface KnowledgeArticleUpdateInput {
+  title?: string;
+  summary?: string | null;
+  content?: string;
+  category_id?: string | null;
+  owner_staff_id?: string | null;
+  department_id?: string | null;
+  visibility_scope?: VisibilityScope;
+  effective_at?: string | null;
+  review_at?: string | null;
+  expiry_at?: string | null;
+  estimated_reading_minutes?: number | null;
+  requires_acknowledgement?: boolean;
+  requires_training?: boolean;
+  version: number;
+}
+
+export interface KnowledgeArticleTransitionInput {
+  target_status: ArticleStatus;
+  comment?: string | null;
+}
+
+export interface KnowledgeArticleVersion {
+  id: string;
+  article_id: string;
+  version_number: number;
+  title_snapshot: string;
+  summary_snapshot: string | null;
+  content_snapshot: string;
+  change_summary: string | null;
+  author_id: string | null;
+  reviewer_id: string | null;
+  submitted_at: string;
+  approved_at: string | null;
+  published_at: string | null;
+  effective_at: string | null;
+  superseded_at: string | null;
+  created_at: string;
+}
+
+export interface KnowledgeReview {
+  id: string;
+  article_id: string;
+  version_id: string;
+  action: string;
+  actor_id: string;
+  comment: string | null;
+  created_at: string;
+}
+
+export interface KnowledgeRelation {
+  id: string;
+  article_id: string;
+  related_type: KnowledgeRelatedType;
+  related_id: string;
+  relation_note: string | null;
+  created_at: string;
+}
+
+export interface KnowledgeRelationCreateInput {
+  related_type: KnowledgeRelatedType;
+  related_id: string;
+  relation_note?: string | null;
+}
+
+export interface KnowledgeVisibilityRule {
+  id: string;
+  article_id: string;
+  rule_type: "department" | "role" | "staff";
+  department_id: string | null;
+  role_id: string | null;
+  staff_id: string | null;
+}
+
+export interface KnowledgeVisibilityRuleCreateInput {
+  rule_type: "department" | "role" | "staff";
+  department_id?: string | null;
+  role_id?: string | null;
+  staff_id?: string | null;
+}
+
+export interface KnowledgeAttachment {
+  id: string;
+  article_id: string;
+  version_id: string | null;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  upload_status: string;
+  scan_status: string;
+  created_at: string;
+}
+
+export interface KnowledgeAssignment {
+  id: string;
+  article_id: string;
+  version_id: string | null;
+  assignee_type: KnowledgeAssigneeType;
+  staff_id: string | null;
+  department_id: string | null;
+  role_id: string | null;
+  due_at: string | null;
+  is_mandatory: boolean;
+  reason: string | null;
+  assigned_by: string | null;
+  status: "active" | "completed" | "cancelled";
+  created_at: string;
+}
+
+export interface KnowledgeAssignmentCreateInput {
+  version_id?: string | null;
+  assignee_type: KnowledgeAssigneeType;
+  staff_id?: string | null;
+  department_id?: string | null;
+  role_id?: string | null;
+  due_at?: string | null;
+  is_mandatory?: boolean;
+  reason?: string | null;
+}
+
+export interface KnowledgeAcknowledgement {
+  id: string;
+  article_id: string;
+  version_id: string;
+  staff_id: string;
+  first_opened_at: string | null;
+  last_opened_at: string | null;
+  open_count: number;
+  acknowledged_at: string | null;
+  due_at: string | null;
+  revoked_at: string | null;
+}
+
+export interface KnowledgeAnalytics {
+  published_articles: number;
+  drafts_awaiting_review: number;
+  articles_due_for_review: number;
+  expired_articles: number;
+  mandatory_acknowledgements_completed: number;
+  mandatory_acknowledgements_overdue: number;
+  most_viewed_articles: Array<{ article_id: string; title: string; open_count: number }>;
+}
+
+// --- Phase 11: Staff Operations -------------------------------------------------
+
+export type LifecycleStatus =
+  | "invited"
+  | "onboarding"
+  | "active"
+  | "on_leave"
+  | "suspended"
+  | "notice_period"
+  | "inactive"
+  | "terminated";
+export type StaffDocumentType =
+  | "identity_proof"
+  | "address_proof"
+  | "offer_letter"
+  | "employment_contract"
+  | "policy_acknowledgement"
+  | "food_safety_certificate"
+  | "medical_fitness_certificate"
+  | "training_certificate"
+  | "experience_letter"
+  | "exit_document"
+  | "other";
+export type TransitionType = "onboarding" | "offboarding";
+export type ShiftStatus = "scheduled" | "published" | "completed" | "cancelled" | "no_show";
+export type ShiftChangeRequestType = "swap" | "cover" | "change";
+export type AttendanceStatus =
+  | "present"
+  | "absent"
+  | "late"
+  | "half_day"
+  | "on_leave"
+  | "weekly_off"
+  | "holiday"
+  | "missed_punch";
+export type LeaveStatus = "draft" | "submitted" | "approved" | "rejected" | "cancelled" | "withdrawn";
+export type TrainingAssignmentStatus =
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "overdue"
+  | "waived"
+  | "cancelled";
+export type ProficiencyLevel = "beginner" | "intermediate" | "advanced" | "expert";
+export type PerformanceReviewStatus =
+  | "draft"
+  | "in_progress"
+  | "submitted"
+  | "reviewed"
+  | "finalized"
+  | "acknowledged";
+export type DisciplinarySeverity = "minor" | "moderate" | "severe";
+export type AvailabilityType = "available" | "unavailable" | "preferred";
+
+export interface EmploymentProfile {
+  id: string;
+  staff_user_id: string;
+  lifecycle_status: LifecycleStatus;
+  reporting_manager_id: string | null;
+  secondary_supervisor_id: string | null;
+  work_location: string | null;
+  default_shift_template_id: string | null;
+  joining_date: string;
+  probation_end_date: string | null;
+  confirmation_date: string | null;
+  last_working_date: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
+  uniform_size: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmploymentProfileSensitive extends EmploymentProfile {
+  address_line1: string | null;
+  address_line2: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_postal_code: string | null;
+  restricted_notes: string | null;
+}
+
+export interface EmploymentProfileCreateInput {
+  staff_user_id: string;
+  joining_date: string;
+  reporting_manager_id?: string | null;
+  secondary_supervisor_id?: string | null;
+  work_location?: string | null;
+  default_shift_template_id?: string | null;
+  probation_end_date?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relation?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_postal_code?: string | null;
+  uniform_size?: string | null;
+}
+
+export interface EmploymentProfileUpdateInput {
+  reporting_manager_id?: string | null;
+  secondary_supervisor_id?: string | null;
+  work_location?: string | null;
+  default_shift_template_id?: string | null;
+  probation_end_date?: string | null;
+  confirmation_date?: string | null;
+  last_working_date?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  emergency_contact_relation?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_postal_code?: string | null;
+  uniform_size?: string | null;
+  restricted_notes?: string | null;
+  version: number;
+}
+
+export interface LifecycleTransitionInput {
+  target_status: LifecycleStatus;
+  reason?: string | null;
+}
+
+export interface StaffDocument {
+  id: string;
+  staff_user_id: string;
+  document_type: StaffDocumentType;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  issue_date: string | null;
+  expiry_date: string | null;
+  verification_status: "pending" | "verified" | "rejected" | "expired";
+  verified_by: string | null;
+  verified_at: string | null;
+  reminder_eligible: boolean;
+  created_at: string;
+}
+
+export interface TransitionTemplate {
+  id: string;
+  transition_type: TransitionType;
+  name: string;
+  department_id: string | null;
+  role_id: string | null;
+  is_active: boolean;
+}
+
+export interface TransitionTemplateCreateInput {
+  transition_type: TransitionType;
+  name: string;
+  department_id?: string | null;
+  role_id?: string | null;
+}
+
+export interface TransitionTemplateStepCreateInput {
+  step_order: number;
+  title: string;
+  description?: string | null;
+  step_type: string;
+  depends_on_step_id?: string | null;
+  requires_approval?: boolean;
+  related_knowledge_article_id?: string | null;
+}
+
+export interface TransitionPlan {
+  id: string;
+  staff_user_id: string;
+  template_id: string | null;
+  transition_type: TransitionType;
+  status: "in_progress" | "completed" | "cancelled";
+  started_at: string;
+  completed_at: string | null;
+  completion_percentage: number;
+}
+
+export interface TransitionPlanCreateInput {
+  staff_user_id: string;
+  template_id?: string | null;
+  transition_type: TransitionType;
+}
+
+export interface TransitionStep {
+  id: string;
+  plan_id: string;
+  step_order: number;
+  title: string;
+  step_type: string;
+  status: "pending" | "in_progress" | "completed" | "skipped" | "blocked";
+  due_at: string | null;
+  completed_at: string | null;
+  requires_approval: boolean;
+  approved_at: string | null;
+}
+
+export interface ShiftTemplate {
+  id: string;
+  name: string;
+  department_id: string | null;
+  start_time: string;
+  end_time: string;
+  break_minutes: number;
+  is_overnight: boolean;
+  grace_period_minutes: number;
+  is_active: boolean;
+}
+
+export interface ShiftTemplateCreateInput {
+  name: string;
+  department_id?: string | null;
+  start_time: string;
+  end_time: string;
+  break_minutes?: number;
+  is_overnight?: boolean;
+  grace_period_minutes?: number;
+}
+
+export interface StaffShift {
+  id: string;
+  staff_user_id: string;
+  shift_date: string;
+  shift_template_id: string | null;
+  start_at: string;
+  end_at: string;
+  department_id: string | null;
+  role_on_shift: string | null;
+  status: ShiftStatus;
+  notes: string | null;
+  is_published: boolean;
+  published_at: string | null;
+  version: number;
+}
+
+export interface StaffShiftCreateInput {
+  staff_user_id: string;
+  shift_date: string;
+  shift_template_id?: string | null;
+  start_at: string;
+  end_at: string;
+  department_id?: string | null;
+  role_on_shift?: string | null;
+  notes?: string | null;
+}
+
+export interface StaffShiftUpdateInput {
+  start_at?: string;
+  end_at?: string;
+  role_on_shift?: string | null;
+  notes?: string | null;
+  version: number;
+}
+
+export interface ShiftChangeRequest {
+  id: string;
+  shift_id: string;
+  requested_by: string;
+  request_type: ShiftChangeRequestType;
+  proposed_staff_id: string | null;
+  reason: string | null;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  decided_by: string | null;
+  decided_at: string | null;
+  decision_reason: string | null;
+}
+
+export interface ShiftChangeRequestCreateInput {
+  shift_id: string;
+  request_type: ShiftChangeRequestType;
+  proposed_staff_id?: string | null;
+  reason?: string | null;
+}
+
+export interface ShiftChangeDecisionInput {
+  approve: boolean;
+  decision_reason?: string | null;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  staff_user_id: string;
+  attendance_date: string;
+  shift_id: string | null;
+  scheduled_start_at: string | null;
+  scheduled_end_at: string | null;
+  actual_check_in_at: string | null;
+  actual_check_out_at: string | null;
+  status: AttendanceStatus;
+  late_minutes: number;
+  early_leave_minutes: number;
+  worked_minutes: number;
+  break_minutes: number;
+  source: "manual" | "roster_derived";
+  is_corrected: boolean;
+  approval_state: "pending" | "approved" | "rejected";
+}
+
+export interface AttendanceRecordCreateInput {
+  staff_user_id: string;
+  attendance_date: string;
+  shift_id?: string | null;
+  status: AttendanceStatus;
+  actual_check_in_at?: string | null;
+  actual_check_out_at?: string | null;
+}
+
+export interface AttendanceCorrectionInput {
+  status?: AttendanceStatus;
+  actual_check_in_at?: string | null;
+  actual_check_out_at?: string | null;
+  reason: string;
+}
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  code: string;
+  is_paid: boolean;
+  requires_notice_days: number;
+  max_consecutive_days: number | null;
+  allows_carry_forward: boolean;
+  is_active: boolean;
+}
+
+export interface LeaveTypeCreateInput {
+  name: string;
+  code: string;
+  is_paid?: boolean;
+  requires_notice_days?: number;
+  max_consecutive_days?: number | null;
+  allows_carry_forward?: boolean;
+  carry_forward_max_days?: number | null;
+}
+
+export interface LeaveRequest {
+  id: string;
+  staff_user_id: string;
+  leave_type_id: string;
+  start_date: string;
+  end_date: string;
+  is_partial_day: boolean;
+  partial_day_portion: "first_half" | "second_half" | null;
+  reason: string | null;
+  status: LeaveStatus;
+  approver_id: string | null;
+  decision_reason: string | null;
+  decided_at: string | null;
+}
+
+export interface LeaveRequestCreateInput {
+  leave_type_id: string;
+  start_date: string;
+  end_date: string;
+  is_partial_day?: boolean;
+  partial_day_portion?: "first_half" | "second_half" | null;
+  reason?: string | null;
+}
+
+export interface LeaveDecisionInput {
+  approve: boolean;
+  decision_reason?: string | null;
+}
+
+export interface TrainingCourse {
+  id: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  is_mandatory: boolean;
+  validity_period_days: number | null;
+  passing_score: number | null;
+  max_attempts: number;
+  is_active: boolean;
+}
+
+export interface TrainingCourseCreateInput {
+  code: string;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  department_id?: string | null;
+  role_id?: string | null;
+  is_mandatory?: boolean;
+  validity_period_days?: number | null;
+  passing_score?: number | null;
+  max_attempts?: number;
+  content_source?: string | null;
+}
+
+export interface TrainingAssignment {
+  id: string;
+  course_id: string;
+  staff_user_id: string;
+  assigned_at: string;
+  due_at: string | null;
+  status: TrainingAssignmentStatus;
+}
+
+export interface TrainingAssignInput {
+  course_id: string;
+  staff_user_id: string;
+  due_at?: string | null;
+}
+
+export interface TrainingAttempt {
+  id: string;
+  assignment_id: string;
+  attempt_number: number;
+  started_at: string | null;
+  completed_at: string | null;
+  score: number | null;
+  is_pass: boolean | null;
+  reviewer_id: string | null;
+}
+
+export interface TrainingAttemptCompleteInput {
+  score: number;
+  completion_evidence?: string | null;
+}
+
+export interface StaffCertification {
+  id: string;
+  staff_user_id: string;
+  certification_type: string;
+  issuer: string | null;
+  certificate_number: string | null;
+  issue_date: string;
+  expiry_date: string | null;
+  verification_status: "pending" | "verified" | "rejected" | "expired";
+  verified_by: string | null;
+  verified_at: string | null;
+  renewal_of_certification_id: string | null;
+}
+
+export interface CertificationCreateInput {
+  staff_user_id: string;
+  certification_type: string;
+  issuer?: string | null;
+  certificate_number?: string | null;
+  issue_date: string;
+  expiry_date?: string | null;
+  renewal_of_certification_id?: string | null;
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  category: string | null;
+  description: string | null;
+  is_active: boolean;
+}
+
+export interface SkillCreateInput {
+  name: string;
+  category?: string | null;
+  description?: string | null;
+}
+
+export interface StaffSkill {
+  id: string;
+  staff_user_id: string;
+  skill_id: string;
+  proficiency_level: ProficiencyLevel;
+  is_verified: boolean;
+  verified_by: string | null;
+  verified_at: string | null;
+  notes: string | null;
+}
+
+export interface StaffSkillSetInput {
+  skill_id: string;
+  proficiency_level?: ProficiencyLevel;
+  notes?: string | null;
+}
+
+export interface PerformanceReview {
+  id: string;
+  staff_user_id: string;
+  reviewer_id: string;
+  cycle_label: string;
+  period_start_date: string;
+  period_end_date: string;
+  status: PerformanceReviewStatus;
+  overall_rating: number | null;
+  strengths: string | null;
+  improvement_areas: string | null;
+  staff_comments: string | null;
+  manager_comments: string | null;
+  staff_acknowledged_at: string | null;
+  finalized_at: string | null;
+  version: number;
+}
+
+export interface PerformanceReviewCreateInput {
+  staff_user_id: string;
+  cycle_label: string;
+  period_start_date: string;
+  period_end_date: string;
+  goals?: Array<{ title: string; description?: string | null; target_date?: string | null }>;
+}
+
+export interface PerformanceReviewUpdateInput {
+  overall_rating?: number | null;
+  strengths?: string | null;
+  improvement_areas?: string | null;
+  staff_comments?: string | null;
+  manager_comments?: string | null;
+  version: number;
+}
+
+export interface PerformanceReviewTransitionInput {
+  target_status: PerformanceReviewStatus;
+}
+
+export interface StaffDisciplinaryRecord {
+  id: string;
+  staff_user_id: string;
+  incident_date: string;
+  category: string;
+  description: string;
+  severity: DisciplinarySeverity;
+  action_taken: string | null;
+  recorded_by: string;
+  status: "open" | "resolved" | "appealed";
+  resolved_at: string | null;
+}
+
+export interface DisciplinaryRecordCreateInput {
+  staff_user_id: string;
+  incident_date: string;
+  category: string;
+  description: string;
+  severity: DisciplinarySeverity;
+  action_taken?: string | null;
+}
+
+export interface AvailabilityWindow {
+  id: string;
+  staff_user_id: string;
+  availability_type: AvailabilityType;
+  day_of_week: number | null;
+  specific_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  reason: string | null;
+}
+
+export interface AvailabilityWindowCreateInput {
+  availability_type: AvailabilityType;
+  day_of_week?: number | null;
+  specific_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  reason?: string | null;
+  effective_start_date?: string | null;
+  effective_end_date?: string | null;
+}
+
+export interface StaffAnalytics {
+  active_staff: number;
+  staff_by_department: Array<{ department_id: string | null; count: number }>;
+  onboarding_in_progress: number;
+  documents_expiring_30d: number;
+  certifications_expiring_30d: number;
+  on_leave_today: number;
+  scheduled_today: number;
+  attendance_exceptions_today: number;
+  late_arrivals_today: number;
+  training_overdue: number;
+  mandatory_training_completion_pct: number;
+  knowledge_acknowledgement_completion_pct: number;
+  reviews_due: number;
+  open_shift_change_requests: number;
+}
