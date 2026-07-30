@@ -1,5 +1,5 @@
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { KnowledgeDashboard } from "./knowledge-dashboard";
 
 export default function Page() {
-  return <ModulePlaceholder title="Lightweight Knowledge Base" />;
+  return <KnowledgeDashboard />;
 }
