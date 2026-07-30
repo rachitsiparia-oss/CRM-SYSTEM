@@ -269,6 +269,83 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     # member's own profile); `.manage` is only for staff-initiated broadcast
     # notifications, not for reading one's own inbox.
     PermissionDef("notifications.manage", "Create broadcast staff notifications."),
+    # Knowledge Base — new in Phase 11. DATABASE_AND_API.md section 13/28
+    # sketches a much lighter folders/documents model than this phase's own
+    # instruction's article-lifecycle elaboration; these codes follow the
+    # granular-over-catch-all convention every prior phase's Phase 3
+    # placeholder replacement established. `.review`/`.approve`/`.publish`
+    # are separately gated (not folded into `.update`) so an author cannot
+    # self-approve when policy requires a different reviewer — enforced in
+    # `app.knowledge.articles`, not just by withholding the grant.
+    PermissionDef("knowledge.view", "View knowledge base articles."),
+    PermissionDef("knowledge.create", "Create knowledge base articles."),
+    PermissionDef("knowledge.update", "Edit knowledge base article drafts."),
+    PermissionDef("knowledge.review", "Submit and comment on articles under review."),
+    PermissionDef(
+        "knowledge.approve", "Approve or request changes on a submitted article.", is_sensitive=True
+    ),
+    PermissionDef("knowledge.publish", "Publish, unpublish, and supersede article versions."),
+    PermissionDef("knowledge.archive", "Archive knowledge base articles."),
+    PermissionDef("knowledge.categories.manage", "Create, edit, and reorder knowledge categories."),
+    PermissionDef("knowledge.tags.manage", "Add and remove knowledge article tags."),
+    PermissionDef(
+        "knowledge.visibility.manage", "Manage which staff/department/role can see an article."
+    ),
+    PermissionDef("knowledge.assign", "Assign articles to staff, departments, or roles."),
+    PermissionDef("knowledge.acknowledge", "Acknowledge an assigned mandatory article."),
+    PermissionDef("knowledge.analytics.view", "View knowledge base completion analytics."),
+    # Staff Operations — new in Phase 11, extending the Phase 3 `staff.view`/
+    # `staff.manage`/`staff.hr_sensitive.read` triple (kept as-is for staff
+    # *account* administration) with the operational HR domains this
+    # phase's own instruction covers. `.disciplinary.*` is deliberately
+    # separate from the broader `staff.hr_sensitive.read` — PROJECT_PLAN.md's
+    # own "Disciplinary records with strict permissions" bullet calls for a
+    # narrower grant than general HR-sensitive field visibility.
+    PermissionDef("staff.profile.view", "View a staff member's operational employment profile."),
+    PermissionDef("staff.profile.manage", "Edit a staff member's operational employment profile."),
+    PermissionDef("staff.documents.view", "View staff HR documents.", is_sensitive=True),
+    PermissionDef(
+        "staff.documents.manage", "Upload and verify staff HR documents.", is_sensitive=True
+    ),
+    PermissionDef("staff.onboarding.view", "View onboarding plans and steps."),
+    PermissionDef("staff.onboarding.manage", "Create and manage onboarding plans."),
+    PermissionDef(
+        "staff.offboarding.manage", "Create and manage offboarding plans.", is_sensitive=True
+    ),
+    PermissionDef("staff.shifts.view", "View shift templates and the roster."),
+    PermissionDef("staff.shifts.manage", "Create and edit shift templates and roster assignments."),
+    PermissionDef("staff.shifts.publish", "Publish the roster to staff."),
+    PermissionDef("staff.shift_changes.request", "Request a shift swap, cover, or change."),
+    PermissionDef("staff.shift_changes.approve", "Approve or reject shift change requests."),
+    PermissionDef("staff.attendance.view", "View attendance records."),
+    PermissionDef("staff.attendance.manage", "Record attendance."),
+    PermissionDef(
+        "staff.attendance.correct", "Correct a recorded attendance entry.", is_sensitive=True
+    ),
+    PermissionDef("staff.leave.view", "View leave requests."),
+    PermissionDef("staff.leave.request", "Submit a leave request."),
+    PermissionDef("staff.leave.approve", "Approve or reject leave requests.", is_sensitive=True),
+    PermissionDef("staff.training.view", "View training courses and assignments."),
+    PermissionDef("staff.training.manage", "Create and edit training courses."),
+    PermissionDef("staff.training.assign", "Assign training courses to staff."),
+    PermissionDef("staff.training.review", "Record training attempt scores and outcomes."),
+    PermissionDef("staff.certifications.view", "View staff certifications."),
+    PermissionDef("staff.certifications.manage", "Record and verify staff certifications."),
+    PermissionDef("staff.skills.view", "View the staff skills matrix."),
+    PermissionDef("staff.skills.manage", "Record and verify staff skills."),
+    PermissionDef("staff.reviews.view", "View performance reviews.", is_sensitive=True),
+    PermissionDef(
+        "staff.reviews.manage",
+        "Create, submit, and finalize performance reviews.",
+        is_sensitive=True,
+    ),
+    PermissionDef("staff.disciplinary.view", "View staff disciplinary records.", is_sensitive=True),
+    PermissionDef(
+        "staff.disciplinary.manage", "Record staff disciplinary actions.", is_sensitive=True
+    ),
+    PermissionDef("staff.availability.view", "View staff availability windows."),
+    PermissionDef("staff.availability.manage", "Record staff availability windows."),
+    PermissionDef("staff.analytics.view", "View staff operations analytics."),
     # Campaigns
     PermissionDef("campaigns.view", "View marketing campaigns."),
     PermissionDef("campaigns.create", "Create marketing campaigns."),
