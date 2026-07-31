@@ -28,7 +28,7 @@ async def get_account_for_customer(
 
 
 async def ensure_account(
-    session: AsyncSession, *, actor: StaffUser, payload: EnsureAccountIn
+    session: AsyncSession, *, actor: StaffUser | None, payload: EnsureAccountIn
 ) -> CustomerCreditAccount:
     existing = await get_account_for_customer(session, payload.customer_id)
     if existing is not None:
@@ -41,7 +41,7 @@ async def ensure_account(
     await session.flush()
     await record_audit_event(
         session,
-        actor_id=actor.id,
+        actor_id=actor.id if actor else None,
         action_code="customer_credit.account.created",
         target_type="customer_credit_account",
         target_id=account.id,
