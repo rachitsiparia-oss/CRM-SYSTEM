@@ -19,7 +19,7 @@ from app.db.models import (
 )
 from app.db.session import get_db
 from app.inventory import order_integration as inventory_order_integration
-from app.orders import service
+from app.orders import commercial_growth_integration, service
 from app.orders.schemas import (
     OrderAssignIn,
     OrderCreateIn,
@@ -226,6 +226,12 @@ async def transition_order(
         new_status=payload.new_status,
         reason=payload.reason,
         request=request,
+    )
+    # Phase 12: loyalty/offer/achievement/referral side effects, run after
+    # the status transition succeeds — see
+    # app.orders.commercial_growth_integration's module docstring.
+    await commercial_growth_integration.apply_commercial_growth_effects(
+        session, actor=actor, order=order, new_status=payload.new_status
     )
     out = await service.build_order_out(session, order)
     return DataResponse(data=out, meta=request_meta(request))
