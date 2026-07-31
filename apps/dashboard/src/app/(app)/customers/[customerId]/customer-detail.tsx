@@ -32,6 +32,7 @@ import { CustomerAddresses } from "./customer-addresses";
 import { CustomerNotes } from "./customer-notes";
 import { CustomerTags } from "./customer-tags";
 import { CustomerTimeline } from "./customer-timeline";
+import { CustomerCommercialSummary } from "./customer-commercial-summary";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -164,6 +165,7 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
+          <TabsTrigger value="commercial">Commercial</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
 
@@ -213,6 +215,10 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
             customerId={customerId}
             canEdit={hasPermission(currentUser, "customers.tags.manage") && !isMerged}
           />
+        </TabsContent>
+
+        <TabsContent value="commercial" className="mt-4">
+          <CustomerCommercialSummary customerId={customerId} />
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-4">
