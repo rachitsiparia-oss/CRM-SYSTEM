@@ -17,6 +17,7 @@ from app.health.router import router as health_router
 from app.inventory.router import router as inventory_router
 from app.knowledge.router import router as knowledge_router
 from app.leads.router import router as leads_router
+from app.loyalty.router import router as loyalty_router
 from app.menu.router import router as menu_router
 from app.notifications.router import router as notifications_router
 from app.orders.router import router as orders_router
@@ -83,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(notifications_router)
     app.include_router(knowledge_router)
     app.include_router(staff_operations_router)
+    app.include_router(loyalty_router)
 
     return app
 
