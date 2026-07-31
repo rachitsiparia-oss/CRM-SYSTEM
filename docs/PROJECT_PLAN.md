@@ -1811,21 +1811,28 @@ Emergency contacts
 - Sensitive changes are audited
 - Seed staff data uses the canonical 65-person set
 
-# PHASE 12 — LOYALTY, OFFERS, AND CAMPAIGNS
+# PHASE 12 — LOYALTY, OFFERS, CAMPAIGNS, REFERRALS, GIFT CARDS AND INTERNAL CUSTOMER CREDIT
 
 ## Objective
 
-Build the loyalty ledger, offers/coupons engine, customer segmentation, and consent-aware marketing campaigns.
+Build the loyalty ledger, offers/coupons engine, customer segmentation, consent-aware marketing campaigns, a referral program, achievements/badges, restaurant gift cards, and an internal customer-credit ledger.
+
+**Scope expansion note (2026-07-30):** the original scope below (Loyalty, Offers, Campaigns) was this phase's sole canonical scope through Phase 11. Referrals, Achievements and Badges, Gift Cards, and Internal Customer Credit were added to this phase by explicit user decision when the implementing instruction for Phase 12 requested them beyond what `ROADMAP.md` and this document specified at the time. See `docs/GROWTH_AND_INTELLIGENCE.md` §7-§10 for their full canonical specification (added in the same decision) and `ROADMAP.md`'s Phase 12 completion notes for the reconciliation record.
 
 ## Scope
 
-- Loyalty accounts and immutable point ledger (§12 of this document)
-- Rewards, offers, coupons, eligibility, and redemption
-- Customer segments and audience management
-- Campaigns through connected channels (WhatsApp, email, SMS)
+- Loyalty accounts and immutable point ledger (§12 of this document; full ledger/tier detail in `docs/GROWTH_AND_INTELLIGENCE.md` §5)
+- Rewards, offers, coupons, eligibility, and redemption (`docs/GROWTH_AND_INTELLIGENCE.md` §6)
+- Customer segments and audience management (`docs/GROWTH_AND_INTELLIGENCE.md` §4)
+- Campaigns through connected channels (WhatsApp, email, SMS) — reusing the Phase 10 Communication Hub's provider-independent adapter layer, no live provider credentials required
 - Consent and suppression, frequency caps
 - Audience preview, scheduled sending, delivery analytics
 - Campaign attribution
+- Referral program: referral codes, referrer/referee rewards posted through the Loyalty ledger, anti-abuse controls (`docs/GROWTH_AND_INTELLIGENCE.md` §7)
+- Achievements and badges: deterministic milestone recognitions with optional ledger-posted rewards (`docs/GROWTH_AND_INTELLIGENCE.md` §8)
+- Restaurant gift cards: secure codes, immutable value ledger, redemption against orders (`docs/GROWTH_AND_INTELLIGENCE.md` §9) — restaurant-issued retail value, not a claim of payment-services regulatory compliance
+- Internal customer credit: non-withdrawable promotional/service-recovery store credit, immutable ledger, distinct from the Loyalty points ledger (`docs/GROWTH_AND_INTELLIGENCE.md` §10)
+- Lightweight commercial-risk controls: adjustment limits, approval thresholds, duplicate/self-referral detection, flagged-action review
 
 ## Backend tasks
 
@@ -1833,6 +1840,11 @@ Build the loyalty ledger, offers/coupons engine, customer segmentation, and cons
 - Offer and coupon models with deterministic promotion evaluation order
 - Audience query builder using approved fixed business logic, not a generic workflow builder
 - Campaign jobs, frequency caps, suppression enforcement
+- Referral attribution/qualification/reward/reject workflow, integrated with the Loyalty ledger
+- Achievement evaluation and idempotent, immutable award records
+- Gift-card issue/activate/redeem/reverse/adjust/suspend with a concurrency-safe balance ledger
+- Internal-credit issue/redeem/reverse/adjust with the same concurrency-safety guarantees
+- Commercial-risk flagging and review queue, reusing existing tasks/notifications rather than a new workflow engine
 
 ## Frontend tasks
 
@@ -1840,11 +1852,20 @@ Build the loyalty ledger, offers/coupons engine, customer segmentation, and cons
 - Offer and coupon management
 - Campaign list and detail, audience preview
 - Segment builder
+- Referral program, codes, and relationship review
+- Achievement catalogue and award explorer
+- Gift-card issuance, ledger, and redemption history, with masked codes by default
+- Internal-credit accounts, ledger, and issue/adjust/reverse workflows
+- Commercial-risk review queue
+- Customer 360 commercial summary (tier, points, expiring points, credit, gift cards, coupons, referrals, achievements, campaign history)
 
 ## Definition of Done
 
 - Consent is enforced at send time
 - Loyalty balance uses an auditable, append-only ledger
+- Gift-card and internal-credit balances are always derivable from, and reconcile with, their own append-only ledgers; neither balance can go negative under concurrent redemption
+- Referral rewards and achievement rewards post through the canonical Loyalty or internal-credit ledger, never an untracked balance
+- Self-referral, duplicate-referee attribution, and duplicate-order rewards are structurally prevented
 - Duplicate reward issuance is prevented
 - Campaign sending occurs in background jobs (ARQ)
 - Promotion evaluation is deterministic and matches order-total calculation exactly

@@ -303,15 +303,22 @@ Real bugs found and fixed during this phase's own testing (not pre-existing defe
 
 Deferred, deliberately, for the same reason every prior phase stopped here: authenticated manual browser click-through and authenticated Playwright coverage were not built — no test Supabase session or `storageState` fixture exists in this environment, the same limitation Phases 5 through 10 each documented. The unauthenticated redirect boundary is instead verified by the 17 new Playwright specs; authenticated workflows are fully exercised by the new backend test suite. No automatic reminder/expiry-warning dispatch (document/certification expiry, article review-due) — deterministic idempotent query functions exist, automatic dispatch through a live `apps/worker` ARQ schedule is Phase 15's scope, the same "engine, not scheduler" split Phase 10 established. No biometric attendance hardware, no payroll settlement in offboarding, and no complex leave-accrual ledger — all explicitly out of this phase's scope per `PROJECT_PLAN.md`. Full deviation records are in `docs/DATABASE_AND_API.md` §13.4 (Knowledge Base) and §14.6 (Staff Operations). **Phase 12 (Loyalty, Offers, and Campaigns) has not been started.**
 
-## Phase 12 — Loyalty, Offers, and Campaigns
+## Phase 12 — Loyalty, Offers, Campaigns, Referrals, Gift Cards and Internal Customer Credit
 
 Status: NOT STARTED
+
+Scope note (2026-07-30): before implementation began, the Phase 12 instruction was reconciled against this file, `docs/PROJECT_PLAN.md`, and the domain-authoritative `docs/GROWTH_AND_INTELLIGENCE.md` (ranked above `PROJECT_PLAN.md` in `CLAUDE.md` §1.1's document-authority order for this exact area). All three agreed the canonical scope was Loyalty ledger/tiers, Offers/Coupons/Promotions, Segments, and Campaigns only — the instruction additionally requested a referral program, achievements/badges, gift cards, and an internal customer-credit ledger, none of which appeared in any of the ten `docs/` files. Per `CLAUDE.md`'s own conflict-resolution rule ("stop the conflicting implementation, identify the exact conflict... and follow the most recent explicit user decision"), this was surfaced to the user rather than silently narrowed or expanded. The user explicitly chose to expand Phase 12's canonical scope to include all four additions, with documentation updated first — reflected in the widened scope below, in `docs/PROJECT_PLAN.md`'s Phase 12 block, and in four new sections (§7-§10) added to `docs/GROWTH_AND_INTELLIGENCE.md`.
 
 Scope:
 
 - Loyalty accounts and immutable point ledger
 - Rewards, offers, coupons, eligibility, and redemption
 - Segments, campaigns, consent, suppression, approval, scheduling, delivery, and attribution
+- Referral program (referral codes, referrer/referee rewards posted through the Loyalty ledger, anti-abuse controls)
+- Achievements and badges (deterministic milestone recognitions, optional ledger-posted rewards)
+- Restaurant gift cards (secure codes, immutable value ledger, redemption against orders)
+- Internal customer credit (non-withdrawable promotional/service-recovery store credit, immutable ledger, distinct from Loyalty points)
+- Lightweight commercial-risk controls (adjustment limits, approval thresholds, duplicate/self-referral detection, flagged-action review)
 
 Completion date:
 
