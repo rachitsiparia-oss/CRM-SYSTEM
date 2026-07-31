@@ -2040,6 +2040,31 @@ All under `/api/v1/staff-operations`, per §14.6's actual 24-table schema (in ad
 - `POST /api/v1/complaints/{id}/transition`
 - `POST /api/v1/complaints/{id}/recovery-action`
 
+### 30.4 Phase 12 implementation notes and deviations
+
+Phase 12's actual API surface (nine domain routers, superseding §30.1's four-endpoint sketch, which predated the scope expansion recorded in `ROADMAP.md`'s Phase 12 completion notes):
+
+- `/api/v1/loyalty` — `programs`, `programs/{id}` (PATCH, `/transition`), `tiers`, `accounts` (GET by `customer_id`, POST to enroll), `accounts/{id}/ledger`, `earn`, `redeem`, `adjust`, `reverse`, `accounts/{id}/tier`, `analytics`.
+- `/api/v1/segments` — CRUD + `/transition`, `/members` (list/add/remove), `/refresh`, `/preview`.
+- `/api/v1/offers` — CRUD + `/versions`, `/transition`, `/coupons`, `/preview`, `redemptions/reserve`, `redemptions/{id}` (`/confirm`, `/reject`, `/reverse`).
+- `/api/v1/campaigns` — CRUD + `/transition`, `/audience/build`, `/recipients`, `/launch`, `/sync`, `/analytics`.
+- `/api/v1/referrals` — `programs` (CRUD + `/transition`, `/codes`), `codes/{code}`, `relationships` (list + `/attribute`, `/{id}/qualify`, `/{id}/reject`, `/{id}/reward`).
+- `/api/v1/achievements` — CRUD + `/evaluate`, `awards/{id}` (GET, `/reverse`).
+- `/api/v1/gift-cards` — CRUD (issue only, no update) + `/analytics`, `/{id}/reveal`, `/{id}` status actions (`activate`/`suspend`/`reinstate`/`cancel`/`expire`), `/{id}/adjust`, `/{id}/ledger`, `/redeem`, `/reverse`.
+- `/api/v1/customer-credit` — `accounts` (GET by `customer_id`, POST to open), `accounts/{id}/ledger`, `issue`, `redeem`, `adjust`, `reverse`, `analytics`.
+- `/api/v1/commercial-risk` — `flags` (list + GET by id), `flags/{id}/review`.
+
+Key implementation decisions, in addition to §1.1's ROADMAP scope-expansion note:
+
+- **Shared, closed rule engine** (`app.commercial_rules`): a `RuleNode` tree (`RuleCondition` leaves combined by `RuleGroup` `all`/`any`/`not` logic) is the *only* mechanism Segments' `rule_definition`, Offers' `eligibility_rule`, and Achievements' `condition` accept — `fact` is restricted to a closed `SUPPORTED_FACTS` tuple resolved from real CRM data (`app.commercial_rules.facts.resolve_customer_facts`), never an arbitrary expression. `app.offers.benefit.BenefitRule` is a parallel closed discriminated union for offer payout math, validated against the offer's `offer_type` at creation.
+- **Ledger pattern replicated three times**: `loyalty_ledger_entries`, `gift_card_ledger_entries`, and `customer_credit_ledger_entries` all mirror Phase 8's `inventory_ledger` guarantees — append-only, signed deltas keyed by `entry_type`, idempotency-keyed (`VARCHAR(160)`, callers with unbounded-length source keys must hash them, not embed them verbatim), and `SELECT ... FOR UPDATE` row-locked before balance mutation.
+- **Order-lifecycle integration is additive**: `app.orders.commercial_growth_integration.apply_commercial_growth_effects` runs *after* Phase 7's unmodified state machine (the same "integrate without weakening validation" model Phase 8's `inventory.order_integration` established), writing `Customer.completed_order_count`/`lifetime_value_minor`/`average_order_value_minor`/`first_order_at`/`last_order_at` on `completed` — a Phase 7 responsibility its own docstring described but no Phase 7 code path ever fulfilled, fixed here rather than deferred since every Phase 12 rule evaluation depends on those columns being fresh. Loyalty earn and referral qualification are gated on `payment_status == "paid"`; the customer roll-up and achievement evaluation are not (an unpaid completed order is still a fulfilled order for count/spend purposes).
+- **`GET /segments/{id}/members` returns `PaginatedResponse[uuid.UUID]`** (bare current-member customer ids), not `SegmentMembership` rows — `SegmentMembership` is the add/remove *event* record returned by the mutation endpoints. Frontend `useSegmentMembers` types against the correct `string[]` shape.
+- **Gift cards, customer credit, and commercial-risk flags are intentionally not seeded** — this phase's own rule against fabricating real-value grants to arbitrary customers or synthetic risk events (`app/db/seed.py`'s own comment). All other eight domains have idempotent seed data.
+- **Frontend navigation**: all nine domains nest as `children` under the single existing "Marketing, Loyalty & Feedback" nav section (`/marketing/loyalty`, `/marketing/segments`, `/marketing/offers`, `/marketing/campaigns`, `/marketing/referrals`, `/marketing/achievements`, `/marketing/gift-cards`, `/marketing/customer-credit`, `/marketing/commercial-risk`) rather than adding new top-level sections, per CLAUDE.md §2's fixed twelve-section rule. The section is now permission-gated (`requiredPermission`, OR-matched across all nine domains' `.view` codes) — previously an ungated placeholder.
+- **Rule-tree authoring is intentionally scoped down in the UI**: Segments/Offers/Achievements creation forms build a single `RuleCondition` (fact/operator/value), not an arbitrary nested `RuleGroup` tree — the backend accepts full trees (and a read-only `summarizeRuleNode` renderer displays any tree, including ones the UI itself never authors), but a visual AND/OR tree builder was judged out of scope for this phase's lightweight-controls framing. Extending the UI to author nested groups is a natural, self-contained follow-up.
+- **Customer 360 integration**: a new "Commercial" tab on the customer detail page (`apps/dashboard/src/app/(app)/customers/[customerId]/customer-commercial-summary.tsx`) surfaces loyalty points/tier, gift card count and balances, customer-credit balance, and open commercial-risk flag count via the domain hooks directly (no new backend aggregation endpoint) — matching the tab-per-domain pattern established by the existing addresses/notes/tags tabs, since no combined per-customer commercial-summary endpoint exists or was judged necessary.
+
 ## 31. REPORTING, EXPORT, NOTIFICATION, AND AUDIT API
 
 ### 31.1 Dashboard
