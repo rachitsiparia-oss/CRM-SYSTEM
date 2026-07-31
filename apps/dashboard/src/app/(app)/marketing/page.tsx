@@ -1,5 +1,5 @@
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { MarketingDashboard } from "./marketing-dashboard";
 
 export default function Page() {
-  return <ModulePlaceholder title="Marketing, Loyalty & Feedback" />;
+  return <MarketingDashboard />;
 }
