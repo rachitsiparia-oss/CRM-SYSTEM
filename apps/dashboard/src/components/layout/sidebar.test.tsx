@@ -20,7 +20,7 @@ describe("Sidebar", () => {
     window.localStorage.clear();
   });
 
-  it("shows all twelve approved sections for a user with staff.view, menu.view, orders.view, reservations.view, communications.view, and knowledge.view", () => {
+  it("shows all twelve approved sections for a user with staff.view, menu.view, orders.view, reservations.view, communications.view, knowledge.view, and loyalty.view", () => {
     mockCurrentUser([
       "staff.view",
       "menu.view",
@@ -28,12 +28,14 @@ describe("Sidebar", () => {
       "reservations.view",
       "communications.view",
       "knowledge.view",
+      "loyalty.view",
     ]);
     render(<Sidebar />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
-    // Staff & HR's, Menu's, Orders', Reservations', Communication Hub's, and
-    // Knowledge Base's children start collapsed (current route is "/", not
-    // one of their routes), so only the twelve top-level links render.
+    // Staff & HR's, Menu's, Orders', Reservations', Communication Hub's,
+    // Knowledge Base's, and Marketing's children start collapsed (current
+    // route is "/", not one of their routes), so only the twelve top-level
+    // links render.
     expect(nav.querySelectorAll("a")).toHaveLength(12);
   });
 
@@ -46,6 +48,7 @@ describe("Sidebar", () => {
       "reservations.view",
       "communications.view",
       "knowledge.view",
+      "loyalty.view",
     ]);
     render(<Sidebar />);
     expect(screen.queryByRole("link", { name: /Staff & HR/ })).not.toBeInTheDocument();
@@ -60,6 +63,7 @@ describe("Sidebar", () => {
       "reservations.view",
       "communications.view",
       "knowledge.view",
+      "loyalty.view",
     ]);
     render(<Sidebar />);
     expect(
@@ -76,6 +80,7 @@ describe("Sidebar", () => {
       "reservations.view",
       "communications.view",
       "knowledge.view",
+      "loyalty.view",
     ]);
     render(<Sidebar />);
     expect(
@@ -86,7 +91,14 @@ describe("Sidebar", () => {
   });
 
   it("hides Reservations & Calendar for a user without reservations.view", () => {
-    mockCurrentUser(["staff.view", "menu.view", "orders.view", "communications.view", "knowledge.view"]);
+    mockCurrentUser([
+      "staff.view",
+      "menu.view",
+      "orders.view",
+      "communications.view",
+      "knowledge.view",
+      "loyalty.view",
+    ]);
     render(<Sidebar />);
     expect(
       screen.queryByRole("link", { name: /Reservations & Calendar/ }),
@@ -96,7 +108,14 @@ describe("Sidebar", () => {
   });
 
   it("hides Communication Hub for a user without communications.view", () => {
-    mockCurrentUser(["staff.view", "menu.view", "orders.view", "reservations.view", "knowledge.view"]);
+    mockCurrentUser([
+      "staff.view",
+      "menu.view",
+      "orders.view",
+      "reservations.view",
+      "knowledge.view",
+      "loyalty.view",
+    ]);
     render(<Sidebar />);
     expect(screen.queryByRole("link", { name: /Communication Hub/ })).not.toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Primary" });
@@ -104,10 +123,34 @@ describe("Sidebar", () => {
   });
 
   it("hides Lightweight Knowledge Base for a user without knowledge.view", () => {
-    mockCurrentUser(["staff.view", "menu.view", "orders.view", "reservations.view", "communications.view"]);
+    mockCurrentUser([
+      "staff.view",
+      "menu.view",
+      "orders.view",
+      "reservations.view",
+      "communications.view",
+      "loyalty.view",
+    ]);
     render(<Sidebar />);
     expect(
       screen.queryByRole("link", { name: /Lightweight Knowledge Base/ }),
+    ).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(nav.querySelectorAll("a")).toHaveLength(11);
+  });
+
+  it("hides Marketing, Loyalty & Feedback for a user without any of its nine domain view permissions", () => {
+    mockCurrentUser([
+      "staff.view",
+      "menu.view",
+      "orders.view",
+      "reservations.view",
+      "communications.view",
+      "knowledge.view",
+    ]);
+    render(<Sidebar />);
+    expect(
+      screen.queryByRole("link", { name: /Marketing, Loyalty & Feedback/ }),
     ).not.toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav.querySelectorAll("a")).toHaveLength(11);
