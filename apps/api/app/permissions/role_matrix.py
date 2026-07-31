@@ -137,6 +137,20 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.certifications.view",
         "staff.skills.view",
         "staff.analytics.view",
+        # Phase 12 — situational awareness across the commercial-growth
+        # domains, matching the view-only oversight pattern already given
+        # for inventory/reservations/communications above; program
+        # ownership stays with marketing_manager, financial control with
+        # finance_manager.
+        "loyalty.view",
+        "segments.view",
+        "offers.view",
+        "campaigns.view",
+        "referrals.view",
+        "achievements.view",
+        "gift_cards.view",
+        "customer_credit.view",
+        "commercial_risk.view",
     ),
     "finance_manager": (
         "dashboard.view",
@@ -164,6 +178,32 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.training.view",
+        # Phase 12 — finance owns the money-denominated ledgers (gift
+        # cards, internal credit) and every ledger reversal, since those
+        # are real financial liability/write-off actions; program design
+        # (loyalty tiers, offers, campaigns) stays with marketing_manager.
+        "loyalty.view",
+        "loyalty.analytics.view",
+        "loyalty.reverse",
+        "offers.view",
+        "offers.analytics.view",
+        "offers.reverse",
+        "campaigns.analytics.view",
+        "gift_cards.view",
+        "gift_cards.issue",
+        "gift_cards.manage",
+        "gift_cards.adjust",
+        "gift_cards.reverse",
+        "gift_cards.reveal_sensitive",
+        "gift_cards.analytics.view",
+        "customer_credit.view",
+        "customer_credit.issue",
+        "customer_credit.adjust",
+        "customer_credit.approve",
+        "customer_credit.reverse",
+        "customer_credit.analytics.view",
+        "commercial_risk.view",
+        "commercial_risk.review",
     ),
     "kitchen_manager": (
         "dashboard.view",
@@ -335,6 +375,10 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.training.view",
+        # Phase 12 — read-only awareness of offers that may affect
+        # reservations/deposits (GROWTH_AND_INTELLIGENCE.md's own
+        # integration note); no redemption or program-management authority.
+        "offers.view",
     ),
     "customer_support_agent": (
         "dashboard.view",
@@ -375,21 +419,69 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.training.view",
+        # Phase 12 — service recovery is core to this role: small goodwill
+        # loyalty adjustments, coupon/offer redemption at the customer's
+        # request, gift-card lookup/redemption, and small internal-credit
+        # issuance (staff-adjustment limits and any approval threshold are
+        # enforced in app.customer_credit.service, not by this permission
+        # alone). No reversal, no reveal-sensitive, no program design.
+        "loyalty.view",
+        "loyalty.adjust",
+        "offers.view",
+        "offers.redeem",
+        "gift_cards.view",
+        "gift_cards.manage",
+        "customer_credit.view",
+        "customer_credit.issue",
+        "referrals.view",
+        "achievements.view",
     ),
     "marketing_manager": (
         "dashboard.view",
         "tasks.view",
         "tasks.create",
+        # Phase 12 — marketing_manager is the primary owner of this entire
+        # commercial-growth domain (loyalty program/tier design, segments,
+        # offers/coupons, campaigns, referrals, achievements). Money-
+        # denominated ledger custody (gift-card issuance/reversal, internal
+        # credit issuance/approval/reversal, any loyalty/offer *reversal*)
+        # stays with finance_manager — see that role's own comment.
+        "loyalty.view",
+        "loyalty.manage",
+        "loyalty.adjust",
+        "loyalty.tiers.manage",
+        "loyalty.analytics.view",
+        "segments.view",
+        "segments.manage",
+        "segments.refresh",
+        "segments.export",
+        "offers.view",
+        "offers.manage",
+        "offers.approve",
+        "offers.analytics.view",
         "campaigns.view",
-        "campaigns.create",
+        "campaigns.manage",
         "campaigns.approve",
-        "campaigns.send",
+        "campaigns.execute",
+        "campaigns.cancel",
+        "campaigns.analytics.view",
+        "referrals.view",
+        "referrals.manage",
+        "referrals.review",
+        "referrals.adjust",
+        "achievements.view",
+        "achievements.manage",
+        "gift_cards.view",
+        "gift_cards.manage",
+        "gift_cards.analytics.view",
+        "customer_credit.view",
+        "customer_credit.analytics.view",
+        "commercial_risk.view",
         "customers.view",
         "customers.tags.manage",
         "leads.view",
         "leads.notes.manage",
         "leads.export",
-        "loyalty.view",
         "reports.view",
         "communications.view",
         "communications.templates.view",
@@ -519,6 +611,15 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.availability.view",
+        # Phase 12 — floor supervisor handles checkout-time coupon/gift-
+        # card redemption and can flag suspicious activity to management;
+        # no program design, no financial-reversal authority.
+        "offers.view",
+        "offers.redeem",
+        "gift_cards.view",
+        "gift_cards.manage",
+        "loyalty.view",
+        "commercial_risk.view",
     ),
     "kitchen_staff": (
         "dashboard.view",
@@ -581,6 +682,14 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.request",
         "staff.training.view",
         "staff.skills.view",
+        # Phase 12 — front-of-house is the primary checkout-time redemption
+        # point for coupons and gift cards; loyalty is visible so they can
+        # answer balance questions, but not adjustable by this role.
+        "offers.view",
+        "offers.redeem",
+        "gift_cards.view",
+        "gift_cards.manage",
+        "loyalty.view",
     ),
     "delivery_coordinator": (
         "dashboard.view",

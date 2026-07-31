@@ -346,14 +346,101 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("staff.availability.view", "View staff availability windows."),
     PermissionDef("staff.availability.manage", "Record staff availability windows."),
     PermissionDef("staff.analytics.view", "View staff operations analytics."),
-    # Campaigns
+    # Loyalty — Phase 12, replacing the Phase 3 loyalty.view/.adjust
+    # placeholder pair with the full domain (GROWTH_AND_INTELLIGENCE.md §5).
+    PermissionDef("loyalty.view", "View loyalty programs, tiers, and accounts."),
+    PermissionDef("loyalty.manage", "Create and edit loyalty programs and tiers."),
+    PermissionDef("loyalty.adjust", "Earn/redeem points and issue manual adjustments."),
+    PermissionDef(
+        "loyalty.reverse",
+        "Reverse a loyalty ledger entry via a compensating entry.",
+        is_sensitive=True,
+    ),
+    PermissionDef("loyalty.tiers.manage", "Manually assign or review customer loyalty tiers."),
+    PermissionDef("loyalty.analytics.view", "View loyalty program analytics."),
+    # Segments — Phase 12 (GROWTH_AND_INTELLIGENCE.md §4).
+    PermissionDef("segments.view", "View customer segments and membership."),
+    PermissionDef("segments.manage", "Create and edit customer segments."),
+    PermissionDef("segments.refresh", "Materialize a dynamic segment's current membership."),
+    PermissionDef("segments.export", "Export segment membership.", is_sensitive=True),
+    # Offers, coupons, and promotions — Phase 12 (GROWTH_AND_INTELLIGENCE.md §6).
+    PermissionDef("offers.view", "View offers, coupons, and redemption history."),
+    PermissionDef("offers.manage", "Create and edit offers and coupons."),
+    PermissionDef("offers.approve", "Approve an offer requiring approval.", is_sensitive=True),
+    PermissionDef("offers.redeem", "Reserve and confirm an offer redemption on an order."),
+    PermissionDef("offers.reverse", "Reverse a confirmed offer redemption.", is_sensitive=True),
+    PermissionDef("offers.analytics.view", "View offer and promotion analytics."),
+    # Campaigns — Phase 12, replacing the Phase 3 campaigns.view/.create/
+    # .approve/.send placeholder set (GROWTH_AND_INTELLIGENCE.md §3).
     PermissionDef("campaigns.view", "View marketing campaigns."),
-    PermissionDef("campaigns.create", "Create marketing campaigns."),
-    PermissionDef("campaigns.approve", "Approve marketing campaigns.", is_sensitive=True),
-    PermissionDef("campaigns.send", "Send marketing campaigns.", is_sensitive=True),
-    # Loyalty
-    PermissionDef("loyalty.view", "View loyalty accounts."),
-    PermissionDef("loyalty.adjust", "Adjust loyalty balances.", is_sensitive=True),
+    PermissionDef("campaigns.manage", "Create and edit marketing campaigns."),
+    PermissionDef("campaigns.approve", "Approve a marketing campaign.", is_sensitive=True),
+    PermissionDef(
+        "campaigns.execute", "Schedule and execute a marketing campaign.", is_sensitive=True
+    ),
+    PermissionDef("campaigns.cancel", "Pause or cancel a running campaign."),
+    PermissionDef("campaigns.analytics.view", "View campaign delivery and attribution analytics."),
+    # Referrals — Phase 12 (GROWTH_AND_INTELLIGENCE.md §7).
+    PermissionDef("referrals.view", "View referral programs, codes, and relationships."),
+    PermissionDef("referrals.manage", "Create and edit referral programs and codes."),
+    PermissionDef(
+        "referrals.review",
+        "Review and reject flagged referral relationships.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "referrals.adjust",
+        "Manually adjust a referral relationship's reward.",
+        is_sensitive=True,
+    ),
+    # Achievements and badges — Phase 12 (GROWTH_AND_INTELLIGENCE.md §8).
+    PermissionDef("achievements.view", "View achievement definitions and customer awards."),
+    PermissionDef("achievements.manage", "Create and edit achievement definitions."),
+    # Gift cards — Phase 12 (GROWTH_AND_INTELLIGENCE.md §9).
+    PermissionDef("gift_cards.view", "View gift cards and ledger history (masked codes)."),
+    PermissionDef("gift_cards.issue", "Issue and activate a gift card.", is_sensitive=True),
+    PermissionDef("gift_cards.manage", "Redeem a gift card against an order."),
+    PermissionDef(
+        "gift_cards.adjust", "Manually adjust or suspend a gift card.", is_sensitive=True
+    ),
+    PermissionDef(
+        "gift_cards.reverse", "Reverse a gift card redemption or adjustment.", is_sensitive=True
+    ),
+    PermissionDef(
+        "gift_cards.reveal_sensitive",
+        "View an unmasked gift card code or PIN.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "gift_cards.analytics.view", "View gift card liability and redemption analytics."
+    ),
+    # Internal customer credit — Phase 12 (GROWTH_AND_INTELLIGENCE.md §10).
+    PermissionDef("customer_credit.view", "View internal customer credit accounts and ledger."),
+    PermissionDef("customer_credit.issue", "Issue internal customer credit.", is_sensitive=True),
+    PermissionDef(
+        "customer_credit.adjust", "Manually adjust internal customer credit.", is_sensitive=True
+    ),
+    PermissionDef(
+        "customer_credit.approve",
+        "Approve internal credit issuance above threshold.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "customer_credit.reverse",
+        "Reverse an internal customer credit entry.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "customer_credit.analytics.view", "View internal customer credit liability analytics."
+    ),
+    # Commercial risk — Phase 12, a lightweight review queue for flagged
+    # commercial events (GROWTH_AND_INTELLIGENCE.md §21).
+    PermissionDef("commercial_risk.view", "View flagged commercial-risk events."),
+    PermissionDef(
+        "commercial_risk.review",
+        "Resolve or dismiss a flagged commercial-risk event.",
+        is_sensitive=True,
+    ),
     # Feedback and complaints
     PermissionDef("feedback.view", "View customer feedback."),
     PermissionDef("complaints.manage", "Manage customer complaints."),
