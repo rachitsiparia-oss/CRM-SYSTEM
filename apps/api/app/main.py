@@ -13,6 +13,7 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
+from app.customer_credit.router import router as customer_credit_router
 from app.customers.router import router as customers_router
 from app.health.router import router as health_router
 from app.inventory.router import router as inventory_router
@@ -23,6 +24,7 @@ from app.menu.router import router as menu_router
 from app.notifications.router import router as notifications_router
 from app.offers.router import router as offers_router
 from app.orders.router import router as orders_router
+from app.referrals.router import router as referrals_router
 from app.reservations.router import router as reservations_router
 from app.roles.router import router as roles_router
 from app.segments.router import router as segments_router
@@ -91,6 +93,8 @@ def create_app() -> FastAPI:
     app.include_router(segments_router)
     app.include_router(offers_router)
     app.include_router(campaigns_router)
+    app.include_router(referrals_router)
+    app.include_router(customer_credit_router)
 
     return app
 
