@@ -46,6 +46,13 @@ async def get_default_program(session: AsyncSession) -> LoyaltyProgram | None:
     return result
 
 
+async def get_program_by_code(session: AsyncSession, code: str) -> LoyaltyProgram | None:
+    result: LoyaltyProgram | None = await session.scalar(
+        select(LoyaltyProgram).where(LoyaltyProgram.code == code)
+    )
+    return result
+
+
 async def create_program(
     session: AsyncSession, *, actor: StaffUser, payload: ProgramCreateIn
 ) -> LoyaltyProgram:

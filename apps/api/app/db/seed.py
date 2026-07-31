@@ -17,6 +17,8 @@ phases and will add their own `seed_*()` calls here.
 
 import asyncio
 
+from app.achievements.seed import seed_achievements
+from app.campaigns.seed import seed_campaigns
 from app.communications.seed import seed_communications
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
@@ -26,7 +28,9 @@ from app.db.session import get_session_factory
 from app.inventory.seed import seed_inventory
 from app.knowledge.seed import seed_knowledge_articles
 from app.leads.seed import seed_leads
+from app.loyalty.seed import seed_loyalty
 from app.menu.seed import seed_menu
+from app.offers.seed import seed_offers
 from app.orders.seed import seed_orders
 from app.permissions.seed import (
     seed_departments,
@@ -34,7 +38,9 @@ from app.permissions.seed import (
     seed_role_permissions,
     seed_roles,
 )
+from app.referrals.seed import seed_referrals
 from app.reservations.seed import seed_reservations
+from app.segments.seed import seed_segments
 from app.staff_operations.seed import seed_staff_operations
 
 logger = get_logger(__name__)
@@ -62,6 +68,15 @@ async def run_seed() -> None:
         await seed_communications(session)
         await seed_staff_operations(session)
         await seed_knowledge_articles(session)
+        await seed_loyalty(session)
+        await seed_segments(session)
+        await seed_offers(session)
+        await seed_referrals(session)
+        await seed_achievements(session)
+        await seed_campaigns(session)
+        # gift_cards/customer_credit/commercial_risk are intentionally not
+        # seeded — this phase's own rule against fabricating real-value
+        # grants to arbitrary customers or synthetic risk events.
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -71,7 +86,7 @@ async def run_seed() -> None:
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
             "orders, inventory, reservations, communications, staff operations, knowledge "
-            "base seeded"
+            "base, loyalty, segments, offers, referrals, achievements, campaigns seeded"
         ),
     )
 
