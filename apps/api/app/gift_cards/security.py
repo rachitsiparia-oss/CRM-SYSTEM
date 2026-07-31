@@ -6,6 +6,7 @@ persisted — only `code_hash`/`code_last4` are stored.
 
 from __future__ import annotations
 
+import re
 import secrets
 
 from app.core.hashing import hash_secret, verify_secret
@@ -13,6 +14,7 @@ from app.core.hashing import hash_secret, verify_secret
 _CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # no 0/O/1/I — avoids misread codes
 _CODE_LENGTH = 16
 _CODE_GROUP_SIZE = 4
+_NON_ALNUM = re.compile(r"[^0-9A-Za-z]")
 
 
 def generate_card_number() -> str:
@@ -28,16 +30,25 @@ def format_code_display(code: str) -> str:
     return "-".join(groups)
 
 
+def normalize_code_input(raw: str) -> str:
+    """Strips the dashes/whitespace `format_code_display` adds and
+    uppercases — the code is issued to the caller in its grouped display
+    form (section 9.3's "masked display form"), so redemption must accept
+    that same form back, not only the raw ungrouped string. Hashing and
+    verification always operate on this normalized form."""
+    return _NON_ALNUM.sub("", raw).upper()
+
+
 def masked_display(code_last4: str) -> str:
     return f"****-****-****-{code_last4}"
 
 
 def hash_code(code: str) -> str:
-    return hash_secret(code)
+    return hash_secret(normalize_code_input(code))
 
 
 def verify_code(code: str, code_hash: str) -> bool:
-    return verify_secret(code, code_hash)
+    return verify_secret(normalize_code_input(code), code_hash)
 
 
 def hash_pin(pin: str) -> str:

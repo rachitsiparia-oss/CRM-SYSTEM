@@ -39,7 +39,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.achievements import awards as achievement_awards
 from app.achievements import service as achievement_service
 from app.achievements.errors import AchievementError
+from app.audit.service import record_audit_event
 from app.db.models import (
+    AuditEvent,
     Customer,
     OfferRedemption,
     Order,
@@ -53,16 +55,35 @@ from app.offers.errors import OfferError
 from app.referrals import relationships as referral_relationships
 from app.referrals.errors import ReferralError
 
+_ROLLUP_ACTION_CODE = "commercial_growth.customer_rollup_updated"
+
 
 async def _update_customer_rollup(
-    session: AsyncSession, *, customer: Customer, order: Order
+    session: AsyncSession, *, actor: StaffUser, customer: Customer, order: Order
 ) -> None:
     """Runs once per completed order, regardless of payment_status — an
     order that reached 'completed' was fulfilled; refund/payment failure
     after the fact is tracked separately via `payment_status` and does not
     retroactively un-fulfil it. Money-in-transit accounting stays Phase 7's
     concern; this only maintains the count/spend projection Phase 12 reads.
+
+    Guarded by a dedicated audit-event marker (`_ROLLUP_ACTION_CODE`
+    against `target_type="order"`) so a retried/duplicate `completed`
+    transition for the same order never double-counts — the same
+    idempotency guarantee `_earn_loyalty_points` gets for free from its
+    ledger idempotency key, applied here since this function has no
+    ledger of its own to key against.
     """
+    already_applied = await session.scalar(
+        select(AuditEvent.id).where(
+            AuditEvent.action_code == _ROLLUP_ACTION_CODE,
+            AuditEvent.target_type == "order",
+            AuditEvent.target_id == order.id,
+        )
+    )
+    if already_applied is not None:
+        return
+
     now = datetime.now(UTC)
     customer.completed_order_count += 1
     customer.lifetime_value_minor += order.grand_total_minor
@@ -73,6 +94,14 @@ async def _update_customer_rollup(
         customer.first_order_at = now
     customer.last_order_at = now
     await session.flush()
+    await record_audit_event(
+        session,
+        actor_id=actor.id,
+        action_code=_ROLLUP_ACTION_CODE,
+        target_type="order",
+        target_id=order.id,
+        safe_metadata={"customer_id": str(customer.id)},
+    )
 
 
 async def _earn_loyalty_points(
@@ -228,7 +257,7 @@ async def apply_commercial_growth_effects(
     if customer is None:
         return
 
-    await _update_customer_rollup(session, customer=customer, order=order)
+    await _update_customer_rollup(session, actor=actor, customer=customer, order=order)
     await _evaluate_achievements(session, actor=actor, customer=customer, order=order)
 
     if order.payment_status == "paid":

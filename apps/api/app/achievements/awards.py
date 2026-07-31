@@ -7,6 +7,7 @@ and is never edited, only reversed via a compensating ledger entry.
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -33,6 +34,20 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 _rule_node_adapter: TypeAdapter[RuleNode] = TypeAdapter(RuleNode)
+
+
+def _reward_idempotency_key(
+    *, achievement_id: uuid.UUID, customer_id: uuid.UUID, source_event_key: str
+) -> str:
+    """Both target ledgers' `idempotency_key` columns are `VARCHAR(160)`.
+    `source_event_key` is caller-supplied (callers may reasonably compose
+    it from multiple identifiers, e.g. an order id plus the achievement
+    id) and isn't length-bounded against this specific budget, so it is
+    hashed rather than embedded verbatim — the achievement/customer ids
+    stay in plain UUID form for debuggability, only the part with no
+    length guarantee is compressed to a fixed-size digest."""
+    digest = hashlib.sha256(source_event_key.encode("utf-8")).hexdigest()
+    return f"achievement:{achievement_id}:{customer_id}:{digest}"
 
 
 async def get_award(session: AsyncSession, award_id: uuid.UUID) -> CustomerAchievementAward | None:
@@ -116,7 +131,11 @@ async def evaluate_and_award(
             account_id=account.id,
             entry_type="achievement_reward",
             points=achievement.reward_amount,
-            idempotency_key=f"achievement:{achievement.id}:{customer_id}:{source_event_key}",
+            idempotency_key=_reward_idempotency_key(
+                achievement_id=achievement.id,
+                customer_id=customer_id,
+                source_event_key=source_event_key,
+            ),
             actor_id=actor.id if actor else None,
             source_type="achievement",
             source_id=achievement.id,
@@ -137,7 +156,11 @@ async def evaluate_and_award(
             entry_type="issue",
             issue_reason="achievement_reward",
             amount_minor=achievement.reward_amount,
-            idempotency_key=f"achievement:{achievement.id}:{customer_id}:{source_event_key}",
+            idempotency_key=_reward_idempotency_key(
+                achievement_id=achievement.id,
+                customer_id=customer_id,
+                source_event_key=source_event_key,
+            ),
             actor_id=actor.id if actor else None,
             source_type="achievement",
             source_id=achievement.id,

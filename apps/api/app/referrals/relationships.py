@@ -24,16 +24,27 @@ from app.referrals.errors import (
     RewardHoldNotElapsedError,
     SelfReferralError,
 )
-from app.shared.normalization import normalize_email, normalize_phone
+from app.shared.normalization import NormalizationError, normalize_email, normalize_phone
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def normalize_identity(raw: str) -> str:
-    phone = normalize_phone(raw)
+    """`normalize_phone`/`normalize_email` each raise `NormalizationError`
+    (not return falsy) for input that doesn't match their own format —
+    a referred contact may legitimately be either shape, so each is tried
+    in turn and only the final fallback (neither a phone nor an email)
+    falls back to a plain lowercase/stripped comparison key."""
+    try:
+        phone = normalize_phone(raw)
+    except NormalizationError:
+        phone = None
     if phone:
         return phone
-    email = normalize_email(raw)
+    try:
+        email = normalize_email(raw)
+    except NormalizationError:
+        email = None
     if email:
         return email
     return raw.strip().lower()

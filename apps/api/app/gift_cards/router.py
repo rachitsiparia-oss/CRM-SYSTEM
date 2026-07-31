@@ -103,6 +103,16 @@ async def issue_gift_card(
     )
 
 
+@router.get("/analytics")
+async def get_analytics(
+    request: Request,
+    _actor: StaffUser = Depends(require_permission("gift_cards.analytics.view")),
+    session: AsyncSession = Depends(get_db),
+) -> DataResponse[GiftCardAnalyticsOut]:
+    result = await analytics.get_analytics(session)
+    return DataResponse(data=result, meta=request_meta(request))
+
+
 @router.get("/{gift_card_id}")
 async def get_gift_card(
     gift_card_id: uuid.UUID,
@@ -213,7 +223,7 @@ async def expire_gift_card(
     return DataResponse(data=_to_out(card), meta=request_meta(request))
 
 
-@router.post("/{gift_card_id}/adjust")
+@router.post("/{gift_card_id}/adjust", status_code=status.HTTP_201_CREATED)
 async def adjust_gift_card(
     gift_card_id: uuid.UUID,
     payload: AdjustGiftCardIn,
@@ -299,13 +309,3 @@ async def reverse_redemption(
     except GiftCardError as exc:
         raise HTTPException(exc.status_code, detail=exc.message) from exc
     return DataResponse(data=LedgerEntryOut.model_validate(reversal), meta=request_meta(request))
-
-
-@router.get("/analytics")
-async def get_analytics(
-    request: Request,
-    _actor: StaffUser = Depends(require_permission("gift_cards.analytics.view")),
-    session: AsyncSession = Depends(get_db),
-) -> DataResponse[GiftCardAnalyticsOut]:
-    result = await analytics.get_analytics(session)
-    return DataResponse(data=result, meta=request_meta(request))
