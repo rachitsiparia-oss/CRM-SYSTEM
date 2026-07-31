@@ -30,6 +30,7 @@ from app.db.models import (
     Order,
     ReferralRelationship,
     Reservation,
+    Segment,
     SegmentMembership,
     Tag,
 )
@@ -120,12 +121,29 @@ async def resolve_customer_facts(
     )
     facts["customer.tags"] = [row[0] for row in tag_rows]
 
-    segment_rows = await session.execute(
-        select(SegmentMembership.segment_id).where(
-            SegmentMembership.customer_id == customer_id, SegmentMembership.action == "added"
+    # Current static membership per segment is the most recent row for
+    # (segment_id, customer_id) — matches SegmentMembership's own
+    # documented "add/remove history, computed at read time" contract.
+    latest_membership = (
+        select(
+            SegmentMembership.segment_id,
+            func.max(SegmentMembership.created_at).label("latest_at"),
         )
+        .where(SegmentMembership.customer_id == customer_id)
+        .group_by(SegmentMembership.segment_id)
+        .subquery()
     )
-    facts["customer.segment_codes"] = [str(row[0]) for row in segment_rows]
+    segment_rows = await session.execute(
+        select(Segment.code)
+        .join(SegmentMembership, SegmentMembership.segment_id == Segment.id)
+        .join(
+            latest_membership,
+            (SegmentMembership.segment_id == latest_membership.c.segment_id)
+            & (SegmentMembership.created_at == latest_membership.c.latest_at),
+        )
+        .where(SegmentMembership.customer_id == customer_id, SegmentMembership.action == "added")
+    )
+    facts["customer.segment_codes"] = [row[0] for row in segment_rows]
 
     consent_rows = await session.execute(
         select(CustomerConsent.consent_type).where(
