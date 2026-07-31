@@ -1,7 +1,10 @@
+from app.db.models.achievement import Achievement, CustomerAchievementAward
 from app.db.models.attendance_correction import AttendanceCorrection
 from app.db.models.attendance_record import AttendanceRecord
 from app.db.models.audit_event import AuditEvent
 from app.db.models.business_hours import BusinessHours
+from app.db.models.campaign import Campaign, CampaignRecipient
+from app.db.models.commercial_risk_flag import CommercialRiskFlag
 from app.db.models.communication_channel import CommunicationChannel
 from app.db.models.communication_consent import CommunicationConsent
 from app.db.models.communication_preference import CommunicationPreference
@@ -13,12 +16,14 @@ from app.db.models.conversation_status_history import ConversationStatusHistory
 from app.db.models.customer import Customer
 from app.db.models.customer_address import CustomerAddress
 from app.db.models.customer_consent import CustomerConsent
+from app.db.models.customer_credit import CustomerCreditAccount, CustomerCreditLedgerEntry
 from app.db.models.customer_merge_event import CustomerMergeEvent
 from app.db.models.customer_note import CustomerNote
 from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
 from app.db.models.dining_area import DiningArea
+from app.db.models.gift_card import GiftCard, GiftCardLedgerEntry
 from app.db.models.holiday_calendar import HolidayCalendar
 from app.db.models.inbound_webhook_event import InboundWebhookEvent
 from app.db.models.inventory_batch import InventoryBatch
@@ -41,6 +46,9 @@ from app.db.models.lead_follow_up import LeadFollowUp
 from app.db.models.lead_status_history import LeadStatusHistory
 from app.db.models.leave_request import LeaveRequest
 from app.db.models.leave_type import LeaveType
+from app.db.models.loyalty_account import LoyaltyAccount, LoyaltyTierMembership
+from app.db.models.loyalty_ledger_entry import LoyaltyLedgerEntry
+from app.db.models.loyalty_program import LoyaltyProgram, LoyaltyTier
 from app.db.models.manual_call_log import ManualCallLog
 from app.db.models.menu_category import MenuCategory
 from app.db.models.message import Message
@@ -52,6 +60,7 @@ from app.db.models.modifier import Modifier
 from app.db.models.modifier_group import ModifierGroup
 from app.db.models.modifier_group_item import ModifierGroupItem
 from app.db.models.notification import Notification
+from app.db.models.offer import Coupon, Offer, OfferRedemption, OfferVersion
 from app.db.models.order import Order
 from app.db.models.order_assignment import OrderAssignment
 from app.db.models.order_charge import OrderCharge
@@ -75,6 +84,9 @@ from app.db.models.product_modifier_group import ProductModifierGroup
 from app.db.models.product_variant import ProductVariant
 from app.db.models.provider_status_event import ProviderStatusEvent
 from app.db.models.recipe import Recipe, RecipeItem
+from app.db.models.referral_code import ReferralCode
+from app.db.models.referral_program import ReferralProgram
+from app.db.models.referral_relationship import ReferralRelationship
 from app.db.models.reservation import Reservation
 from app.db.models.reservation_note import ReservationNote
 from app.db.models.reservation_policy import ReservationPolicies
@@ -89,6 +101,7 @@ from app.db.models.restaurant_table import RestaurantTable
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.scheduled_message import ScheduledMessage
+from app.db.models.segment import Segment, SegmentMembership
 from app.db.models.shift_change_request import ShiftChangeRequest
 from app.db.models.shift_template import ShiftTemplate
 from app.db.models.skill import Skill
@@ -129,10 +142,14 @@ from app.db.models.unit_of_measure import UnitOfMeasure
 from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
+    "Achievement",
     "AttendanceCorrection",
     "AttendanceRecord",
     "AuditEvent",
     "BusinessHours",
+    "Campaign",
+    "CampaignRecipient",
+    "CommercialRiskFlag",
     "CommunicationChannel",
     "CommunicationConsent",
     "CommunicationPreference",
@@ -141,15 +158,21 @@ __all__ = [
     "ConversationAssignment",
     "ConversationLink",
     "ConversationStatusHistory",
+    "Coupon",
     "Customer",
+    "CustomerAchievementAward",
     "CustomerAddress",
     "CustomerConsent",
+    "CustomerCreditAccount",
+    "CustomerCreditLedgerEntry",
     "CustomerMergeEvent",
     "CustomerNote",
     "CustomerPreference",
     "CustomerTag",
     "Department",
     "DiningArea",
+    "GiftCard",
+    "GiftCardLedgerEntry",
     "HolidayCalendar",
     "InboundWebhookEvent",
     "InventoryBatch",
@@ -172,6 +195,11 @@ __all__ = [
     "LeadStatusHistory",
     "LeaveRequest",
     "LeaveType",
+    "LoyaltyAccount",
+    "LoyaltyLedgerEntry",
+    "LoyaltyProgram",
+    "LoyaltyTier",
+    "LoyaltyTierMembership",
     "ManualCallLog",
     "MenuCategory",
     "Message",
@@ -183,6 +211,9 @@ __all__ = [
     "ModifierGroup",
     "ModifierGroupItem",
     "Notification",
+    "Offer",
+    "OfferRedemption",
+    "OfferVersion",
     "Order",
     "OrderAssignment",
     "OrderCharge",
@@ -207,6 +238,9 @@ __all__ = [
     "ProviderStatusEvent",
     "Recipe",
     "RecipeItem",
+    "ReferralCode",
+    "ReferralProgram",
+    "ReferralRelationship",
     "Reservation",
     "ReservationNote",
     "ReservationPolicies",
@@ -221,6 +255,8 @@ __all__ = [
     "Role",
     "RolePermission",
     "ScheduledMessage",
+    "Segment",
+    "SegmentMembership",
     "ShiftChangeRequest",
     "ShiftTemplate",
     "Skill",
