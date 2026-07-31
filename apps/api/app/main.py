@@ -16,6 +16,7 @@ from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
 from app.customer_credit.router import router as customer_credit_router
 from app.customers.router import router as customers_router
+from app.gift_cards.router import router as gift_cards_router
 from app.health.router import router as health_router
 from app.inventory.router import router as inventory_router
 from app.knowledge.router import router as knowledge_router
@@ -97,6 +98,7 @@ def create_app() -> FastAPI:
     app.include_router(referrals_router)
     app.include_router(customer_credit_router)
     app.include_router(achievements_router)
+    app.include_router(gift_cards_router)
 
     return app
 
