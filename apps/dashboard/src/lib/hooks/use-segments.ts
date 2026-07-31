@@ -93,6 +93,10 @@ export interface SegmentMembersParams {
   pageSize: number;
 }
 
+/** `GET /{segment_id}/members` returns the segment's *current* membership as
+ * bare customer ids (`PaginatedResponse<string>`) — distinct from
+ * `SegmentMembership`, which is the add/remove *event* record returned by
+ * the mutation endpoints below. */
 export function useSegmentMembers(segmentId: string | undefined, params: SegmentMembersParams) {
   const query = new URLSearchParams({
     page: String(params.page),
@@ -101,7 +105,7 @@ export function useSegmentMembers(segmentId: string | undefined, params: Segment
   return useQuery({
     queryKey: ["segments", segmentId, "members", params],
     queryFn: () =>
-      apiFetchClient<PaginatedResponse<SegmentMembership>>(
+      apiFetchClient<PaginatedResponse<string>>(
         `${BASE}/${segmentId}/members?${query.toString()}`,
       ),
     enabled: !!segmentId,
