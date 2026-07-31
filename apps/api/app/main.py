@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
+from app.campaigns.router import router as campaigns_router
 from app.communications.router import router as communications_router
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import Settings, get_settings
@@ -89,6 +90,7 @@ def create_app() -> FastAPI:
     app.include_router(loyalty_router)
     app.include_router(segments_router)
     app.include_router(offers_router)
+    app.include_router(campaigns_router)
 
     return app
 

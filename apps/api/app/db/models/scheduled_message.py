@@ -13,6 +13,10 @@ SCHEDULED_MESSAGE_PURPOSES = (
     "feedback_request",
     "lead_follow_up",
     "manual",
+    # Added under the 2026-07-30 Phase 12 scope-expansion decision — a
+    # campaign send reuses this same scheduling engine rather than a
+    # second one (GROWTH_AND_INTELLIGENCE.md section 3).
+    "campaign",
 )
 
 # CLAUDE.md section 14, "engine, not scheduler" — no external scheduler

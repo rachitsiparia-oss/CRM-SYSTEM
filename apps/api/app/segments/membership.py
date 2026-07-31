@@ -44,6 +44,13 @@ async def evaluate_for_customer(
     return evaluate(node, facts)
 
 
+async def get_current_member_ids(session: AsyncSession, segment_id: uuid.UUID) -> set[uuid.UUID]:
+    """Public entry point for other domains (campaigns) that need a
+    segment's full current membership rather than one paginated page —
+    see `list_members` for the paginated read path."""
+    return await _current_member_ids(session, segment_id)
+
+
 async def _current_member_ids(session: AsyncSession, segment_id: uuid.UUID) -> set[uuid.UUID]:
     latest_membership = (
         select(
