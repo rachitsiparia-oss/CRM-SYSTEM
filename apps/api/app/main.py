@@ -20,6 +20,7 @@ from app.leads.router import router as leads_router
 from app.loyalty.router import router as loyalty_router
 from app.menu.router import router as menu_router
 from app.notifications.router import router as notifications_router
+from app.offers.router import router as offers_router
 from app.orders.router import router as orders_router
 from app.reservations.router import router as reservations_router
 from app.roles.router import router as roles_router
@@ -87,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(staff_operations_router)
     app.include_router(loyalty_router)
     app.include_router(segments_router)
+    app.include_router(offers_router)
 
     return app
 
