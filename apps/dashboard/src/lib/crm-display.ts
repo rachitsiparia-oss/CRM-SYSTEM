@@ -3,24 +3,36 @@ import type {
   ArticleStatus,
   AttendanceStatus,
   BatchStatus,
+  CampaignRecipientStatus,
+  CampaignStatus,
+  CommercialRiskFlagStatus,
   ConversationPriority,
   ConversationStatus,
   CountStatus,
+  CustomerCreditAccountStatus,
   CustomerStatus,
   DisciplinarySeverity,
   FollowUpStatus,
   FoodType,
+  GiftCardStatus,
   LeadPriority,
   LeadStatus,
   LeaveStatus,
   LifecycleStatus,
+  LoyaltyAccountStatus,
+  LoyaltyProgramStatus,
   NotificationPriority,
+  OfferRedemptionStatus,
+  OfferStatus,
   OrderStatus,
   PaymentStatus,
   PerformanceReviewStatus,
   ReceiptStatus,
+  ReferralProgramStatus,
+  ReferralRelationshipStatus,
   ReservationStatus,
   ScheduledMessageStatus,
+  SegmentStatus,
   ShiftStatus,
   StockStatus,
   TableStatus,
@@ -375,6 +387,108 @@ export const VERIFICATION_STATUS_TONES: Record<"pending" | "verified" | "rejecte
   verified: "success",
   rejected: "danger",
   expired: "warning",
+};
+
+// --- Phase 12: Loyalty, Segments, Offers, Campaigns, Referrals, Achievements,
+// Gift Cards, Internal Customer Credit, Commercial Risk ---
+
+export const LOYALTY_PROGRAM_STATUS_TONES: Record<LoyaltyProgramStatus, StatusTone> = {
+  draft: "neutral",
+  active: "success",
+  paused: "warning",
+  archived: "neutral",
+};
+
+export const LOYALTY_ACCOUNT_STATUS_TONES: Record<LoyaltyAccountStatus, StatusTone> = {
+  active: "success",
+  suspended: "warning",
+  closed: "neutral",
+  merged: "neutral",
+};
+
+export const SEGMENT_STATUS_TONES: Record<SegmentStatus, StatusTone> = {
+  draft: "neutral",
+  active: "success",
+  archived: "neutral",
+};
+
+export const OFFER_STATUS_TONES: Record<OfferStatus, StatusTone> = {
+  draft: "neutral",
+  in_review: "info",
+  approved: "info",
+  active: "success",
+  paused: "warning",
+  expired: "neutral",
+  cancelled: "danger",
+  archived: "neutral",
+};
+
+export const OFFER_REDEMPTION_STATUS_TONES: Record<OfferRedemptionStatus, StatusTone> = {
+  reserved: "info",
+  applied: "info",
+  confirmed: "success",
+  reversed: "warning",
+  rejected: "danger",
+  expired: "neutral",
+};
+
+export const CAMPAIGN_STATUS_TONES: Record<CampaignStatus, StatusTone> = {
+  draft: "neutral",
+  ready: "info",
+  scheduled: "info",
+  running: "success",
+  paused: "warning",
+  completed: "success",
+  cancelled: "neutral",
+  failed: "danger",
+  archived: "neutral",
+};
+
+export const CAMPAIGN_RECIPIENT_STATUS_TONES: Record<CampaignRecipientStatus, StatusTone> = {
+  pending: "neutral",
+  eligible: "info",
+  suppressed: "warning",
+  sent: "success",
+  failed: "danger",
+};
+
+export const REFERRAL_PROGRAM_STATUS_TONES: Record<ReferralProgramStatus, StatusTone> = {
+  draft: "neutral",
+  active: "success",
+  paused: "warning",
+  archived: "neutral",
+};
+
+export const REFERRAL_RELATIONSHIP_STATUS_TONES: Record<ReferralRelationshipStatus, StatusTone> = {
+  invited: "neutral",
+  attributed: "info",
+  qualified: "info",
+  rewarded: "success",
+  rejected: "danger",
+  cancelled: "neutral",
+};
+
+export const GIFT_CARD_STATUS_TONES: Record<GiftCardStatus, StatusTone> = {
+  draft: "neutral",
+  active: "success",
+  partially_redeemed: "info",
+  fully_redeemed: "neutral",
+  expired: "neutral",
+  suspended: "warning",
+  cancelled: "danger",
+};
+
+export const CUSTOMER_CREDIT_ACCOUNT_STATUS_TONES: Record<CustomerCreditAccountStatus, StatusTone> = {
+  active: "success",
+  suspended: "warning",
+  closed: "neutral",
+};
+
+export const COMMERCIAL_RISK_FLAG_STATUS_TONES: Record<CommercialRiskFlagStatus, StatusTone> = {
+  open: "danger",
+  reviewing: "warning",
+  resolved: "success",
+  dismissed: "neutral",
 };
 
 /** Reservation `start_time`/`end_time` arrive as "HH:MM:SS" (no date, no

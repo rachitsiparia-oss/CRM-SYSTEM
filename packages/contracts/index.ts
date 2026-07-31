@@ -3435,3 +3435,1067 @@ export interface StaffAnalytics {
   reviews_due: number;
   open_shift_change_requests: number;
 }
+
+// --- Phase 12: Commercial Rules (shared condition engine) ---------------------
+// Mirrors apps/api/app/commercial_rules/schema.py. The single, closed
+// condition schema shared by Segments, Offer eligibility, and Achievement
+// conditions — `fact` is restricted to CommercialRuleFact, never a free-form
+// path. A rule is a tree: RuleGroup nodes (all/any/not) whose leaves are
+// RuleCondition nodes (fact + operator + value).
+
+export type RuleOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "in"
+  | "not_in"
+  | "contains"
+  | "is_true"
+  | "is_false";
+
+export const COMMERCIAL_RULE_FACTS = [
+  "customer.created_at",
+  "customer.days_since_created",
+  "customer.lifetime_spend_minor",
+  "customer.rolling_90d_spend_minor",
+  "customer.completed_order_count",
+  "customer.average_order_value_minor",
+  "customer.days_since_last_order",
+  "customer.visit_count",
+  "customer.no_show_count",
+  "customer.cancellation_count",
+  "customer.loyalty_tier_rank",
+  "customer.loyalty_points_balance",
+  "customer.tags",
+  "customer.segment_codes",
+  "customer.whatsapp_consent",
+  "customer.email_consent",
+  "customer.sms_consent",
+  "customer.birthday_month",
+  "customer.referral_count",
+  "customer.has_purchased_gift_card",
+  "order.channel",
+  "order.order_type",
+  "order.subtotal_minor",
+  "order.product_ids",
+  "order.category_ids",
+] as const;
+export type CommercialRuleFact = (typeof COMMERCIAL_RULE_FACTS)[number];
+
+export interface RuleCondition {
+  kind: "condition";
+  fact: CommercialRuleFact;
+  operator: RuleOperator;
+  value: unknown;
+}
+
+export interface RuleGroup {
+  kind: "group";
+  logic: "all" | "any" | "not";
+  conditions: RuleNode[];
+}
+
+export type RuleNode = RuleCondition | RuleGroup;
+
+export interface RuleEvaluationResult {
+  eligible: boolean;
+  matched_facts: string[];
+  failed_facts: string[];
+  unknown_facts: string[];
+}
+
+// --- Phase 12: Offer benefit rules ---------------------------------------------
+// Mirrors apps/api/app/offers/benefit.py. A per-offer_type discriminated
+// union — validated server-side at offer creation, never accepted as
+// arbitrary JSON at redemption time.
+
+export interface PercentageBenefit {
+  kind: "percentage";
+  percent: string; // exact-decimal on the wire — display only, never arithmetic
+}
+export interface FixedAmountBenefit {
+  kind: "fixed_amount";
+  amount_minor: number;
+}
+export interface BuyXGetYBenefit {
+  kind: "buy_x_get_y";
+  buy_quantity: number;
+  get_quantity: number;
+  get_discount_percent: string;
+}
+export interface ComboPriceBenefit {
+  kind: "combo_price";
+  fixed_price_minor: number;
+}
+export interface LoyaltyBonusBenefit {
+  kind: "loyalty_bonus";
+  grant_points: number;
+}
+export interface InternalCreditBenefit {
+  kind: "internal_credit";
+  grant_amount_minor: number;
+}
+export type BenefitRule =
+  | PercentageBenefit
+  | FixedAmountBenefit
+  | BuyXGetYBenefit
+  | ComboPriceBenefit
+  | LoyaltyBonusBenefit
+  | InternalCreditBenefit;
+
+// --- Phase 12: Loyalty ----------------------------------------------------------
+// Mirrors apps/api/app/loyalty/schemas.py.
+
+export type LoyaltyProgramStatus = "draft" | "active" | "paused" | "archived";
+export type TierQualificationMetric =
+  | "lifetime_spend"
+  | "rolling_spend"
+  | "points_earned"
+  | "completed_orders"
+  | "visits"
+  | "manual";
+export type LoyaltyAccountStatus = "active" | "suspended" | "closed" | "merged";
+export type LoyaltyLedgerEntryType =
+  | "earn_order"
+  | "earn_campaign"
+  | "earn_manual"
+  | "redeem_order"
+  | "redeem_reward"
+  | "expire"
+  | "reverse_earn"
+  | "reverse_redemption"
+  | "service_recovery_credit"
+  | "merge_transfer"
+  | "correction"
+  | "referral_reward"
+  | "achievement_reward";
+
+export interface LoyaltyProgram {
+  id: string;
+  code: string;
+  name: string;
+  points_display_name: string;
+  description: string | null;
+  status: LoyaltyProgramStatus;
+  is_default: boolean;
+  points_per_currency_unit: number;
+  currency_unit_minor: number;
+  redemption_points_per_unit: number;
+  redemption_value_minor: number;
+  minimum_redemption_points: number;
+  max_redemption_percent: string | null;
+  points_expiry_days: number | null;
+  terms_summary: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoyaltyProgramCreateInput {
+  code: string;
+  name: string;
+  points_display_name?: string;
+  description?: string | null;
+  points_per_currency_unit?: number;
+  currency_unit_minor?: number;
+  redemption_points_per_unit?: number;
+  redemption_value_minor?: number;
+  minimum_redemption_points?: number;
+  max_redemption_percent?: string | null;
+  points_expiry_days?: number | null;
+  terms_summary?: string | null;
+  is_default?: boolean;
+}
+
+export interface LoyaltyProgramUpdateInput {
+  name?: string;
+  description?: string | null;
+  points_expiry_days?: number | null;
+  max_redemption_percent?: string | null;
+  terms_summary?: string | null;
+}
+
+export interface LoyaltyTier {
+  id: string;
+  program_id: string;
+  code: string;
+  name: string;
+  rank: number;
+  qualification_metric: TierQualificationMetric;
+  threshold: string;
+  rolling_window_days: number | null;
+  benefits_summary: string | null;
+  points_multiplier: string;
+  is_active: boolean;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface LoyaltyTierCreateInput {
+  code: string;
+  name: string;
+  rank: number;
+  qualification_metric: TierQualificationMetric;
+  threshold: string;
+  rolling_window_days?: number | null;
+  benefits_summary?: string | null;
+  points_multiplier?: string;
+  review_period_days?: number | null;
+  downgrade_grace_days?: number | null;
+  icon?: string | null;
+  color?: string | null;
+}
+
+export interface LoyaltyAccount {
+  id: string;
+  account_number: string;
+  customer_id: string;
+  program_id: string;
+  status: LoyaltyAccountStatus;
+  points_balance: number;
+  lifetime_points_earned: number;
+  lifetime_points_redeemed: number;
+  lifetime_points_expired: number;
+  current_tier_id: string | null;
+  enrolled_at: string;
+}
+
+export interface LoyaltyLedgerEntry {
+  id: string;
+  account_id: string;
+  entry_type: LoyaltyLedgerEntryType;
+  points_delta: number;
+  balance_after: number;
+  source_type: string | null;
+  source_id: string | null;
+  description: string | null;
+  effective_at: string;
+  expiry_at: string | null;
+  reversal_of_id: string | null;
+  created_at: string;
+}
+
+export interface LoyaltyEnrollInput {
+  customer_id: string;
+  program_id?: string | null;
+  enrollment_source?: string | null;
+}
+
+export interface LoyaltyEarnInput {
+  account_id: string;
+  entry_type: "earn_order" | "earn_campaign" | "earn_manual" | "service_recovery_credit";
+  points: number;
+  source_type?: string | null;
+  source_id?: string | null;
+  description?: string | null;
+  idempotency_key: string;
+  expiry_at?: string | null;
+}
+
+export interface LoyaltyRedeemInput {
+  account_id: string;
+  entry_type?: "redeem_order" | "redeem_reward";
+  points: number;
+  source_type?: string | null;
+  source_id?: string | null;
+  description?: string | null;
+  idempotency_key: string;
+}
+
+export interface LoyaltyAdjustInput {
+  account_id: string;
+  points_delta: number;
+  reason: string;
+  idempotency_key: string;
+  approval_reference?: string | null;
+}
+
+export interface LoyaltyReverseInput {
+  entry_id: string;
+  reason: string;
+  idempotency_key: string;
+}
+
+export interface LoyaltyTierAssignInput {
+  tier_id: string;
+  reason: string;
+}
+
+export interface LoyaltyAnalytics {
+  active_members: number;
+  points_issued_30d: number;
+  points_redeemed_30d: number;
+  points_expired_30d: number;
+  outstanding_points_liability_minor: number;
+  redemption_rate_pct: string;
+  tier_distribution: Array<Record<string, number | string | null>>;
+}
+
+// --- Phase 12: Segments ----------------------------------------------------------
+// Mirrors apps/api/app/segments/schemas.py.
+
+export type SegmentType = "dynamic" | "static";
+export type SegmentStatus = "draft" | "active" | "archived";
+
+export interface Segment {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  segment_type: SegmentType;
+  status: SegmentStatus;
+  rule_definition: RuleNode | null;
+  rule_version: number;
+  refresh_strategy: string | null;
+  estimated_count: number | null;
+  last_computed_count: number | null;
+  last_refreshed_at: string | null;
+  owner_staff_id: string | null;
+  is_seed_builtin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SegmentCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  segment_type: SegmentType;
+  rule_definition?: RuleNode | null;
+  refresh_strategy?: string | null;
+}
+
+export interface SegmentUpdateInput {
+  name?: string;
+  description?: string | null;
+  rule_definition?: RuleNode | null;
+  refresh_strategy?: string | null;
+}
+
+export interface SegmentMembership {
+  id: string;
+  segment_id: string;
+  customer_id: string;
+  action: "added" | "removed";
+  source: string | null;
+  added_by: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface SegmentPreview {
+  eligible: boolean;
+  matched_facts: string[];
+  failed_facts: string[];
+  unknown_facts: string[];
+}
+
+export interface SegmentRefreshResult {
+  segment_id: string;
+  computed_count: number;
+  refreshed_at: string;
+}
+
+// --- Phase 12: Offers & Coupons --------------------------------------------------
+// Mirrors apps/api/app/offers/schemas.py.
+
+export type OfferType =
+  | "percentage_discount"
+  | "fixed_discount"
+  | "item_discount"
+  | "category_discount"
+  | "buy_x_get_y"
+  | "combo_price"
+  | "free_item"
+  | "delivery_fee_discount"
+  | "loyalty_bonus"
+  | "internal_credit"
+  | "service_recovery";
+export type OfferStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "active"
+  | "paused"
+  | "expired"
+  | "cancelled"
+  | "archived";
+export type OfferRedemptionStatus =
+  | "reserved"
+  | "applied"
+  | "confirmed"
+  | "reversed"
+  | "rejected"
+  | "expired";
+
+export interface OfferVersionCreateInput {
+  eligibility_rule: RuleNode;
+  benefit_rule: BenefitRule;
+  minimum_order_value_minor?: number | null;
+  maximum_discount_minor?: number | null;
+  applicable_product_ids?: string[] | null;
+  excluded_product_ids?: string[] | null;
+  applicable_category_ids?: string[] | null;
+  channel_eligibility?: string[] | null;
+  day_time_windows?: Record<string, unknown> | null;
+  global_usage_limit?: number | null;
+  per_customer_usage_limit?: number | null;
+  valid_from: string;
+  valid_until?: string | null;
+}
+
+export interface OfferCreateInput {
+  offer_code: string;
+  internal_name: string;
+  customer_facing_name: string;
+  offer_type: OfferType;
+  requires_code?: boolean;
+  stackability_group?: string | null;
+  is_exclusive?: boolean;
+  budget_cap_minor?: number | null;
+  redemption_cap?: number | null;
+  requires_approval?: boolean;
+  financial_owner_id?: string | null;
+  terms_and_notes?: string | null;
+  initial_version: OfferVersionCreateInput;
+}
+
+export interface OfferUpdateInput {
+  internal_name?: string;
+  customer_facing_name?: string;
+  stackability_group?: string | null;
+  is_exclusive?: boolean;
+  budget_cap_minor?: number | null;
+  redemption_cap?: number | null;
+  financial_owner_id?: string | null;
+  terms_and_notes?: string | null;
+}
+
+export interface OfferVersion {
+  id: string;
+  offer_id: string;
+  version_number: number;
+  eligibility_rule: RuleNode;
+  benefit_rule: BenefitRule;
+  minimum_order_value_minor: number | null;
+  maximum_discount_minor: number | null;
+  applicable_product_ids: string[] | null;
+  excluded_product_ids: string[] | null;
+  applicable_category_ids: string[] | null;
+  channel_eligibility: string[] | null;
+  day_time_windows: Record<string, unknown> | null;
+  global_usage_limit: number | null;
+  per_customer_usage_limit: number | null;
+  valid_from: string;
+  valid_until: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Offer {
+  id: string;
+  offer_code: string;
+  internal_name: string;
+  customer_facing_name: string;
+  offer_type: OfferType;
+  status: OfferStatus;
+  requires_code: boolean;
+  stackability_group: string | null;
+  is_exclusive: boolean;
+  budget_cap_minor: number | null;
+  redemption_cap: number | null;
+  redemption_count: number;
+  requires_approval: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
+  financial_owner_id: string | null;
+  terms_and_notes: string | null;
+  latest_version_number: number;
+  latest_version_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  offer_id: string;
+  is_reusable: boolean;
+  customer_id: string | null;
+  starts_at: string | null;
+  expires_at: string | null;
+  redemption_limit: number | null;
+  redemption_count: number;
+  source_campaign_id: string | null;
+  generation_batch: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CouponCreateInput {
+  code: string;
+  is_reusable?: boolean;
+  customer_id?: string | null;
+  starts_at?: string | null;
+  expires_at?: string | null;
+  redemption_limit?: number | null;
+  generation_batch?: string | null;
+}
+
+export interface OfferPreviewInput {
+  customer_id: string;
+  coupon_code?: string | null;
+  order_channel?: string | null;
+  order_type?: string | null;
+  subtotal_minor: number;
+  product_ids?: string[];
+  category_ids?: string[];
+  eligible_amount_minor: number;
+}
+
+export interface OfferPreviewResult {
+  eligible: boolean;
+  matched_facts: string[];
+  failed_facts: string[];
+  unknown_facts: string[];
+  discount_amount_minor: number;
+  reasons: string[];
+}
+
+export interface OfferReserveRedemptionInput {
+  offer_id: string;
+  customer_id: string;
+  coupon_code?: string | null;
+  order_id?: string | null;
+  order_channel?: string | null;
+  order_type?: string | null;
+  subtotal_minor: number;
+  product_ids?: string[];
+  category_ids?: string[];
+  eligible_amount_minor: number;
+  idempotency_key: string;
+}
+
+export interface OfferRedemption {
+  id: string;
+  offer_id: string;
+  offer_version_id: string;
+  coupon_id: string | null;
+  customer_id: string;
+  order_id: string | null;
+  entered_code: string | null;
+  eligible_amount_minor: number;
+  discount_amount_minor: number;
+  status: OfferRedemptionStatus;
+  evaluation_explanation: Record<string, unknown>;
+  idempotency_key: string;
+  reservation_expires_at: string | null;
+  confirmed_at: string | null;
+  reversed_at: string | null;
+  reversal_reason: string | null;
+  created_at: string;
+}
+
+// --- Phase 12: Campaigns ----------------------------------------------------------
+// Mirrors apps/api/app/campaigns/schemas.py.
+
+export type CampaignStatus =
+  | "draft"
+  | "ready"
+  | "scheduled"
+  | "running"
+  | "paused"
+  | "completed"
+  | "cancelled"
+  | "failed"
+  | "archived";
+export type CampaignRecipientStatus = "pending" | "eligible" | "suppressed" | "sent" | "failed";
+
+export interface Campaign {
+  id: string;
+  code: string;
+  name: string;
+  objective: string | null;
+  campaign_type: string | null;
+  status: CampaignStatus;
+  channel_templates: Record<string, unknown>;
+  target_segment_ids: string[];
+  excluded_segment_ids: string[] | null;
+  linked_offer_id: string | null;
+  scheduled_at: string | null;
+  send_window_start_local: string | null;
+  send_window_end_local: string | null;
+  audience_snapshot_taken_at: string | null;
+  estimated_size: number | null;
+  budget_minor: number | null;
+  owner_staff_id: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignCreateInput {
+  code: string;
+  name: string;
+  objective?: string | null;
+  campaign_type?: string | null;
+  channel_templates: Record<string, string>;
+  target_segment_ids: string[];
+  excluded_segment_ids?: string[] | null;
+  linked_offer_id?: string | null;
+  scheduled_at?: string | null;
+  send_window_start_local?: string | null;
+  send_window_end_local?: string | null;
+  budget_minor?: number | null;
+  owner_staff_id?: string | null;
+}
+
+export interface CampaignUpdateInput {
+  name?: string;
+  objective?: string | null;
+  campaign_type?: string | null;
+  channel_templates?: Record<string, string> | null;
+  target_segment_ids?: string[] | null;
+  excluded_segment_ids?: string[] | null;
+  linked_offer_id?: string | null;
+  scheduled_at?: string | null;
+  send_window_start_local?: string | null;
+  send_window_end_local?: string | null;
+  budget_minor?: number | null;
+  owner_staff_id?: string | null;
+}
+
+export interface CampaignRecipient {
+  id: string;
+  campaign_id: string;
+  customer_id: string;
+  channel_id: string;
+  source_segment_id: string | null;
+  status: CampaignRecipientStatus;
+  eligibility_reason: string | null;
+  suppression_reason: string | null;
+  scheduled_message_id: string | null;
+  message_id: string | null;
+  attempt_count: number;
+  sent_at: string | null;
+  delivered_at: string | null;
+  failed_at: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
+  failure_reason: string | null;
+  created_at: string;
+}
+
+export interface CampaignBuildAudienceResult {
+  campaign_id: string;
+  estimated_size: number;
+  audience_snapshot_taken_at: string;
+}
+
+export interface CampaignLaunchResult {
+  campaign_id: string;
+  queued_count: number;
+  suppressed_count: number;
+}
+
+export interface CampaignAnalytics {
+  campaign_id: string;
+  total_recipients: number;
+  pending: number;
+  eligible: number;
+  suppressed: number;
+  sent: number;
+  failed: number;
+}
+
+// --- Phase 12: Referrals ----------------------------------------------------------
+// Mirrors apps/api/app/referrals/schemas.py.
+
+export type ReferralProgramStatus = "draft" | "active" | "paused" | "archived";
+export type ReferralRelationshipStatus =
+  | "invited"
+  | "attributed"
+  | "qualified"
+  | "rewarded"
+  | "rejected"
+  | "cancelled";
+export type ReferralRewardLedger = "loyalty_points" | "internal_credit";
+
+export interface ReferralProgram {
+  id: string;
+  code: string;
+  name: string;
+  status: ReferralProgramStatus;
+  starts_at: string | null;
+  ends_at: string | null;
+  referrer_eligibility_note: string | null;
+  referee_eligibility_note: string | null;
+  qualifying_order_minimum_minor: number | null;
+  reward_ledger: ReferralRewardLedger;
+  referrer_reward_amount: number;
+  referee_reward_amount: number;
+  max_active_codes_per_referrer: number;
+  max_rewarded_referrals_per_window: number | null;
+  window_days: number | null;
+  reward_hold_days: number;
+  version: number;
+  is_active_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReferralProgramCreateInput {
+  code: string;
+  name: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  referrer_eligibility_note?: string | null;
+  referee_eligibility_note?: string | null;
+  qualifying_order_minimum_minor?: number | null;
+  reward_ledger?: ReferralRewardLedger;
+  referrer_reward_amount: number;
+  referee_reward_amount: number;
+  max_active_codes_per_referrer?: number;
+  max_rewarded_referrals_per_window?: number | null;
+  window_days?: number | null;
+  reward_hold_days?: number;
+}
+
+export interface ReferralProgramUpdateInput {
+  name?: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  referrer_eligibility_note?: string | null;
+  referee_eligibility_note?: string | null;
+  qualifying_order_minimum_minor?: number | null;
+  referrer_reward_amount?: number | null;
+  referee_reward_amount?: number | null;
+  max_active_codes_per_referrer?: number | null;
+  max_rewarded_referrals_per_window?: number | null;
+  window_days?: number | null;
+  reward_hold_days?: number | null;
+}
+
+export interface ReferralCode {
+  id: string;
+  code: string;
+  program_id: string;
+  referrer_customer_id: string;
+  is_active: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface ReferralRelationship {
+  id: string;
+  program_id: string;
+  code_id: string;
+  referrer_customer_id: string;
+  referred_identity_key: string;
+  referred_customer_id: string | null;
+  attributed_at: string;
+  qualifying_order_id: string | null;
+  status: ReferralRelationshipStatus;
+  referrer_reward_ledger_entry_id: string | null;
+  referee_reward_ledger_entry_id: string | null;
+  rejection_reason: string | null;
+  qualified_at: string | null;
+  rewarded_at: string | null;
+  created_at: string;
+}
+
+export interface ReferralAttributeInput {
+  code: string;
+  referred_contact: string;
+  referred_customer_id?: string | null;
+}
+
+// --- Phase 12: Achievements ----------------------------------------------------------
+// Mirrors apps/api/app/achievements/schemas.py.
+
+export type AchievementRewardLedger = "none" | "loyalty_points" | "internal_credit";
+
+export interface Achievement {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  condition_version: number;
+  condition: RuleNode;
+  is_active: boolean;
+  is_hidden: boolean;
+  reward_ledger: AchievementRewardLedger;
+  reward_amount: number | null;
+  is_repeatable: boolean;
+  cooldown_days: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AchievementCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  condition: RuleNode;
+  is_active?: boolean;
+  is_hidden?: boolean;
+  reward_ledger?: AchievementRewardLedger;
+  reward_amount?: number | null;
+  is_repeatable?: boolean;
+  cooldown_days?: number | null;
+}
+
+export interface AchievementUpdateInput {
+  name?: string;
+  description?: string | null;
+  icon?: string | null;
+  condition?: RuleNode | null;
+  is_active?: boolean | null;
+  is_hidden?: boolean | null;
+  reward_ledger?: AchievementRewardLedger | null;
+  reward_amount?: number | null;
+  is_repeatable?: boolean | null;
+  cooldown_days?: number | null;
+}
+
+export interface AchievementAward {
+  id: string;
+  achievement_id: string;
+  customer_id: string;
+  source_event_type: string;
+  source_event_key: string;
+  is_repeatable_award: boolean;
+  reward_ledger_entry_id: string | null;
+  reversed_at: string | null;
+  reversal_reason: string | null;
+  awarded_at: string;
+}
+
+// --- Phase 12: Gift Cards ----------------------------------------------------------
+// Mirrors apps/api/app/gift_cards/schemas.py.
+
+export type GiftCardStatus =
+  | "draft"
+  | "active"
+  | "partially_redeemed"
+  | "fully_redeemed"
+  | "expired"
+  | "suspended"
+  | "cancelled";
+export type GiftCardLedgerEntryType =
+  | "issue"
+  | "activate"
+  | "redeem"
+  | "reverse"
+  | "adjust"
+  | "expire"
+  | "cancel"
+  | "migration";
+
+export interface GiftCard {
+  id: string;
+  card_number: string;
+  masked_display: string;
+  purchaser_customer_id: string | null;
+  purchaser_contact: string | null;
+  recipient_customer_id: string | null;
+  recipient_name: string | null;
+  recipient_contact: string | null;
+  initial_amount_minor: number;
+  current_balance_minor: number;
+  status: GiftCardStatus;
+  issued_at: string | null;
+  purchased_at: string | null;
+  activated_at: string | null;
+  expires_at: string | null;
+  source_order_id: string | null;
+  delivery_status: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GiftCardIssueInput {
+  initial_amount_minor: number;
+  purchaser_customer_id?: string | null;
+  purchaser_contact?: string | null;
+  recipient_customer_id?: string | null;
+  recipient_name?: string | null;
+  recipient_contact?: string | null;
+  expires_at?: string | null;
+  pin?: string | null;
+  source_order_id?: string | null;
+  notes?: string | null;
+  idempotency_key: string;
+}
+
+export interface GiftCardIssueResult {
+  gift_card: GiftCard;
+  code: string;
+}
+
+export interface GiftCardRevealCode {
+  card_number: string;
+  code_last4: string;
+}
+
+export interface GiftCardStatusActionInput {
+  reason?: string | null;
+}
+
+export interface GiftCardRedeemInput {
+  code: string;
+  pin?: string | null;
+  amount_minor: number;
+  order_id?: string | null;
+  idempotency_key: string;
+}
+
+export interface GiftCardAdjustInput {
+  amount_delta_minor: number;
+  reason: string;
+  idempotency_key: string;
+}
+
+export interface GiftCardLedgerEntry {
+  id: string;
+  gift_card_id: string;
+  entry_type: GiftCardLedgerEntryType;
+  amount_delta_minor: number;
+  balance_after_minor: number;
+  source_type: string | null;
+  source_id: string | null;
+  idempotency_key: string;
+  reason: string | null;
+  reversal_of_id: string | null;
+  created_by: string | null;
+  effective_at: string;
+  created_at: string;
+}
+
+export interface GiftCardAnalytics {
+  active_cards: number;
+  outstanding_liability_minor: number;
+  issued_30d_minor: number;
+  redeemed_30d_minor: number;
+}
+
+// --- Phase 12: Internal Customer Credit ----------------------------------------------------------
+// Mirrors apps/api/app/customer_credit/schemas.py.
+
+export type CustomerCreditAccountStatus = "active" | "suspended" | "closed";
+export type CustomerCreditEntryType = "issue" | "redeem" | "reverse" | "adjust" | "expire" | "migration";
+export type CustomerCreditIssueReason =
+  | "service_recovery"
+  | "refund_as_credit"
+  | "campaign_reward"
+  | "referral_reward"
+  | "achievement_reward"
+  | "goodwill_adjustment"
+  | "migration";
+
+export interface CustomerCreditAccount {
+  id: string;
+  customer_id: string;
+  status: CustomerCreditAccountStatus;
+  current_balance_minor: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerCreditIssueInput {
+  account_id: string;
+  amount_minor: number;
+  issue_reason: CustomerCreditIssueReason;
+  idempotency_key: string;
+  source_type?: string | null;
+  source_id?: string | null;
+  reason?: string | null;
+  approval_reference?: string | null;
+}
+
+export interface CustomerCreditRedeemInput {
+  account_id: string;
+  amount_minor: number;
+  idempotency_key: string;
+  source_type?: string | null;
+  source_id?: string | null;
+  reason?: string | null;
+}
+
+export interface CustomerCreditAdjustInput {
+  account_id: string;
+  amount_delta_minor: number;
+  reason: string;
+  idempotency_key: string;
+  approval_reference?: string | null;
+}
+
+export interface CustomerCreditLedgerEntry {
+  id: string;
+  account_id: string;
+  entry_type: CustomerCreditEntryType;
+  issue_reason: CustomerCreditIssueReason | null;
+  amount_delta_minor: number;
+  balance_after_minor: number;
+  source_type: string | null;
+  source_id: string | null;
+  idempotency_key: string;
+  reason: string | null;
+  approval_reference: string | null;
+  reversal_of_id: string | null;
+  created_by: string | null;
+  effective_at: string;
+  created_at: string;
+}
+
+export interface CustomerCreditAnalytics {
+  active_accounts: number;
+  outstanding_liability_minor: number;
+  issued_30d_minor: number;
+  redeemed_30d_minor: number;
+}
+
+// --- Phase 12: Commercial Risk ----------------------------------------------------------
+// Mirrors apps/api/app/commercial_risk/schemas.py.
+
+export type CommercialRiskFlagType =
+  | "repeated_manual_adjustment"
+  | "repeated_reversal"
+  | "excessive_coupon_failures"
+  | "high_value_issuance"
+  | "self_referral_attempt"
+  | "identity_overlap"
+  | "duplicate_attempt";
+export type CommercialRiskFlagStatus = "open" | "reviewing" | "resolved" | "dismissed";
+
+export interface CommercialRiskFlag {
+  id: string;
+  flag_type: CommercialRiskFlagType;
+  status: CommercialRiskFlagStatus;
+  customer_id: string | null;
+  staff_user_id: string | null;
+  related_type: string | null;
+  related_id: string | null;
+  summary: string;
+  detail: Record<string, unknown> | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolution_note: string | null;
+  task_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommercialRiskReviewInput {
+  target_status: "reviewing" | "resolved" | "dismissed";
+  resolution_note?: string | null;
+}
