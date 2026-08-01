@@ -519,9 +519,92 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef(
         "roles.manage", "Manage role-permission and staff-role assignments.", is_sensitive=True
     ),
-    # Reports
+    # Analytics — Phase 14 (GROWTH_AND_INTELLIGENCE.md section 13.2). One
+    # domain-scoped view code per reporting area exposed on a dashboard,
+    # consolidated where two areas are always granted together in practice
+    # (marketing+loyalty, feedback+complaints) rather than one code per
+    # entry in `REPORTING_AREAS`. Named `analytics.<area>.view` (not
+    # `analytics.view_<area>`) so every one of these ends in the `.view`
+    # suffix `role_matrix._ALL_VIEW` scans for — the same auto-inclusion
+    # mechanism `read_only_auditor` already relies on for every other
+    # domain. `analytics.staff.view` and `analytics.system_operations.view`
+    # are marked sensitive since they expose HR/operational-security-
+    # adjacent aggregates respectively.
+    PermissionDef("analytics.executive.view", "View the executive growth dashboard."),
+    PermissionDef("analytics.sales.view", "View sales and revenue analytics."),
+    PermissionDef("analytics.orders.view", "View order-operations analytics."),
+    PermissionDef("analytics.customers.view", "View customer and lifecycle analytics."),
+    PermissionDef("analytics.leads.view", "View lead-pipeline analytics."),
+    PermissionDef("analytics.reservations.view", "View reservation analytics."),
+    PermissionDef("analytics.inventory.view", "View inventory and supplier analytics."),
+    PermissionDef(
+        "analytics.marketing_loyalty.view", "View marketing, loyalty, and campaign analytics."
+    ),
+    PermissionDef("analytics.feedback_complaints.view", "View feedback and complaint analytics."),
+    PermissionDef("analytics.staff.view", "View staff-operations analytics.", is_sensitive=True),
+    PermissionDef(
+        "analytics.system_operations.view",
+        "View system-operations and integration-health analytics.",
+        is_sensitive=True,
+    ),
+    # Reports — GROWTH_AND_INTELLIGENCE.md section 13.18-13.19.
+    # `reports.drilldown.view` gates record-level drill-down data behind a
+    # report/dashboard card, since it exposes more granular detail than the
+    # aggregate metric itself.
     PermissionDef("reports.view", "View reports."),
+    PermissionDef("reports.create", "Create custom report definitions."),
+    PermissionDef(
+        "reports.manage_system", "Edit or retire system report definitions.", is_sensitive=True
+    ),
+    PermissionDef("reports.share", "Share a report definition with other staff or roles."),
+    PermissionDef("reports.run", "Execute a report run."),
     PermissionDef("reports.export", "Export reports.", is_sensitive=True),
+    PermissionDef("reports.schedule", "Create and manage scheduled reports."),
+    PermissionDef(
+        "reports.schedule.manage_recipients",
+        "Change who receives a scheduled report.",
+        is_sensitive=True,
+    ),
+    PermissionDef("reports.delivery.view", "View scheduled-report delivery history."),
+    PermissionDef(
+        "reports.drilldown.view",
+        "View record-level drill-down data behind a report.",
+        is_sensitive=True,
+    ),
+    # Anomalies and forecasts — GROWTH_AND_INTELLIGENCE.md section 15.
+    PermissionDef("anomalies.view", "View detected anomalies."),
+    PermissionDef(
+        "anomalies.manage_rules", "Create and edit anomaly-detection rules.", is_sensitive=True
+    ),
+    PermissionDef(
+        "anomalies.acknowledge", "Acknowledge, investigate, resolve, or dismiss an anomaly."
+    ),
+    PermissionDef("forecasts.view", "View forecasts."),
+    PermissionDef("forecasts.manage", "Create and edit forecast definitions.", is_sensitive=True),
+    PermissionDef("forecasts.run", "Manually trigger a forecast generation."),
+    # Controlled AI — GROWTH_AND_INTELLIGENCE.md section 14, CLAUDE.md
+    # section 17. `ai.analytics.hr_sensitive` gates AI features from
+    # including HR/staff-sensitive source data, mirroring
+    # `staff.hr_sensitive.read`'s overlay pattern.
+    PermissionDef(
+        "ai.analytics.use", "Use controlled AI summary, draft, and explanation features."
+    ),
+    PermissionDef(
+        "ai.analytics.query", "Ask a natural-language analytics question via controlled AI."
+    ),
+    PermissionDef(
+        "ai.analytics.manage_prompts", "Manage controlled-AI prompt templates.", is_sensitive=True
+    ),
+    PermissionDef(
+        "ai.analytics.usage.view",
+        "View controlled-AI usage, cost, and performance reports.",
+        is_sensitive=True,
+    ),
+    PermissionDef(
+        "ai.analytics.hr_sensitive",
+        "Allow controlled-AI features to include HR-sensitive source data.",
+        is_sensitive=True,
+    ),
     # Settings
     PermissionDef("settings.view", "View system settings."),
     PermissionDef("settings.manage", "Manage system settings.", is_sensitive=True),

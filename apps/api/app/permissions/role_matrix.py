@@ -177,6 +177,25 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "recovery.approve",
         "recovery.execute",
         "recovery.financial_sensitive.read",
+        # Phase 14 — broad operational reporting oversight, matching this
+        # role's own broad operational grants above: every operational
+        # dashboard, report creation/execution (not system-definition
+        # management, reserved for owner/GM), and anomaly/forecast
+        # visibility for the domains it already runs day to day.
+        "analytics.executive.view",
+        "analytics.orders.view",
+        "analytics.reservations.view",
+        "analytics.inventory.view",
+        "analytics.feedback_complaints.view",
+        "reports.view",
+        "reports.create",
+        "reports.run",
+        "reports.export",
+        "reports.drilldown.view",
+        "anomalies.view",
+        "anomalies.acknowledge",
+        "forecasts.view",
+        "ai.analytics.use",
     ),
     "finance_manager": (
         "dashboard.view",
@@ -241,6 +260,25 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "recovery.approve",
         "recovery.reverse",
         "recovery.financial_sensitive.read",
+        # Phase 14 — finance owns revenue/cost reporting and controlled-AI
+        # cost oversight (GROWTH_AND_INTELLIGENCE.md section 19's "finance
+        # gets financial/revenue but not HR-sensitive staff analytics").
+        # No `analytics.staff.view`, no `ai.analytics.hr_sensitive`.
+        "analytics.executive.view",
+        "analytics.sales.view",
+        "analytics.orders.view",
+        "analytics.inventory.view",
+        "reports.view",
+        "reports.create",
+        "reports.run",
+        "reports.export",
+        "reports.schedule",
+        "reports.drilldown.view",
+        "forecasts.view",
+        "anomalies.view",
+        "ai.analytics.use",
+        "ai.analytics.query",
+        "ai.analytics.usage.view",
     ),
     "kitchen_manager": (
         "dashboard.view",
@@ -308,6 +346,10 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "feedback.view",
         "complaints.view",
         "complaints.update",
+        # Phase 14 — kitchen manager needs its own inventory/recipe-cost
+        # picture, not the full operational suite.
+        "analytics.inventory.view",
+        "reports.view",
     ),
     "inventory_manager": (
         "dashboard.view",
@@ -367,6 +409,16 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         # Phase 13 — supply/packaging-related complaints occasionally route
         # to inventory for awareness; no case-management authority.
         "complaints.view",
+        # Phase 14 — the store keeper is the primary consumer of inventory
+        # analytics, waste/consumption anomalies, and ingredient-demand
+        # forecasts (a named GROWTH_AND_INTELLIGENCE.md section 15.2
+        # forecast area).
+        "analytics.inventory.view",
+        "reports.view",
+        "reports.run",
+        "anomalies.view",
+        "anomalies.acknowledge",
+        "forecasts.view",
     ),
     "reservation_manager": (
         "dashboard.view",
@@ -438,6 +490,12 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "complaints.resolve",
         "recovery.view",
         "recovery.propose",
+        # Phase 14 — reservation analytics and forecast for the domain this
+        # role owns end to end (reservation volume is a named forecast
+        # area).
+        "analytics.reservations.view",
+        "reports.view",
+        "forecasts.view",
     ),
     "customer_support_agent": (
         "dashboard.view",
@@ -510,6 +568,13 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "customer_credit.issue",
         "referrals.view",
         "achievements.view",
+        # Phase 14 — front-line visibility into the feedback/complaint
+        # signal this role generates, and the controlled-AI reply-drafting/
+        # conversation-summary capabilities that directly support their
+        # existing `communications.reply` work.
+        "analytics.feedback_complaints.view",
+        "reports.view",
+        "ai.analytics.use",
     ),
     "marketing_manager": (
         "dashboard.view",
@@ -583,6 +648,27 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "feedback.request_review",
         "feedback.respond_to_review",
         "complaints.analytics.view",
+        # Phase 14 — marketing owns campaign/customer-growth analytics and
+        # reporting end to end (GROWTH_AND_INTELLIGENCE.md section 19:
+        # "marketing gets campaign/segment/loyalty/feedback/customer-growth
+        # analytics"), plus campaign-response forecasting and campaign/
+        # complaint-rate anomaly review, and drafting/summary AI features
+        # for campaign copy and feedback themes.
+        "analytics.marketing_loyalty.view",
+        "analytics.customers.view",
+        "analytics.leads.view",
+        "analytics.feedback_complaints.view",
+        "reports.view",
+        "reports.create",
+        "reports.run",
+        "reports.export",
+        "reports.schedule",
+        "reports.share",
+        "reports.drilldown.view",
+        "forecasts.view",
+        "anomalies.view",
+        "ai.analytics.use",
+        "ai.analytics.query",
     ),
     "hr_manager": (
         "dashboard.view",
@@ -655,6 +741,15 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "complaints.transition",
         "complaints.resolve",
         "complaints.close",
+        # Phase 14 — staff analytics without unrelated financial control
+        # (GROWTH_AND_INTELLIGENCE.md section 19's explicit HR reasoning),
+        # plus the AI HR-sensitive overlay so controlled-AI features may
+        # draw on HR-sensitive source data for this role alone.
+        "analytics.staff.view",
+        "reports.view",
+        "reports.export",
+        "ai.analytics.use",
+        "ai.analytics.hr_sensitive",
     ),
     "shift_supervisor": (
         "dashboard.view",
