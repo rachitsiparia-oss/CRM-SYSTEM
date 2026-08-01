@@ -5,11 +5,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.achievements.router import router as achievements_router
+from app.anomalies.router import router as anomalies_router
 from app.auth.router import router as auth_router
 from app.campaigns.router import router as campaigns_router
 from app.commercial_risk.router import router as commercial_risk_router
 from app.communications.router import router as communications_router
 from app.complaints.router import router as complaints_router
+from app.controlled_ai.router import router as controlled_ai_router
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
@@ -20,6 +22,7 @@ from app.customer_credit.router import router as customer_credit_router
 from app.customers.router import router as customers_router
 from app.feedback.router import review_requests_router
 from app.feedback.router import router as feedback_router
+from app.forecasts.router import router as forecasts_router
 from app.gift_cards.router import router as gift_cards_router
 from app.health.router import router as health_router
 from app.inventory.router import router as inventory_router
@@ -31,6 +34,9 @@ from app.notifications.router import router as notifications_router
 from app.offers.router import router as offers_router
 from app.orders.router import router as orders_router
 from app.referrals.router import router as referrals_router
+from app.report_exports.router import router as report_exports_router
+from app.report_schedules.router import router as report_schedules_router
+from app.reports.router import router as reports_router
 from app.reservations.router import router as reservations_router
 from app.roles.router import router as roles_router
 from app.segments.router import router as segments_router
@@ -109,6 +115,12 @@ def create_app() -> FastAPI:
     app.include_router(review_requests_router)
     app.include_router(complaints_router)
     app.include_router(service_recovery_router)
+    app.include_router(reports_router)
+    app.include_router(report_exports_router)
+    app.include_router(report_schedules_router)
+    app.include_router(anomalies_router)
+    app.include_router(forecasts_router)
+    app.include_router(controlled_ai_router)
 
     return app
 

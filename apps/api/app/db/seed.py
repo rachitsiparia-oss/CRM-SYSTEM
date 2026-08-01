@@ -18,15 +18,18 @@ phases and will add their own `seed_*()` calls here.
 import asyncio
 
 from app.achievements.seed import seed_achievements
+from app.anomalies.seed import seed_anomaly_rules
 from app.campaigns.seed import seed_campaigns
 from app.communications.seed import seed_communications
 from app.complaints.seed import seed_complaints
+from app.controlled_ai.seed import seed_ai_prompt_templates
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
 from app.feedback.seed import seed_feedback
+from app.forecasts.seed import seed_forecast_definitions
 from app.inventory.seed import seed_inventory
 from app.knowledge.seed import seed_knowledge_articles
 from app.leads.seed import seed_leads
@@ -41,6 +44,8 @@ from app.permissions.seed import (
     seed_roles,
 )
 from app.referrals.seed import seed_referrals
+from app.report_schedules.seed import seed_scheduled_reports
+from app.reports.seed import seed_report_definitions
 from app.reservations.seed import seed_reservations
 from app.segments.seed import seed_segments
 from app.service_recovery.seed import seed_service_recovery
@@ -83,6 +88,11 @@ async def run_seed() -> None:
         await seed_feedback(session)
         await seed_complaints(session)
         await seed_service_recovery(session)
+        await seed_report_definitions(session)
+        await seed_scheduled_reports(session)
+        await seed_anomaly_rules(session)
+        await seed_forecast_definitions(session)
+        await seed_ai_prompt_templates(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -93,7 +103,8 @@ async def run_seed() -> None:
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
             "orders, inventory, reservations, communications, staff operations, knowledge "
             "base, loyalty, segments, offers, referrals, achievements, campaigns, feedback, "
-            "complaints, service recovery seeded"
+            "complaints, service recovery, report definitions, scheduled reports, anomaly "
+            "rules, forecast definitions, AI prompt templates seeded"
         ),
     )
 
