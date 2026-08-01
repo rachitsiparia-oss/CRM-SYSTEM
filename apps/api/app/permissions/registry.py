@@ -441,9 +441,76 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
         "Resolve or dismiss a flagged commercial-risk event.",
         is_sensitive=True,
     ),
-    # Feedback and complaints
+    # Feedback and reviews — Phase 13 (GROWTH_AND_INTELLIGENCE.md §11).
+    # Replaces the Phase-3-era placeholder pair ("feedback.view",
+    # "complaints.manage") with the granular set this phase actually needs,
+    # the same replace-not-alias treatment every prior phase's own
+    # placeholder codes got (e.g. Phase 6's "menu.manage").
     PermissionDef("feedback.view", "View customer feedback."),
-    PermissionDef("complaints.manage", "Manage customer complaints."),
+    PermissionDef("feedback.create", "Record a new feedback entry."),
+    PermissionDef("feedback.update", "Triage, acknowledge, tag, and edit a feedback entry."),
+    PermissionDef("feedback.resolve", "Resolve, dismiss, or archive a feedback entry."),
+    PermissionDef("feedback.convert_to_complaint", "Convert a feedback entry into a complaint."),
+    PermissionDef("feedback.analytics.view", "View feedback and rating analytics."),
+    PermissionDef(
+        "feedback.request_review", "Create and manage post-order/post-reservation review requests."
+    ),
+    PermissionDef(
+        "feedback.respond_to_review", "Draft an internal response to a public review reference."
+    ),
+    # Complaints and service recovery — Phase 13 (GROWTH_AND_INTELLIGENCE.md
+    # §12). `complaints.view` sees complaints assigned to the actor's own
+    # staff/department scope; `complaints.view_all` additionally sees every
+    # complaint regardless of assignment (mirrors `staff.view`/
+    # `staff.hr_sensitive.read`'s base-plus-sensitive-overlay shape).
+    PermissionDef(
+        "complaints.view", "View complaints assigned to your own staff or department scope."
+    ),
+    PermissionDef("complaints.view_all", "View every complaint regardless of assignment."),
+    PermissionDef("complaints.create", "Create a new complaint."),
+    PermissionDef("complaints.update", "Edit complaint details, add notes and attachments."),
+    PermissionDef("complaints.assign", "Assign or reassign a complaint to staff or a department."),
+    PermissionDef(
+        "complaints.transition", "Move a complaint through its ordinary status lifecycle."
+    ),
+    PermissionDef(
+        "complaints.escalate", "Manually escalate a complaint to the next level.", is_sensitive=True
+    ),
+    PermissionDef("complaints.resolve", "Mark a complaint resolved."),
+    PermissionDef("complaints.close", "Close a resolved complaint."),
+    PermissionDef("complaints.reopen", "Reopen a closed or resolved complaint."),
+    PermissionDef("complaints.sla.manage", "Create and edit SLA policies."),
+    PermissionDef("complaints.analytics.view", "View complaint and SLA analytics."),
+    PermissionDef(
+        "complaints.hr_sensitive.read",
+        "View staff-conduct complaint detail beyond the base complaint record.",
+        is_sensitive=True,
+    ),
+    # Service recovery — Phase 13 (GROWTH_AND_INTELLIGENCE.md §12.6).
+    # Compensation is never mutated directly from these permissions alone —
+    # `recovery.execute` only authorizes calling the already-permission-
+    # gated `app.loyalty`/`app.customer_credit`/`app.orders` services that
+    # actually record the value (PROJECT_PLAN.md's Phase 13 scope bullet).
+    PermissionDef("recovery.view", "View service recovery actions."),
+    PermissionDef("recovery.propose", "Propose a service recovery action on a complaint."),
+    PermissionDef(
+        "recovery.approve",
+        "Approve a service recovery action requiring approval.",
+        is_sensitive=True,
+    ),
+    PermissionDef("recovery.reject", "Reject a proposed service recovery action."),
+    PermissionDef(
+        "recovery.execute", "Execute an approved service recovery action.", is_sensitive=True
+    ),
+    PermissionDef(
+        "recovery.reverse", "Reverse a completed service recovery action.", is_sensitive=True
+    ),
+    PermissionDef("recovery.rules.manage", "Create and edit compensation approval rules."),
+    PermissionDef(
+        "recovery.financial_sensitive.read",
+        "View compensation value and approval detail beyond the base recovery record.",
+        is_sensitive=True,
+    ),
     # Staff, roles, and permissions
     PermissionDef("staff.view", "View staff user directory."),
     PermissionDef("staff.manage", "Manage staff user accounts.", is_sensitive=True),

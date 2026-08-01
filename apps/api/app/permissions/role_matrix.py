@@ -151,6 +151,32 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "gift_cards.view",
         "customer_credit.view",
         "commercial_risk.view",
+        # Phase 13 — operations owns end-to-end complaint case management
+        # (assignment, escalation, ordinary resolution/closure) and mid-tier
+        # recovery approval/execution; SLA policy design and HR-sensitive
+        # detail stay with owner/general_manager/hr_manager respectively.
+        "feedback.view",
+        "feedback.create",
+        "feedback.update",
+        "feedback.resolve",
+        "feedback.convert_to_complaint",
+        "feedback.analytics.view",
+        "feedback.request_review",
+        "complaints.view_all",
+        "complaints.create",
+        "complaints.update",
+        "complaints.assign",
+        "complaints.transition",
+        "complaints.escalate",
+        "complaints.resolve",
+        "complaints.close",
+        "complaints.reopen",
+        "complaints.analytics.view",
+        "recovery.view",
+        "recovery.propose",
+        "recovery.approve",
+        "recovery.execute",
+        "recovery.financial_sensitive.read",
     ),
     "finance_manager": (
         "dashboard.view",
@@ -204,6 +230,17 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "customer_credit.analytics.view",
         "commercial_risk.view",
         "commercial_risk.review",
+        # Phase 13 — finance signs off on and can reverse a compensation
+        # action (the same "signs off on adjustments" pattern as
+        # inventory.adjustments.approve above), and sees the financial
+        # detail behind that decision; case management itself is
+        # operations_manager/customer_support_agent's job.
+        "complaints.view",
+        "complaints.analytics.view",
+        "recovery.view",
+        "recovery.approve",
+        "recovery.reverse",
+        "recovery.financial_sensitive.read",
     ),
     "kitchen_manager": (
         "dashboard.view",
@@ -264,6 +301,13 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.skills.view",
         "staff.skills.manage",
         "staff.availability.view",
+        # Phase 13 — food_quality/allergy_or_dietary complaints route to the
+        # kitchen department; the kitchen manager investigates and notes
+        # root cause on complaints assigned to them, but does not own
+        # intake, transitions, or recovery decisions.
+        "feedback.view",
+        "complaints.view",
+        "complaints.update",
     ),
     "inventory_manager": (
         "dashboard.view",
@@ -320,6 +364,9 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.training.view",
         "staff.certifications.view",
         "staff.skills.view",
+        # Phase 13 — supply/packaging-related complaints occasionally route
+        # to inventory for awareness; no case-management authority.
+        "complaints.view",
     ),
     "reservation_manager": (
         "dashboard.view",
@@ -379,6 +426,18 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         # reservations/deposits (GROWTH_AND_INTELLIGENCE.md's own
         # integration note); no redemption or program-management authority.
         "offers.view",
+        # Phase 13 — reservation-linked complaints (the "reservation"
+        # category) are this role's domain, including proposing a priority-
+        # reservation recovery; financial/escalation authority stays
+        # elsewhere.
+        "feedback.view",
+        "complaints.view",
+        "complaints.create",
+        "complaints.update",
+        "complaints.transition",
+        "complaints.resolve",
+        "recovery.view",
+        "recovery.propose",
     ),
     "customer_support_agent": (
         "dashboard.view",
@@ -408,8 +467,24 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "communications.preferences.view",
         "communications.call_logs.create",
         "communications.call_logs.view",
+        # Phase 13 — the primary complaint intake and case-handling role:
+        # full feedback lifecycle, ordinary complaint case management, and
+        # proposing (not approving/executing) recovery actions. No
+        # view_all, escalate, close, reopen, sla.manage, hr_sensitive,
+        # analytics, or any recovery approval/execution/reversal authority.
         "feedback.view",
-        "complaints.manage",
+        "feedback.create",
+        "feedback.update",
+        "feedback.resolve",
+        "feedback.convert_to_complaint",
+        "feedback.request_review",
+        "complaints.view",
+        "complaints.create",
+        "complaints.update",
+        "complaints.transition",
+        "complaints.resolve",
+        "recovery.view",
+        "recovery.propose",
         # "Customer support/reservation roles: operational knowledge access
         # relevant to their duties" plus self-service basics every role gets.
         "knowledge.view",
@@ -499,6 +574,15 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.training.view",
+        # Phase 13 — marketing owns review-request outreach and drafting
+        # public-review responses, plus the aggregate feedback/complaint-
+        # rate signal that feeds its own reports; no complaint case
+        # management.
+        "feedback.view",
+        "feedback.analytics.view",
+        "feedback.request_review",
+        "feedback.respond_to_review",
+        "complaints.analytics.view",
     ),
     "hr_manager": (
         "dashboard.view",
@@ -559,6 +643,18 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.availability.view",
         "staff.availability.manage",
         "staff.analytics.view",
+        # Phase 13 — staff-conduct ("staff_behavior") complaints are HR's
+        # domain regardless of who they happen to be assigned to; the
+        # hr_sensitive overlay unlocks the sensitive detail on top of the
+        # base record, the same base-plus-sensitive-overlay shape as
+        # staff.view/.hr_sensitive.read above.
+        "feedback.view",
+        "complaints.view_all",
+        "complaints.hr_sensitive.read",
+        "complaints.update",
+        "complaints.transition",
+        "complaints.resolve",
+        "complaints.close",
     ),
     "shift_supervisor": (
         "dashboard.view",
@@ -620,6 +716,16 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "gift_cards.manage",
         "loyalty.view",
         "commercial_risk.view",
+        # Phase 13 — floor-level intake: log a complaint or feedback on the
+        # spot and add notes; formal case progression stays with support/
+        # operations.
+        "feedback.view",
+        "feedback.create",
+        "complaints.view",
+        "complaints.create",
+        "complaints.update",
+        "recovery.view",
+        "recovery.propose",
     ),
     "kitchen_staff": (
         "dashboard.view",
@@ -690,6 +796,13 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "gift_cards.view",
         "gift_cards.manage",
         "loyalty.view",
+        # Phase 13 — first point of contact for a guest complaint or piece
+        # of feedback; formal case progression stays with support/
+        # operations/reservation_manager.
+        "feedback.view",
+        "feedback.create",
+        "complaints.view",
+        "complaints.create",
     ),
     "delivery_coordinator": (
         "dashboard.view",
@@ -709,6 +822,14 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "staff.leave.view",
         "staff.leave.request",
         "staff.training.view",
+        # Phase 13 — delivery/delay/packaging complaints are this role's
+        # domain end to end; no financial or escalation authority.
+        "feedback.view",
+        "complaints.view",
+        "complaints.create",
+        "complaints.update",
+        "complaints.transition",
+        "complaints.resolve",
     ),
     "read_only_auditor": tuple(sorted({*_ALL_VIEW, "audit.view"})),
 }
