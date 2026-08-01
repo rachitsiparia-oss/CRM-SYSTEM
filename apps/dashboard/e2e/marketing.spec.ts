@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-// Phase 12: /marketing and its nine sub-domain route trees (loyalty,
+// Phase 12/13: /marketing and its sub-domain route trees (loyalty,
 // segments, offers, campaigns, referrals, achievements, gift-cards,
-// customer-credit, commercial-risk) follow the exact same session gate as
-// every other module (src/proxy.ts) — no exception carved out here either.
+// customer-credit, commercial-risk, feedback, complaints, service-recovery)
+// follow the exact same session gate as every other module (src/proxy.ts)
+// — no exception carved out here either.
 // Authenticated create/transition/redeem/reverse workflows are not covered
 // here: this project has no Playwright authentication helper (no test
 // Supabase session, no storageState fixture) in any phase so far — every
@@ -33,6 +34,10 @@ const ROUTES = [
   ["a gift card detail page", `/marketing/gift-cards/${ZERO_UUID}`],
   ["customer credit", "/marketing/customer-credit"],
   ["the commercial risk queue", "/marketing/commercial-risk"],
+  ["the feedback workspace", "/marketing/feedback"],
+  ["the complaints workspace", "/marketing/complaints"],
+  ["a complaint detail page", `/marketing/complaints/${ZERO_UUID}`],
+  ["the service recovery workspace", "/marketing/service-recovery"],
 ] as const;
 
 for (const [description, path] of ROUTES) {
