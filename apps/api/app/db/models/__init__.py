@@ -6,6 +6,9 @@ from app.db.models.business_hours import BusinessHours
 from app.db.models.campaign import Campaign, CampaignRecipient
 from app.db.models.commercial_risk_flag import CommercialRiskFlag
 from app.db.models.communication_channel import CommunicationChannel
+from app.db.models.communication_consent import CommunicationConsent
+from app.db.models.communication_preference import CommunicationPreference
+from app.db.models.communication_suppression import CommunicationSuppression
 from app.db.models.complaint import (
     Complaint,
     ComplaintAssignment,
@@ -18,9 +21,6 @@ from app.db.models.complaint import (
     ComplaintStatusHistory,
 )
 from app.db.models.complaint_attachment import ComplaintAttachment
-from app.db.models.communication_consent import CommunicationConsent
-from app.db.models.communication_preference import CommunicationPreference
-from app.db.models.communication_suppression import CommunicationSuppression
 from app.db.models.conversation import Conversation
 from app.db.models.conversation_assignment import ConversationAssignment
 from app.db.models.conversation_link import ConversationLink

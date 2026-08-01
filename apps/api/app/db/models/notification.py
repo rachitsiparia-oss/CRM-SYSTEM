@@ -12,6 +12,10 @@ NOTIFICATION_PRIORITIES = ("low", "normal", "high", "urgent")
 # Phase 11 migration (`ALTER TABLE ... DROP/ADD CONSTRAINT`) when
 # `app.knowledge`/`app.staff_operations` started emitting notifications
 # with a stable back-reference (this phase's own instruction section 30).
+# `complaint`/`service_recovery_action` were added the same way for
+# Phase 13 (GROWTH_AND_INTELLIGENCE.md section 12/12.6's notification
+# matrix — high-severity complaints, assignments, escalations, SLA
+# events, and recovery approvals).
 NOTIFICATION_RECORD_TYPES = (
     "reservation",
     "order",
@@ -28,6 +32,8 @@ NOTIFICATION_RECORD_TYPES = (
     "performance_review",
     "training_assignment",
     "shift_change_request",
+    "complaint",
+    "service_recovery_action",
 )
 
 

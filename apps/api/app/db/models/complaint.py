@@ -191,9 +191,7 @@ class Complaint(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):
     first_responded_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    acknowledged_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reopened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -270,9 +268,7 @@ class ComplaintNote(UUIDPrimaryKeyMixin, AppendOnlyTimestampMixin, Base):
     __table_args__ = (Index("ix_complaint_notes_complaint_id", "complaint_id"),)
 
     complaint_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("complaints.id"), nullable=False)
-    author_staff_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("staff_users.id"), nullable=False
-    )
+    author_staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id"), nullable=False)
     note: Mapped[str] = mapped_column(Text, nullable=False)
 
 
@@ -302,9 +298,7 @@ class ComplaintEscalation(UUIDPrimaryKeyMixin, AppendOnlyTimestampMixin, Base):
     new_assigned_department_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("departments.id"), nullable=True
     )
-    acknowledged_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     dedup_key: Mapped[str] = mapped_column(String(160), nullable=False)

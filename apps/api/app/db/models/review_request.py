@@ -40,7 +40,9 @@ class ReviewRequest(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):
 
     __tablename__ = "review_requests"
     __table_args__ = (
-        CheckConstraint(f"source_type IN {REVIEW_REQUEST_SOURCE_TYPES!r}", name="valid_source_type"),
+        CheckConstraint(
+            f"source_type IN {REVIEW_REQUEST_SOURCE_TYPES!r}", name="valid_source_type"
+        ),
         CheckConstraint(f"channel IN {REVIEW_REQUEST_CHANNELS!r}", name="valid_channel"),
         CheckConstraint(f"status IN {REVIEW_REQUEST_STATUSES!r}", name="valid_status"),
         CheckConstraint(

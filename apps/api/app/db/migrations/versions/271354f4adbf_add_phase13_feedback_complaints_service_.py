@@ -1254,13 +1254,30 @@ def upgrade() -> None:
         "CHECK (linked_type IN ('reservation', 'order', 'waitlist_entry', 'feedback_case', "
         "'complaint'))"
     )
+    op.execute("ALTER TABLE notifications DROP CONSTRAINT ck_notifications_valid_record_type")
+    op.execute(
+        "ALTER TABLE notifications ADD CONSTRAINT ck_notifications_valid_record_type "
+        "CHECK (record_type IS NULL OR record_type IN ('reservation', 'order', 'lead', "
+        "'customer', 'conversation', 'task', 'inventory_item', 'knowledge_article', "
+        "'staff_shift', 'leave_request', 'staff_certification', 'staff_document', "
+        "'performance_review', 'training_assignment', 'shift_change_request', 'complaint', "
+        "'service_recovery_action'))"
+    )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # Revert the two widened CHECK constraints and drop the deferred FK
+    # Revert the three widened CHECK constraints and drop the deferred FK
     # before touching any Phase 13 table — `complaints` is dropped before
     # `feedback_entries` below, so the FK referencing it must go first.
+    op.execute("ALTER TABLE notifications DROP CONSTRAINT ck_notifications_valid_record_type")
+    op.execute(
+        "ALTER TABLE notifications ADD CONSTRAINT ck_notifications_valid_record_type "
+        "CHECK (record_type IS NULL OR record_type IN ('reservation', 'order', 'lead', "
+        "'customer', 'conversation', 'task', 'inventory_item', 'knowledge_article', "
+        "'staff_shift', 'leave_request', 'staff_certification', 'staff_document', "
+        "'performance_review', 'training_assignment', 'shift_change_request'))"
+    )
     op.execute(
         "ALTER TABLE conversation_links DROP CONSTRAINT ck_conversation_links_valid_linked_type"
     )

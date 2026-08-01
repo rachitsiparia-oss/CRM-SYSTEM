@@ -90,9 +90,7 @@ class FeedbackEntry(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):
     )
 
     feedback_number: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
-    customer_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("customers.id"), nullable=True
-    )
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
     guest_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     guest_contact: Mapped[str | None] = mapped_column(String(200), nullable=True)
     source: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -100,9 +98,7 @@ class FeedbackEntry(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):
     reservation_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("reservations.id"), nullable=True
     )
-    campaign_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("campaigns.id"), nullable=True
-    )
+    campaign_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("campaigns.id"), nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     sentiment: Mapped[str | None] = mapped_column(String(16), nullable=True)
     consent_for_follow_up: Mapped[bool] = mapped_column(nullable=False, default=False)
@@ -111,9 +107,7 @@ class FeedbackEntry(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):
     )
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="new")
     priority: Mapped[str] = mapped_column(String(16), nullable=False, default="normal")
-    acknowledged_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # No FK declared here — added via ALTER TABLE in the migration once

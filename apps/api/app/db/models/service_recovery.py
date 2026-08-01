@@ -163,9 +163,7 @@ class ServiceRecoveryAction(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, B
 
 class ServiceRecoveryActionHistory(UUIDPrimaryKeyMixin, AppendOnlyTimestampMixin, Base):
     __tablename__ = "service_recovery_action_history"
-    __table_args__ = (
-        Index("ix_service_recovery_action_history_action_id", "action_id"),
-    )
+    __table_args__ = (Index("ix_service_recovery_action_history_action_id", "action_id"),)
 
     action_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("service_recovery_actions.id"), nullable=False
