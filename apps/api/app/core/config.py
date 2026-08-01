@@ -66,6 +66,17 @@ class Settings(BaseSettings):
     supabase_service_role_key: str | None = None
     auth_jwt_signing_secret: str | None = None
 
+    # Controlled AI — Phase 14 (TOOLS.md section 8, GROWTH_AND_INTELLIGENCE.md
+    # section 14). OpenAI is the approved primary provider, Groq an optional
+    # fallback; neither is required — with both unset, `app.controlled_ai`
+    # falls back to a deterministic mock provider so ordinary CRM workflows
+    # (and tests) never depend on live AI credentials being configured
+    # (CLAUDE.md section 17, "AI outage does not block core CRM").
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+
     @model_validator(mode="after")
     def _require_database_url_outside_local_dev(self) -> Self:
         # Staging and production must never start without a real database —
