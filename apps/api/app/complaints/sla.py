@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.complaints.schemas import SlaPolicyCreateIn, SlaPolicyUpdateIn
 from app.db.models import Complaint, ComplaintSlaEvent, SlaPolicy
 from app.reservations.availability import get_business_hours_for_date
 
@@ -220,3 +221,49 @@ async def detect_sla_events(
     if created:
         await session.flush()
     return created
+
+
+# --- SLA policy CRUD ---------------------------------------------------------
+
+
+async def get_sla_policy(session: AsyncSession, policy_id: uuid.UUID) -> SlaPolicy | None:
+    return await session.get(SlaPolicy, policy_id)
+
+
+async def list_sla_policies(
+    session: AsyncSession, *, is_active: bool | None = None
+) -> list[SlaPolicy]:
+    query = select(SlaPolicy)
+    if is_active is not None:
+        query = query.where(SlaPolicy.is_active == is_active)
+    result = await session.scalars(query.order_by(SlaPolicy.name))
+    return list(result.all())
+
+
+async def create_sla_policy(session: AsyncSession, *, payload: SlaPolicyCreateIn) -> SlaPolicy:
+    policy = SlaPolicy(
+        code=payload.code,
+        name=payload.name,
+        applicable_categories=payload.applicable_categories,
+        applicable_severities=payload.applicable_severities,
+        first_response_minutes=payload.first_response_minutes,
+        acknowledgement_minutes=payload.acknowledgement_minutes,
+        resolution_minutes=payload.resolution_minutes,
+        follow_up_minutes=payload.follow_up_minutes,
+        escalation_after_minutes=payload.escalation_after_minutes,
+        business_hours_only=payload.business_hours_only,
+        default_assignee_department_id=payload.default_assignee_department_id,
+    )
+    session.add(policy)
+    await session.flush()
+    return policy
+
+
+async def update_sla_policy(
+    session: AsyncSession, *, policy: SlaPolicy, payload: SlaPolicyUpdateIn
+) -> SlaPolicy:
+    data = payload.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        setattr(policy, field, value)
+    await session.flush()
+    return policy

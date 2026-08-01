@@ -27,3 +27,8 @@ class DuplicateEscalationError(ComplaintError):
 
 class SelfLinkError(ComplaintError):
     code = "self_link"
+
+
+class TransitionNotPermittedError(ComplaintError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "transition_not_permitted"

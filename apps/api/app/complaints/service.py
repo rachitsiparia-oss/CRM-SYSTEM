@@ -18,7 +18,9 @@ from app.complaints.errors import (
     InvalidAssignmentError,
     InvalidStatusTransitionError,
     SelfLinkError,
+    TransitionNotPermittedError,
 )
+from app.complaints.integrations import link_complaint_conversation
 from app.complaints.schemas import ComplaintCreateIn, ComplaintStatus, ComplaintUpdateIn
 from app.db.models import (
     Complaint,
@@ -28,12 +30,16 @@ from app.db.models import (
     ComplaintLink,
     ComplaintNote,
     ComplaintRootCauseHistory,
+    ComplaintSlaEvent,
     ComplaintStatusHistory,
     Role,
     StaffRole,
     StaffUser,
+    TaskRecord,
 )
 from app.notifications.service import notify
+from app.permissions.service import has_permission
+from app.tasks.service import generate_task_number
 
 # GROWTH_AND_INTELLIGENCE.md section 12.3's lifecycle, plus `cancelled`
 # (see the `Complaint` model's own docstring for why it's a documented
@@ -223,6 +229,8 @@ async def create_complaint(
         )
     )
     await session.flush()
+    await link_complaint_conversation(session, complaint=complaint)
+    await session.flush()
 
     if actor is not None:
         await record_audit_event(
@@ -283,6 +291,13 @@ async def transition_complaint(
     if target_status not in allowed:
         raise InvalidStatusTransitionError(
             f"Cannot transition complaint from {complaint.status!r} to {target_status!r}."
+        )
+    required_permission = GATED_TRANSITIONS.get(target_status)
+    if required_permission is not None and not await has_permission(
+        session, actor.id, required_permission
+    ):
+        raise TransitionNotPermittedError(
+            f"You do not have permission to move a complaint to {target_status!r}."
         )
 
     now = datetime.now(UTC)
@@ -646,7 +661,16 @@ async def build_timeline(session: AsyncSession, complaint_id: uuid.UUID) -> list
                 "occurred_at": follow_up_row.created_at,
                 "actor_id": follow_up_row.created_by,
                 "summary": f"Follow-up scheduled for {follow_up_row.scheduled_at.isoformat()}",
-                "detail": {"outcome": follow_up_row.outcome, "notes": follow_up_row.notes},
+                "detail": {
+                    "id": str(follow_up_row.id),
+                    "outcome": follow_up_row.outcome,
+                    "notes": follow_up_row.notes,
+                    "completed_at": (
+                        follow_up_row.completed_at.isoformat()
+                        if follow_up_row.completed_at
+                        else None
+                    ),
+                },
             }
         )
 
@@ -654,19 +678,92 @@ async def build_timeline(session: AsyncSession, complaint_id: uuid.UUID) -> list
     return entries
 
 
+# Task/notification urgency per SLA event type — instruction section
+# 15/31's "approaching SLA breach, SLA breach" actionable-item list.
+_SLA_EVENT_PRIORITY: dict[str, str] = {
+    "breached_resolution": "urgent",
+    "breached_first_response": "high",
+    "breached_acknowledgement": "high",
+    "breached_follow_up": "high",
+    "approaching_resolution": "high",
+    "approaching_first_response": "normal",
+    "approaching_acknowledgement": "normal",
+    "approaching_follow_up": "normal",
+}
+
+
+async def _create_sla_task_and_notify(
+    session: AsyncSession, *, complaint: Complaint, event: ComplaintSlaEvent
+) -> None:
+    """Creates a deduplicated `TaskRecord` (keyed off the same
+    `ComplaintSlaEvent.dedup_key` that already makes event detection
+    idempotent) and notifies the assigned staff member, falling back to
+    management when the complaint is unassigned."""
+    priority = _SLA_EVENT_PRIORITY.get(event.event_type, "normal")
+    title = f"SLA {event.event_type.replace('_', ' ')}: complaint {complaint.complaint_number}"
+    task_idempotency_key = f"task:{event.dedup_key}"
+
+    existing_task = await session.scalar(
+        select(TaskRecord.id).where(TaskRecord.idempotency_key == task_idempotency_key)
+    )
+    if existing_task is None:
+        session.add(
+            TaskRecord(
+                task_number=generate_task_number(),
+                title=title,
+                description=complaint.title,
+                source="system",
+                priority=priority,
+                status="open",
+                assigned_staff_id=complaint.assigned_staff_id,
+                related_type="complaint",
+                related_id=complaint.id,
+                idempotency_key=task_idempotency_key,
+            )
+        )
+        await session.flush()
+
+    if complaint.assigned_staff_id is not None:
+        await notify(
+            session,
+            notification_type=f"complaint.sla.{event.event_type}",
+            title=title,
+            recipient_staff_id=complaint.assigned_staff_id,
+            body=complaint.title,
+            priority=priority,
+            record_type="complaint",
+            record_id=complaint.id,
+            dedup_key=f"{event.dedup_key}:{complaint.assigned_staff_id}",
+        )
+    else:
+        await _notify_management(
+            session,
+            notification_type=f"complaint.sla.{event.event_type}",
+            title=title,
+            body=complaint.title,
+            priority=priority,
+            record_type="complaint",
+            record_id=complaint.id,
+            dedup_key=event.dedup_key,
+        )
+
+
 async def run_sla_escalations(session: AsyncSession) -> list[ComplaintEscalation]:
-    """Orchestrates `app.complaints.sla.detect_sla_events` and auto-
-    escalates a complaint the first time a `breached_resolution` event with
-    an `escalation_after_minutes`-configured policy is recorded for it —
-    deterministic and idempotent (escalation itself dedups on
-    `complaint:{id}:level:{level}`)."""
+    """Orchestrates `app.complaints.sla.detect_sla_events`: creates a
+    deduplicated task/notification for every newly-detected SLA event, and
+    additionally auto-escalates a complaint the first time a
+    `breached_resolution` event with an `escalation_after_minutes`-
+    configured policy is recorded for it — deterministic and idempotent
+    (escalation itself dedups on `complaint:{id}:level:{level}`)."""
     events = await sla.detect_sla_events(session)
     escalations: list[ComplaintEscalation] = []
     for event in events:
-        if event.event_type != "breached_resolution":
-            continue
         complaint = await get_complaint(session, event.complaint_id)
-        if complaint is None or complaint.sla_policy_id is None:
+        if complaint is None:
+            continue
+        await _create_sla_task_and_notify(session, complaint=complaint, event=event)
+
+        if event.event_type != "breached_resolution" or complaint.sla_policy_id is None:
             continue
         from app.db.models import SlaPolicy
 
