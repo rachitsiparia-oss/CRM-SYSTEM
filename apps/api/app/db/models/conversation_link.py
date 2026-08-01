@@ -12,8 +12,10 @@ from app.db.base import AuditedMixin, Base, TimestampMixin, UUIDPrimaryKeyMixin
 # `Conversation` cannot represent. `linked_id` has no FK — the referenced
 # table depends on `linked_type` and is validated at the service layer,
 # the same polymorphic-reference tradeoff `TaskRecord.related_type`/
-# `related_id` makes for the same reason.
-CONVERSATION_LINK_TYPES = ("reservation", "order", "waitlist_entry", "feedback_case")
+# `related_id` makes for the same reason. `complaint` was added in Phase 13
+# (`feedback_case` already anticipated feedback linkage in Phase 10; a
+# complaint is a distinct linked record, not a feedback case).
+CONVERSATION_LINK_TYPES = ("reservation", "order", "waitlist_entry", "feedback_case", "complaint")
 
 
 class ConversationLink(UUIDPrimaryKeyMixin, TimestampMixin, AuditedMixin, Base):

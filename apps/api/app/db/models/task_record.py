@@ -30,9 +30,10 @@ TASK_STATUSES = ("open", "in_progress", "blocked", "completed", "cancelled")
 # Polymorphic — same tradeoff as `ConversationLink.linked_type`/`linked_id`.
 # The five Phase 11 values were added when `app.knowledge`/
 # `app.staff_operations` started creating tasks with a stable back-
-# reference (this phase's own instruction section 31) — the CHECK
-# constraint is widened via `ALTER TABLE` in the Phase 11 migration rather
-# than duplicated as a second polymorphic column.
+# reference (this phase's own instruction section 31); `complaint` and
+# `feedback` were added the same way for Phase 13. The CHECK constraint is
+# widened via `ALTER TABLE` in each owning phase's migration rather than
+# duplicated as a second polymorphic column.
 TASK_RELATED_TYPES = (
     "customer",
     "lead",
@@ -46,6 +47,8 @@ TASK_RELATED_TYPES = (
     "staff_document",
     "training_assignment",
     "performance_review",
+    "complaint",
+    "feedback",
 )
 
 

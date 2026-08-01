@@ -6,6 +6,18 @@ from app.db.models.business_hours import BusinessHours
 from app.db.models.campaign import Campaign, CampaignRecipient
 from app.db.models.commercial_risk_flag import CommercialRiskFlag
 from app.db.models.communication_channel import CommunicationChannel
+from app.db.models.complaint import (
+    Complaint,
+    ComplaintAssignment,
+    ComplaintEscalation,
+    ComplaintFollowUp,
+    ComplaintLink,
+    ComplaintNote,
+    ComplaintRootCauseHistory,
+    ComplaintSlaEvent,
+    ComplaintStatusHistory,
+)
+from app.db.models.complaint_attachment import ComplaintAttachment
 from app.db.models.communication_consent import CommunicationConsent
 from app.db.models.communication_preference import CommunicationPreference
 from app.db.models.communication_suppression import CommunicationSuppression
@@ -23,6 +35,13 @@ from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
 from app.db.models.dining_area import DiningArea
+from app.db.models.feedback import (
+    FeedbackAttachment,
+    FeedbackEntry,
+    FeedbackRating,
+    FeedbackStatusHistory,
+    FeedbackTag,
+)
 from app.db.models.gift_card import GiftCard, GiftCardLedgerEntry
 from app.db.models.holiday_calendar import HolidayCalendar
 from app.db.models.inbound_webhook_event import InboundWebhookEvent
@@ -98,13 +117,20 @@ from app.db.models.reservation_tag_link import ReservationTagLink
 from app.db.models.reservation_timeline import ReservationTimeline
 from app.db.models.reservation_waitlist import ReservationWaitlist
 from app.db.models.restaurant_table import RestaurantTable
+from app.db.models.review_request import ReviewRequest
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.scheduled_message import ScheduledMessage
 from app.db.models.segment import Segment, SegmentMembership
+from app.db.models.service_recovery import (
+    CompensationApprovalRule,
+    ServiceRecoveryAction,
+    ServiceRecoveryActionHistory,
+)
 from app.db.models.shift_change_request import ShiftChangeRequest
 from app.db.models.shift_template import ShiftTemplate
 from app.db.models.skill import Skill
+from app.db.models.sla_policy import SlaPolicy
 from app.db.models.staff_availability_window import StaffAvailabilityWindow
 from app.db.models.staff_certification import StaffCertification
 from app.db.models.staff_disciplinary_record import StaffDisciplinaryRecord
@@ -151,6 +177,17 @@ __all__ = [
     "CampaignRecipient",
     "CommercialRiskFlag",
     "CommunicationChannel",
+    "CompensationApprovalRule",
+    "Complaint",
+    "ComplaintAssignment",
+    "ComplaintAttachment",
+    "ComplaintEscalation",
+    "ComplaintFollowUp",
+    "ComplaintLink",
+    "ComplaintNote",
+    "ComplaintRootCauseHistory",
+    "ComplaintSlaEvent",
+    "ComplaintStatusHistory",
     "CommunicationConsent",
     "CommunicationPreference",
     "CommunicationSuppression",
@@ -171,6 +208,11 @@ __all__ = [
     "CustomerTag",
     "Department",
     "DiningArea",
+    "FeedbackAttachment",
+    "FeedbackEntry",
+    "FeedbackRating",
+    "FeedbackStatusHistory",
+    "FeedbackTag",
     "GiftCard",
     "GiftCardLedgerEntry",
     "HolidayCalendar",
@@ -252,14 +294,18 @@ __all__ = [
     "ReservationTimeline",
     "ReservationWaitlist",
     "RestaurantTable",
+    "ReviewRequest",
     "Role",
     "RolePermission",
     "ScheduledMessage",
     "Segment",
+    "ServiceRecoveryAction",
+    "ServiceRecoveryActionHistory",
     "SegmentMembership",
     "ShiftChangeRequest",
     "ShiftTemplate",
     "Skill",
+    "SlaPolicy",
     "StaffAvailabilityWindow",
     "StaffCertification",
     "StaffDisciplinaryRecord",
