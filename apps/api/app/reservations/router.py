@@ -24,6 +24,7 @@ from app.db.models import (
     TableStatusHistory,
 )
 from app.db.session import get_db
+from app.feedback import integrations as feedback_integrations
 from app.permissions.dependencies import require_permission
 from app.reservations import (
     assignment,
@@ -267,6 +268,11 @@ async def transition_reservation(
         new_status=payload.new_status,
         reason=payload.reason,
         request=request,
+    )
+    # Phase 13: schedules a review-request outreach after a completed visit
+    # — see app.feedback.integrations's module docstring.
+    await feedback_integrations.schedule_reservation_review_request(
+        session, actor=actor, reservation=reservation, new_status=payload.new_status
     )
     return DataResponse(data=ReservationOut.model_validate(reservation), meta=request_meta(request))
 

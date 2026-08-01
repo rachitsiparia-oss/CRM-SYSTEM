@@ -18,6 +18,7 @@ from app.db.models import (
     StaffUser,
 )
 from app.db.session import get_db
+from app.feedback import integrations as feedback_integrations
 from app.inventory import order_integration as inventory_order_integration
 from app.orders import commercial_growth_integration, service
 from app.orders.schemas import (
@@ -231,6 +232,11 @@ async def transition_order(
     # the status transition succeeds — see
     # app.orders.commercial_growth_integration's module docstring.
     await commercial_growth_integration.apply_commercial_growth_effects(
+        session, actor=actor, order=order, new_status=payload.new_status
+    )
+    # Phase 13: schedules a review-request outreach after a completed
+    # order — see app.feedback.integrations's module docstring.
+    await feedback_integrations.schedule_order_review_request(
         session, actor=actor, order=order, new_status=payload.new_status
     )
     out = await service.build_order_out(session, order)

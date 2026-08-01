@@ -18,13 +18,18 @@ from app.db.models import (
     FeedbackTag,
     StaffUser,
 )
-from app.feedback.errors import AlreadyConvertedError, InvalidStatusTransitionError
+from app.feedback.errors import (
+    AlreadyConvertedError,
+    InvalidStatusTransitionError,
+    TransitionNotPermittedError,
+)
 from app.feedback.schemas import (
     ConvertToComplaintIn,
     FeedbackCreateIn,
     FeedbackStatus,
     FeedbackUpdateIn,
 )
+from app.permissions.service import has_permission
 
 # section 11.4's lifecycle. "closed" and the terminal side of "spam" have
 # no outbound transitions; only `spam` may still be archived via `closed`.
@@ -36,6 +41,14 @@ _FEEDBACK_TRANSITIONS: dict[str, set[str]] = {
     "resolved": {"closed"},
     "closed": set(),
     "spam": {"closed"},
+}
+
+# `resolved`/`closed` need the base `feedback.resolve` grant beyond
+# `feedback.update` — same router-independent gating shape
+# `app.complaints.service.GATED_TRANSITIONS` uses.
+GATED_TRANSITIONS: dict[str, str] = {
+    "resolved": "feedback.resolve",
+    "closed": "feedback.resolve",
 }
 
 
@@ -160,6 +173,13 @@ async def transition_feedback(
     if target_status not in allowed:
         raise InvalidStatusTransitionError(
             f"Cannot transition feedback from {feedback.status!r} to {target_status!r}."
+        )
+    required_permission = GATED_TRANSITIONS.get(target_status)
+    if required_permission is not None and not await has_permission(
+        session, actor.id, required_permission
+    ):
+        raise TransitionNotPermittedError(
+            f"You do not have permission to move feedback to {target_status!r}."
         )
 
     now = datetime.now(UTC)

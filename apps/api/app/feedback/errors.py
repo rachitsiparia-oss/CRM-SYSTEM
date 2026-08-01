@@ -33,3 +33,8 @@ class ReviewRequestNotEligibleError(FeedbackError):
 
 class InvalidReviewRequestTransitionError(FeedbackError):
     code = "invalid_review_request_transition"
+
+
+class TransitionNotPermittedError(FeedbackError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "transition_not_permitted"
