@@ -1,4 +1,11 @@
 from app.db.models.achievement import Achievement, CustomerAchievementAward
+from app.db.models.ai_request import (
+    AiPromptTemplate,
+    AiRequest,
+    AiRequestFeedback,
+    AiSourceReference,
+)
+from app.db.models.anomaly import AnomalyFinding, AnomalyRule
 from app.db.models.attendance_correction import AttendanceCorrection
 from app.db.models.attendance_record import AttendanceRecord
 from app.db.models.audit_event import AuditEvent
@@ -35,6 +42,7 @@ from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
 from app.db.models.department import Department
 from app.db.models.dining_area import DiningArea
+from app.db.models.export_artifact import ExportArtifact
 from app.db.models.feedback import (
     FeedbackAttachment,
     FeedbackEntry,
@@ -42,6 +50,7 @@ from app.db.models.feedback import (
     FeedbackStatusHistory,
     FeedbackTag,
 )
+from app.db.models.forecast import ForecastDefinition, ForecastSnapshot
 from app.db.models.gift_card import GiftCard, GiftCardLedgerEntry
 from app.db.models.holiday_calendar import HolidayCalendar
 from app.db.models.inbound_webhook_event import InboundWebhookEvent
@@ -106,6 +115,8 @@ from app.db.models.recipe import Recipe, RecipeItem
 from app.db.models.referral_code import ReferralCode
 from app.db.models.referral_program import ReferralProgram
 from app.db.models.referral_relationship import ReferralRelationship
+from app.db.models.report_definition import ReportDefinition, ReportDefinitionShare
+from app.db.models.report_run import ReportRun, ReportRunDataset
 from app.db.models.reservation import Reservation
 from app.db.models.reservation_note import ReservationNote
 from app.db.models.reservation_policy import ReservationPolicies
@@ -121,6 +132,11 @@ from app.db.models.review_request import ReviewRequest
 from app.db.models.role import Role
 from app.db.models.role_permission import RolePermission
 from app.db.models.scheduled_message import ScheduledMessage
+from app.db.models.scheduled_report import (
+    ReportDeliveryAttempt,
+    ScheduledReport,
+    ScheduledReportRecipient,
+)
 from app.db.models.segment import Segment, SegmentMembership
 from app.db.models.service_recovery import (
     CompensationApprovalRule,
@@ -169,6 +185,12 @@ from app.db.models.wastage_record import WastageRecord
 
 __all__ = [
     "Achievement",
+    "AiPromptTemplate",
+    "AiRequest",
+    "AiRequestFeedback",
+    "AiSourceReference",
+    "AnomalyFinding",
+    "AnomalyRule",
     "AttendanceCorrection",
     "AttendanceRecord",
     "AuditEvent",
@@ -208,11 +230,14 @@ __all__ = [
     "CustomerTag",
     "Department",
     "DiningArea",
+    "ExportArtifact",
     "FeedbackAttachment",
     "FeedbackEntry",
     "FeedbackRating",
     "FeedbackStatusHistory",
     "FeedbackTag",
+    "ForecastDefinition",
+    "ForecastSnapshot",
     "GiftCard",
     "GiftCardLedgerEntry",
     "HolidayCalendar",
@@ -283,6 +308,11 @@ __all__ = [
     "ReferralCode",
     "ReferralProgram",
     "ReferralRelationship",
+    "ReportDefinition",
+    "ReportDefinitionShare",
+    "ReportDeliveryAttempt",
+    "ReportRun",
+    "ReportRunDataset",
     "Reservation",
     "ReservationNote",
     "ReservationPolicies",
@@ -298,6 +328,8 @@ __all__ = [
     "Role",
     "RolePermission",
     "ScheduledMessage",
+    "ScheduledReport",
+    "ScheduledReportRecipient",
     "Segment",
     "ServiceRecoveryAction",
     "ServiceRecoveryActionHistory",
