@@ -184,7 +184,50 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Service Recovery", href: "/marketing/service-recovery" },
     ],
   },
-  { label: "Reports, Analytics & AI Center", href: "/reports", icon: BarChart3 },
+  {
+    label: "Reports, Analytics & AI Center",
+    href: "/reports",
+    icon: BarChart3,
+    // Phase 14 — every analytics/reports/anomalies/forecasts/ai.analytics
+    // domain permission gates this one section (CLAUDE.md section 2 fixes
+    // the twelve sections; a caller with any one of these sees the
+    // section, the same OR-list pattern the Marketing section above uses).
+    requiredPermission: [
+      "analytics.executive.view",
+      "analytics.sales.view",
+      "analytics.orders.view",
+      "analytics.customers.view",
+      "analytics.leads.view",
+      "analytics.reservations.view",
+      "analytics.inventory.view",
+      "analytics.marketing_loyalty.view",
+      "analytics.feedback_complaints.view",
+      "analytics.staff.view",
+      "analytics.system_operations.view",
+      "reports.view",
+      "anomalies.view",
+      "forecasts.view",
+      "ai.analytics.use",
+    ],
+    children: [
+      { label: "Executive Overview", href: "/reports" },
+      { label: "Sales", href: "/reports/sales" },
+      { label: "Customers", href: "/reports/customers" },
+      { label: "Leads", href: "/reports/leads" },
+      { label: "Reservations", href: "/reports/reservations" },
+      { label: "Inventory & Suppliers", href: "/reports/inventory" },
+      { label: "Marketing", href: "/reports/marketing" },
+      { label: "Loyalty", href: "/reports/loyalty" },
+      { label: "Feedback", href: "/reports/feedback" },
+      { label: "Complaints", href: "/reports/complaints" },
+      { label: "Staff & Tasks", href: "/reports/staff" },
+      { label: "Report Library", href: "/reports/library" },
+      { label: "Scheduled Reports", href: "/reports/schedules" },
+      { label: "Anomaly Center", href: "/reports/anomalies" },
+      { label: "Forecasts", href: "/reports/forecasts" },
+      { label: "AI Center", href: "/reports/ai" },
+    ],
+  },
   { label: "Integrations, Security & Settings", href: "/settings", icon: Settings },
 ];
 

@@ -1,5 +1,5 @@
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { ReportsDashboard } from "./reports-dashboard";
 
 export default function Page() {
-  return <ModulePlaceholder title="Reports, Analytics & AI Center" />;
+  return <ReportsDashboard />;
 }
