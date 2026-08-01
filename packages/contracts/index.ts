@@ -4499,3 +4499,604 @@ export interface CommercialRiskReviewInput {
   target_status: "reviewing" | "resolved" | "dismissed";
   resolution_note?: string | null;
 }
+
+// --- Phase 13: Feedback and Review Requests ----------------------------------------------------------
+// Mirrors apps/api/app/feedback/schemas.py.
+
+export type FeedbackSource =
+  | "post_order"
+  | "post_reservation"
+  | "website"
+  | "whatsapp"
+  | "email"
+  | "manual_entry"
+  | "public_review_reference"
+  | "campaign";
+export type FeedbackStatus =
+  | "new"
+  | "acknowledged"
+  | "under_review"
+  | "action_required"
+  | "resolved"
+  | "closed"
+  | "spam";
+export type FeedbackPriority = "low" | "normal" | "high" | "urgent";
+export type SentimentLabel = "positive" | "neutral" | "negative" | "mixed";
+export type RatingDimension =
+  | "overall"
+  | "food_quality"
+  | "taste"
+  | "packaging"
+  | "delivery"
+  | "speed"
+  | "staff_service"
+  | "cleanliness"
+  | "reservation_experience"
+  | "value";
+
+export interface RatingIn {
+  dimension: RatingDimension;
+  rating: number;
+}
+
+export interface RatingOut {
+  id: string;
+  dimension: RatingDimension;
+  rating: number;
+}
+
+export interface FeedbackCreateInput {
+  customer_id?: string | null;
+  guest_name?: string | null;
+  guest_contact?: string | null;
+  source: FeedbackSource;
+  order_id?: string | null;
+  reservation_id?: string | null;
+  campaign_id?: string | null;
+  comment?: string | null;
+  sentiment?: SentimentLabel | null;
+  consent_for_follow_up?: boolean;
+  ratings?: RatingIn[];
+}
+
+export interface FeedbackUpdateInput {
+  assigned_staff_id?: string | null;
+  priority?: FeedbackPriority | null;
+  sentiment?: SentimentLabel | null;
+  comment?: string | null;
+}
+
+export interface FeedbackTransitionInput {
+  target_status: FeedbackStatus;
+  reason?: string | null;
+}
+
+export interface ConvertToComplaintInput {
+  category: string;
+  severity: string;
+  title: string;
+  description?: string | null;
+}
+
+export interface FeedbackStatusHistoryEntry {
+  id: string;
+  from_status: FeedbackStatus | null;
+  to_status: FeedbackStatus;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface Feedback {
+  id: string;
+  feedback_number: string;
+  customer_id: string | null;
+  guest_name: string | null;
+  guest_contact: string | null;
+  source: FeedbackSource;
+  order_id: string | null;
+  reservation_id: string | null;
+  campaign_id: string | null;
+  comment: string | null;
+  sentiment: SentimentLabel | null;
+  consent_for_follow_up: boolean;
+  assigned_staff_id: string | null;
+  status: FeedbackStatus;
+  priority: FeedbackPriority;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  converted_to_complaint_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TagAssignInput {
+  tag_ids: string[];
+}
+
+export interface FeedbackAnalytics {
+  total_30d: number;
+  average_overall_rating: number | null;
+  positive_count_30d: number;
+  neutral_count_30d: number;
+  negative_count_30d: number;
+  converted_to_complaint_30d: number;
+  by_source: Array<{ source: string; count: number }>;
+}
+
+export type ReviewRequestSourceType = "order" | "reservation";
+export type ReviewRequestChannel = "whatsapp" | "email" | "sms";
+export type ReviewRequestStatus =
+  | "draft"
+  | "eligible"
+  | "scheduled"
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "completed"
+  | "expired"
+  | "suppressed"
+  | "cancelled"
+  | "failed";
+
+export interface ReviewRequestCreateInput {
+  customer_id: string;
+  source_type: ReviewRequestSourceType;
+  order_id?: string | null;
+  reservation_id?: string | null;
+  channel: ReviewRequestChannel;
+}
+
+export interface ReviewRequestCompleteInput {
+  comment?: string | null;
+  sentiment?: SentimentLabel | null;
+  ratings?: RatingIn[];
+}
+
+export interface ReviewRequest {
+  id: string;
+  customer_id: string;
+  source_type: ReviewRequestSourceType;
+  order_id: string | null;
+  reservation_id: string | null;
+  channel: ReviewRequestChannel;
+  status: ReviewRequestStatus;
+  eligibility_reason: string | null;
+  suppression_reason: string | null;
+  scheduled_at: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  opened_at: string | null;
+  completed_at: string | null;
+  expired_at: string | null;
+  failure_reason: string | null;
+  resulting_feedback_id: string | null;
+  created_at: string;
+}
+
+export interface ReviewRequestAnalytics {
+  total_30d: number;
+  sent_30d: number;
+  completed_30d: number;
+  completion_rate_pct: number;
+  suppressed_30d: number;
+}
+
+// --- Phase 13: Complaints and SLA ----------------------------------------------------------
+// Mirrors apps/api/app/complaints/schemas.py.
+
+export type ComplaintSourceType =
+  | "feedback"
+  | "direct"
+  | "conversation"
+  | "staff_entry"
+  | "order"
+  | "reservation"
+  | "other";
+export type ComplaintCategory =
+  | "food_quality"
+  | "incorrect_item"
+  | "missing_item"
+  | "packaging"
+  | "delay"
+  | "delivery"
+  | "payment"
+  | "refund"
+  | "reservation"
+  | "staff_behavior"
+  | "cleanliness"
+  | "allergy_or_dietary"
+  | "promotion"
+  | "loyalty"
+  | "communication"
+  | "corporate_order"
+  | "other";
+export type ComplaintSeverity = "low" | "medium" | "high" | "critical";
+export type ComplaintPriority = "low" | "normal" | "high" | "urgent";
+export type ComplaintStatus =
+  | "new"
+  | "acknowledged"
+  | "investigating"
+  | "awaiting_customer"
+  | "awaiting_internal"
+  | "resolution_proposed"
+  | "resolved"
+  | "closed"
+  | "reopened"
+  | "cancelled";
+export type RootCauseCategory =
+  | "process_failure"
+  | "preparation_error"
+  | "inventory_unavailable"
+  | "packaging_error"
+  | "delivery_delay"
+  | "staff_training_gap"
+  | "communication_failure"
+  | "system_failure"
+  | "supplier_issue"
+  | "policy_gap"
+  | "customer_expectation_mismatch"
+  | "unknown";
+export type ComplaintLinkRelationshipType = "duplicate_of" | "related_to";
+export type FollowUpOutcome = "satisfied" | "unsatisfied" | "no_response" | "escalated_again";
+
+export interface ComplaintCreateInput {
+  customer_id: string;
+  source_type: ComplaintSourceType;
+  feedback_id?: string | null;
+  conversation_id?: string | null;
+  order_id?: string | null;
+  reservation_id?: string | null;
+  category: ComplaintCategory;
+  title: string;
+  description: string;
+  severity: ComplaintSeverity;
+  priority?: ComplaintPriority;
+  channel?: string | null;
+  sla_policy_id?: string | null;
+}
+
+export interface ComplaintUpdateInput {
+  title?: string | null;
+  description?: string | null;
+  category?: ComplaintCategory | null;
+  severity?: ComplaintSeverity | null;
+  priority?: ComplaintPriority | null;
+  customer_visible_summary?: string | null;
+}
+
+export interface ComplaintTransitionInput {
+  target_status: ComplaintStatus;
+  reason?: string | null;
+  resolution_summary?: string | null;
+}
+
+export interface ComplaintAssignInput {
+  assigned_staff_id?: string | null;
+  assigned_department_id?: string | null;
+  reason?: string | null;
+}
+
+export interface ComplaintEscalateInput {
+  reason: string;
+  new_assigned_staff_id?: string | null;
+  new_assigned_department_id?: string | null;
+}
+
+export interface RootCauseUpdateInput {
+  root_cause: RootCauseCategory;
+  notes?: string | null;
+}
+
+export interface NoteCreateInput {
+  note: string;
+}
+
+export interface FollowUpCreateInput {
+  scheduled_at: string;
+  notes?: string | null;
+}
+
+export interface FollowUpCompleteInput {
+  outcome: FollowUpOutcome;
+  notes?: string | null;
+}
+
+export interface ComplaintLinkCreateInput {
+  related_complaint_id: string;
+  relationship_type: ComplaintLinkRelationshipType;
+}
+
+export interface Complaint {
+  id: string;
+  complaint_number: string;
+  customer_id: string;
+  source_type: ComplaintSourceType;
+  feedback_id: string | null;
+  conversation_id: string | null;
+  order_id: string | null;
+  reservation_id: string | null;
+  category: ComplaintCategory;
+  title: string;
+  description: string;
+  severity: ComplaintSeverity;
+  priority: ComplaintPriority;
+  status: ComplaintStatus;
+  channel: string | null;
+  assigned_staff_id: string | null;
+  assigned_department_id: string | null;
+  current_escalation_level: number;
+  sla_policy_id: string | null;
+  first_response_due_at: string | null;
+  acknowledgement_due_at: string | null;
+  resolution_due_at: string | null;
+  follow_up_due_at: string | null;
+  first_responded_at: string | null;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  reopened_at: string | null;
+  reopened_count: number;
+  customer_sentiment: string | null;
+  root_cause: RootCauseCategory | null;
+  resolution_summary: string | null;
+  customer_visible_summary: string | null;
+  is_hr_sensitive: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplaintStatusHistoryEntry {
+  id: string;
+  from_status: ComplaintStatus | null;
+  to_status: ComplaintStatus;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface ComplaintAssignment {
+  id: string;
+  assigned_staff_id: string | null;
+  assigned_department_id: string | null;
+  assigned_by: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface ComplaintNote {
+  id: string;
+  author_staff_id: string;
+  note: string;
+  created_at: string;
+}
+
+export interface ComplaintEscalation {
+  id: string;
+  level: number;
+  reason: string;
+  triggered_by_staff_id: string | null;
+  new_assigned_staff_id: string | null;
+  new_assigned_department_id: string | null;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+export interface ComplaintFollowUp {
+  id: string;
+  scheduled_at: string;
+  completed_at: string | null;
+  outcome: FollowUpOutcome | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ComplaintLink {
+  id: string;
+  complaint_id: string;
+  related_complaint_id: string;
+  relationship_type: ComplaintLinkRelationshipType;
+  created_at: string;
+}
+
+export type TimelineEntryType =
+  | "status_change"
+  | "assignment"
+  | "note"
+  | "attachment"
+  | "escalation"
+  | "follow_up"
+  | "recovery_action"
+  | "root_cause_change";
+
+export interface TimelineEntry {
+  entry_type: TimelineEntryType;
+  occurred_at: string;
+  actor_id: string | null;
+  summary: string;
+  detail: Record<string, unknown>;
+}
+
+export interface SlaPolicyCreateInput {
+  code: string;
+  name: string;
+  applicable_categories?: ComplaintCategory[] | null;
+  applicable_severities?: ComplaintSeverity[] | null;
+  first_response_minutes: number;
+  acknowledgement_minutes: number;
+  resolution_minutes: number;
+  follow_up_minutes?: number | null;
+  escalation_after_minutes?: number | null;
+  business_hours_only?: boolean;
+  default_assignee_department_id?: string | null;
+}
+
+export interface SlaPolicyUpdateInput {
+  name?: string | null;
+  is_active?: boolean | null;
+  applicable_categories?: ComplaintCategory[] | null;
+  applicable_severities?: ComplaintSeverity[] | null;
+  first_response_minutes?: number | null;
+  acknowledgement_minutes?: number | null;
+  resolution_minutes?: number | null;
+  follow_up_minutes?: number | null;
+  escalation_after_minutes?: number | null;
+  business_hours_only?: boolean | null;
+  default_assignee_department_id?: string | null;
+}
+
+export interface SlaPolicy {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  applicable_categories: string[] | null;
+  applicable_severities: string[] | null;
+  first_response_minutes: number;
+  acknowledgement_minutes: number;
+  resolution_minutes: number;
+  follow_up_minutes: number | null;
+  escalation_after_minutes: number | null;
+  business_hours_only: boolean;
+  default_assignee_department_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplaintAnalytics {
+  open_count: number;
+  new_30d: number;
+  resolved_30d: number;
+  reopened_30d: number;
+  by_severity: Array<{ severity: string; count: number }>;
+  by_category: Array<{ category: string; count: number }>;
+  average_first_response_minutes: number | null;
+  average_resolution_minutes: number | null;
+  sla_breach_rate_pct: number;
+  escalation_rate_pct: number;
+}
+
+// --- Phase 13: Service Recovery ----------------------------------------------------------
+// Mirrors apps/api/app/service_recovery/schemas.py.
+
+export type RecoveryType =
+  | "apology_only"
+  | "replacement"
+  | "refund_request"
+  | "approved_refund"
+  | "discount"
+  | "coupon"
+  | "loyalty_credit"
+  | "complimentary_item"
+  | "manager_follow_up"
+  | "operational_correction";
+export type RecoveryStatus =
+  | "proposed"
+  | "approval_required"
+  | "approved"
+  | "rejected"
+  | "executing"
+  | "completed"
+  | "failed"
+  | "reversed"
+  | "cancelled";
+
+export interface RecoveryActionProposeInput {
+  recovery_type: RecoveryType;
+  value_minor?: number | null;
+  points?: number | null;
+  description: string;
+}
+
+export interface RecoveryActionRejectInput {
+  reason: string;
+}
+
+export interface RecoveryActionReverseInput {
+  reason: string;
+}
+
+export interface RecoveryAction {
+  id: string;
+  complaint_id: string;
+  customer_id: string;
+  recovery_type: RecoveryType;
+  status: RecoveryStatus;
+  value_minor: number | null;
+  points: number | null;
+  description: string;
+  proposed_by_staff_id: string;
+  proposed_at: string;
+  approval_required: boolean;
+  approval_rule_id: string | null;
+  approved_by_staff_id: string | null;
+  approved_at: string | null;
+  rejected_reason: string | null;
+  executed_at: string | null;
+  execution_reference_type: string | null;
+  execution_reference_id: string | null;
+  failed_reason: string | null;
+  reversed_at: string | null;
+  reversed_by_staff_id: string | null;
+  reversal_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecoveryActionHistoryEntry {
+  id: string;
+  from_status: RecoveryStatus | null;
+  to_status: RecoveryStatus;
+  actor_id: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface ApprovalRuleCreateInput {
+  code: string;
+  name: string;
+  recovery_type?: RecoveryType | null;
+  min_value_minor?: number | null;
+  max_value_minor?: number | null;
+  applicable_severities?: string[] | null;
+  required_permission: string;
+  allow_self_approval?: boolean;
+}
+
+export interface ApprovalRuleUpdateInput {
+  name?: string | null;
+  is_active?: boolean | null;
+  recovery_type?: RecoveryType | null;
+  min_value_minor?: number | null;
+  max_value_minor?: number | null;
+  applicable_severities?: string[] | null;
+  required_permission?: string | null;
+  allow_self_approval?: boolean | null;
+}
+
+export interface ApprovalRule {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  recovery_type: RecoveryType | null;
+  min_value_minor: number | null;
+  max_value_minor: number | null;
+  applicable_severities: string[] | null;
+  required_permission: string;
+  allow_self_approval: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecoveryAnalytics {
+  by_type: Array<{ recovery_type: string; count: number }>;
+  by_status: Array<{ status: string; count: number }>;
+  total_value_minor_30d: number;
+  total_points_30d: number;
+  approved_count_30d: number;
+  rejected_count_30d: number;
+  completion_rate_pct: number;
+}
