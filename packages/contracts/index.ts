@@ -5100,3 +5100,514 @@ export interface RecoveryAnalytics {
   rejected_count_30d: number;
   completion_rate_pct: number;
 }
+
+// --- Phase 14: Reports, Analytics, and Controlled AI ---
+// Mirrors apps/api/app/{reports,report_exports,report_schedules,anomalies,
+// forecasts,controlled_ai}/schemas.py.
+
+export type ReportingArea =
+  | "executive"
+  | "sales"
+  | "orders"
+  | "customers"
+  | "leads"
+  | "reservations"
+  | "menu_products"
+  | "inventory_suppliers"
+  | "marketing"
+  | "loyalty"
+  | "feedback"
+  | "complaints"
+  | "communication"
+  | "staff_tasks"
+  | "system_operations";
+export type ReportWindowCode =
+  | "today"
+  | "yesterday"
+  | "current_week"
+  | "previous_week"
+  | "current_month"
+  | "previous_month"
+  | "current_quarter"
+  | "previous_quarter"
+  | "custom";
+export type ReportDefinitionType = "system" | "custom";
+export type ReportDefinitionVisibility = "private" | "shared" | "system";
+export type ReportSharePermissionLevel = "view" | "run";
+export type ReportRunStatus = "pending" | "running" | "completed" | "failed";
+export type ReportRunTriggerSource = "manual" | "scheduled" | "system";
+export type MetricValueType =
+  | "count"
+  | "currency_minor"
+  | "percent"
+  | "decimal"
+  | "duration_minutes";
+export type MetricFreshness = "live" | "near_real_time" | "cached" | "scheduled";
+
+export interface MetricDef {
+  code: string;
+  display_name: string;
+  description: string;
+  domain: ReportingArea;
+  value_type: MetricValueType;
+  unit: string | null;
+  required_permission: string;
+  supports_comparison: boolean;
+  freshness: MetricFreshness;
+  version: number;
+}
+
+export interface MetricResult {
+  metric_code: string;
+  display_name: string;
+  value_type: MetricValueType;
+  unit: string | null;
+  value: number;
+  comparison_value: number | null;
+  change_pct: number | null;
+  window_code: string;
+  window_start: string;
+  window_end: string;
+  comparison_start: string | null;
+  comparison_end: string | null;
+  freshness: MetricFreshness;
+  generated_at: string;
+}
+
+export interface DashboardResult {
+  domain: string;
+  window_code: string;
+  window_start: string;
+  window_end: string;
+  metrics: MetricResult[];
+  partial_failures: string[];
+}
+
+export interface ReportDefinitionCreateInput {
+  name: string;
+  description?: string | null;
+  domain: ReportingArea;
+  metric_codes: string[];
+  dimensions?: string[] | null;
+  default_filters?: Record<string, unknown> | null;
+  default_window?: ReportWindowCode;
+  comparison_enabled?: boolean;
+  visibility?: ReportDefinitionVisibility;
+}
+
+export interface ReportDefinitionUpdateInput {
+  name?: string | null;
+  description?: string | null;
+  metric_codes?: string[] | null;
+  dimensions?: string[] | null;
+  default_filters?: Record<string, unknown> | null;
+  default_window?: ReportWindowCode | null;
+  comparison_enabled?: boolean | null;
+  visibility?: ReportDefinitionVisibility | null;
+  is_active?: boolean | null;
+}
+
+export interface ReportDefinitionShareInput {
+  shared_with_staff_id?: string | null;
+  shared_with_role_code?: string | null;
+  permission_level?: ReportSharePermissionLevel;
+}
+
+export interface ReportDefinition {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  domain: ReportingArea;
+  definition_type: ReportDefinitionType;
+  metric_codes: string[];
+  dimensions: string[] | null;
+  default_filters: Record<string, unknown> | null;
+  default_window: ReportWindowCode;
+  comparison_enabled: boolean;
+  owner_staff_id: string | null;
+  visibility: ReportDefinitionVisibility;
+  is_active: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportDefinitionShare {
+  id: string;
+  report_definition_id: string;
+  shared_with_staff_id: string | null;
+  shared_with_role_code: string | null;
+  permission_level: ReportSharePermissionLevel;
+  created_at: string;
+}
+
+export interface ReportRunRequestInput {
+  window_code?: ReportWindowCode;
+  custom_start?: string | null;
+  custom_end?: string | null;
+}
+
+export interface ReportRun {
+  id: string;
+  report_definition_id: string;
+  requested_by_staff_id: string | null;
+  trigger_source: ReportRunTriggerSource;
+  status: ReportRunStatus;
+  window_code: string;
+  window_start: string;
+  window_end: string;
+  comparison_window_start: string | null;
+  comparison_window_end: string | null;
+  timezone: string;
+  row_count: number | null;
+  checksum_sha256: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  failure_details: string | null;
+  created_at: string;
+}
+
+export interface ReportRunDetail {
+  run: ReportRun;
+  metrics: MetricResult[];
+  summary: Record<string, unknown> | null;
+}
+
+export interface DrilldownRecord {
+  record_type: string;
+  record_id: string;
+  label: string;
+  detail: Record<string, unknown>;
+}
+
+export interface DrilldownResult {
+  metric_code: string;
+  window_code: string;
+  window_start: string;
+  window_end: string;
+  records: DrilldownRecord[];
+  truncated: boolean;
+}
+
+// --- Exports ---
+
+export type ExportFormat = "csv" | "xlsx" | "pdf";
+export type ExportStatus = "pending" | "generating" | "completed" | "failed";
+
+export interface ExportRequestInput {
+  report_run_id: string;
+  export_format?: ExportFormat;
+}
+
+export interface ExportArtifact {
+  id: string;
+  report_run_id: string | null;
+  requested_by_staff_id: string;
+  export_format: ExportFormat;
+  status: ExportStatus;
+  file_size_bytes: number | null;
+  row_count: number | null;
+  checksum_sha256: string | null;
+  expires_at: string | null;
+  failure_details: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface ExportDownload {
+  download_url: string;
+  expires_at: string | null;
+}
+
+// --- Scheduled reports ---
+
+export type ScheduleFrequency = "daily" | "weekly" | "monthly";
+export type DeliveryStatus = "pending" | "sent" | "delivered" | "failed";
+
+export interface ScheduledReportCreateInput {
+  report_definition_id: string;
+  name: string;
+  schedule_frequency: ScheduleFrequency;
+  schedule_day_of_week?: number | null;
+  schedule_day_of_month?: number | null;
+  schedule_time_of_day?: string;
+  timezone?: string;
+  output_format?: ExportFormat;
+  fixed_filters?: Record<string, unknown> | null;
+  include_ai_narrative?: boolean;
+}
+
+export interface ScheduledReport {
+  id: string;
+  report_definition_id: string;
+  name: string;
+  schedule_frequency: ScheduleFrequency;
+  schedule_day_of_week: number | null;
+  schedule_day_of_month: number | null;
+  schedule_time_of_day: string;
+  timezone: string;
+  output_format: ExportFormat;
+  fixed_filters: Record<string, unknown> | null;
+  include_ai_narrative: boolean;
+  is_enabled: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledReportRecipientCreateInput {
+  recipient_staff_id?: string | null;
+  recipient_role_code?: string | null;
+  recipient_email_override?: string | null;
+}
+
+export interface ScheduledReportRecipient {
+  id: string;
+  scheduled_report_id: string;
+  recipient_staff_id: string | null;
+  recipient_role_code: string | null;
+  recipient_email_override: string | null;
+  created_at: string;
+}
+
+export interface SetEnabledInput {
+  is_enabled: boolean;
+}
+
+export interface ReportDeliveryAttempt {
+  id: string;
+  scheduled_report_id: string;
+  report_run_id: string | null;
+  export_artifact_id: string | null;
+  occurrence_key: string;
+  recipient_reference: string;
+  delivery_channel: string;
+  status: DeliveryStatus;
+  attempted_at: string | null;
+  failure_details: string | null;
+  created_at: string;
+}
+
+// --- Anomalies ---
+
+export type AnomalyRuleType =
+  | "absolute_threshold"
+  | "pct_change_prior_period"
+  | "rolling_average_deviation"
+  | "count_rate_threshold"
+  | "consecutive_deterioration"
+  | "missing_activity";
+export type AnomalyComparisonOperator = "gt" | "gte" | "lt" | "lte";
+export type AnomalySeverity = "low" | "medium" | "high" | "critical";
+export type AnomalyFindingStatus =
+  | "open"
+  | "acknowledged"
+  | "investigating"
+  | "resolved"
+  | "dismissed";
+
+export interface AnomalyRuleCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  metric_code: string;
+  rule_type: AnomalyRuleType;
+  comparison_operator?: AnomalyComparisonOperator | null;
+  threshold_value?: number | null;
+  rolling_window_periods?: number | null;
+  minimum_sample_size?: number;
+  cooldown_hours?: number;
+  severity?: AnomalySeverity;
+  is_active?: boolean;
+  notify_task?: boolean;
+  notify_role_code?: string | null;
+}
+
+export interface AnomalyRuleUpdateInput {
+  name?: string | null;
+  description?: string | null;
+  comparison_operator?: AnomalyComparisonOperator | null;
+  threshold_value?: number | null;
+  rolling_window_periods?: number | null;
+  minimum_sample_size?: number | null;
+  cooldown_hours?: number | null;
+  severity?: AnomalySeverity | null;
+  is_active?: boolean | null;
+  notify_task?: boolean | null;
+  notify_role_code?: string | null;
+}
+
+export interface AnomalyRule {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  metric_code: string;
+  rule_type: AnomalyRuleType;
+  comparison_operator: AnomalyComparisonOperator | null;
+  threshold_value: number | null;
+  rolling_window_periods: number | null;
+  minimum_sample_size: number;
+  cooldown_hours: number;
+  severity: AnomalySeverity;
+  is_active: boolean;
+  notify_task: boolean;
+  notify_role_code: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnomalyFindingTransitionInput {
+  target_status: AnomalyFindingStatus;
+  resolution_note?: string | null;
+}
+
+export interface AnomalyFinding {
+  id: string;
+  anomaly_rule_id: string;
+  metric_code: string;
+  dedup_key: string;
+  baseline_window_start: string | null;
+  baseline_window_end: string | null;
+  observed_window_start: string;
+  observed_window_end: string;
+  observed_value: number | null;
+  expected_value: number | null;
+  deviation_pct: number | null;
+  severity: AnomalySeverity;
+  status: AnomalyFindingStatus;
+  evidence: Record<string, unknown> | null;
+  acknowledged_by: string | null;
+  acknowledged_at: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_note: string | null;
+  linked_task_id: string | null;
+  created_at: string;
+}
+
+// --- Forecasts ---
+
+export type ForecastArea =
+  | "order_volume"
+  | "net_revenue"
+  | "reservation_covers"
+  | "inventory_consumption";
+export type ForecastMethod =
+  | "moving_average"
+  | "linear_trend"
+  | "seasonal_naive"
+  | "exponential_smoothing";
+export type ForecastSnapshotStatus = "ok" | "insufficient_data" | "failed";
+
+export interface ForecastDefinitionCreateInput {
+  code: string;
+  name: string;
+  forecast_area: ForecastArea;
+  method: ForecastMethod;
+  method_params?: Record<string, unknown> | null;
+  target_metric_code: string;
+  dimension_filter?: Record<string, unknown> | null;
+  minimum_history_periods?: number;
+  horizon_periods?: number;
+  is_active?: boolean;
+}
+
+export interface ForecastDefinition {
+  id: string;
+  code: string;
+  name: string;
+  forecast_area: ForecastArea;
+  method: ForecastMethod;
+  method_params: Record<string, unknown> | null;
+  target_metric_code: string;
+  dimension_filter: Record<string, unknown> | null;
+  minimum_history_periods: number;
+  horizon_periods: number;
+  is_active: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ForecastValue {
+  period_offset: number;
+  date: string;
+  value: string;
+}
+
+export interface ForecastSnapshot {
+  id: string;
+  forecast_definition_id: string;
+  historical_window_start: string;
+  historical_window_end: string;
+  horizon_start: string;
+  horizon_end: string;
+  status: ForecastSnapshotStatus;
+  input_data_completeness_pct: number | null;
+  forecast_values: ForecastValue[] | null;
+  confidence_interval: Record<string, unknown> | null;
+  assumptions: string | null;
+  backtest_mae: number | null;
+  backtest_mape: number | null;
+  method_version: string;
+  failure_details: string | null;
+  created_at: string;
+}
+
+// --- Controlled AI ---
+
+export type AiFeatureCode =
+  | "dashboard_summary"
+  | "metric_change_explanation"
+  | "anomaly_evidence_summary"
+  | "report_narrative"
+  | "nl_question_query_plan";
+export type AiRequestStatus = "pending" | "completed" | "failed" | "blocked";
+export type AiFeedbackOutcome = "accepted" | "edited" | "rejected" | "ignored";
+
+export interface AiCompletionRequestInput {
+  feature_code: AiFeatureCode;
+  params?: Record<string, unknown>;
+}
+
+export interface AiRequest {
+  id: string;
+  requested_by_staff_id: string;
+  feature_code: string;
+  prompt_template_version: number;
+  provider_code: string;
+  model_reference: string;
+  grounding_summary: Record<string, unknown> | null;
+  output_text: string | null;
+  output_structured: Record<string, unknown> | null;
+  status: AiRequestStatus;
+  failure_category: string | null;
+  safety_blocked: boolean;
+  safety_block_reason: string | null;
+  latency_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface AiRequestFeedbackInput {
+  outcome_state: AiFeedbackOutcome;
+  edited_content?: string | null;
+  rating?: number | null;
+  feedback_note?: string | null;
+}
+
+export interface AiRequestFeedback {
+  id: string;
+  ai_request_id: string;
+  staff_id: string;
+  outcome_state: AiFeedbackOutcome;
+  edited_content: string | null;
+  rating: number | null;
+  feedback_note: string | null;
+  created_at: string;
+}
