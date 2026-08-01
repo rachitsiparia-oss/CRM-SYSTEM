@@ -5,6 +5,9 @@ import type {
   BatchStatus,
   CampaignRecipientStatus,
   CampaignStatus,
+  ComplaintPriority,
+  ComplaintSeverity,
+  ComplaintStatus,
   CommercialRiskFlagStatus,
   ConversationPriority,
   ConversationStatus,
@@ -12,6 +15,8 @@ import type {
   CustomerCreditAccountStatus,
   CustomerStatus,
   DisciplinarySeverity,
+  FeedbackPriority,
+  FeedbackStatus,
   FollowUpStatus,
   FoodType,
   GiftCardStatus,
@@ -28,9 +33,11 @@ import type {
   PaymentStatus,
   PerformanceReviewStatus,
   ReceiptStatus,
+  RecoveryStatus,
   ReferralProgramStatus,
   ReferralRelationshipStatus,
   ReservationStatus,
+  ReviewRequestStatus,
   ScheduledMessageStatus,
   SegmentStatus,
   ShiftStatus,
@@ -489,6 +496,76 @@ export const COMMERCIAL_RISK_FLAG_STATUS_TONES: Record<CommercialRiskFlagStatus,
   reviewing: "warning",
   resolved: "success",
   dismissed: "neutral",
+};
+
+export const FEEDBACK_STATUS_TONES: Record<FeedbackStatus, StatusTone> = {
+  new: "info",
+  acknowledged: "info",
+  under_review: "warning",
+  action_required: "danger",
+  resolved: "success",
+  closed: "neutral",
+  spam: "neutral",
+};
+
+export const FEEDBACK_PRIORITY_TONES: Record<FeedbackPriority, StatusTone> = {
+  low: "neutral",
+  normal: "info",
+  high: "warning",
+  urgent: "danger",
+};
+
+export const REVIEW_REQUEST_STATUS_TONES: Record<ReviewRequestStatus, StatusTone> = {
+  draft: "neutral",
+  eligible: "info",
+  scheduled: "info",
+  sent: "info",
+  delivered: "info",
+  opened: "info",
+  completed: "success",
+  expired: "neutral",
+  suppressed: "neutral",
+  cancelled: "neutral",
+  failed: "danger",
+};
+
+export const COMPLAINT_STATUS_TONES: Record<ComplaintStatus, StatusTone> = {
+  new: "info",
+  acknowledged: "info",
+  investigating: "warning",
+  awaiting_customer: "warning",
+  awaiting_internal: "warning",
+  resolution_proposed: "warning",
+  resolved: "success",
+  closed: "neutral",
+  reopened: "danger",
+  cancelled: "neutral",
+};
+
+export const COMPLAINT_SEVERITY_TONES: Record<ComplaintSeverity, StatusTone> = {
+  low: "neutral",
+  medium: "info",
+  high: "warning",
+  critical: "danger",
+};
+
+export const COMPLAINT_PRIORITY_TONES: Record<ComplaintPriority, StatusTone> = {
+  low: "neutral",
+  normal: "info",
+  high: "warning",
+  urgent: "danger",
+};
+
+export const RECOVERY_STATUS_TONES: Record<RecoveryStatus, StatusTone> = {
+  proposed: "info",
+  approval_required: "warning",
+  approved: "info",
+  rejected: "danger",
+  executing: "info",
+  completed: "success",
+  failed: "danger",
+  reversed: "neutral",
+  cancelled: "neutral",
 };
 
 /** Reservation `start_time`/`end_time` arrive as "HH:MM:SS" (no date, no

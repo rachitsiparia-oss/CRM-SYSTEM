@@ -139,7 +139,7 @@ describe("Sidebar", () => {
     expect(nav.querySelectorAll("a")).toHaveLength(11);
   });
 
-  it("hides Marketing, Loyalty & Feedback for a user without any of its nine domain view permissions", () => {
+  it("hides Marketing, Loyalty & Feedback for a user without any of its twelve domain view permissions", () => {
     mockCurrentUser([
       "staff.view",
       "menu.view",

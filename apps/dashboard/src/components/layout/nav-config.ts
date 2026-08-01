@@ -160,6 +160,9 @@ export const NAV_SECTIONS: NavSection[] = [
       "gift_cards.view",
       "customer_credit.view",
       "commercial_risk.view",
+      "feedback.view",
+      "complaints.view",
+      "recovery.view",
     ],
     children: [
       { label: "Dashboard", href: "/marketing" },
@@ -172,6 +175,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Gift Cards", href: "/marketing/gift-cards" },
       { label: "Customer Credit", href: "/marketing/customer-credit" },
       { label: "Commercial Risk", href: "/marketing/commercial-risk" },
+      // Phase 13 — feedback/complaints/service recovery live under this
+      // section, not a new top-level nav item: CLAUDE.md section 2 fixes
+      // the twelve sections, and "Marketing, Loyalty & Feedback" already
+      // names feedback explicitly.
+      { label: "Feedback", href: "/marketing/feedback" },
+      { label: "Complaints", href: "/marketing/complaints" },
+      { label: "Service Recovery", href: "/marketing/service-recovery" },
     ],
   },
   { label: "Reports, Analytics & AI Center", href: "/reports", icon: BarChart3 },

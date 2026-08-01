@@ -4,9 +4,12 @@ import Link from "next/link";
 import {
   Award,
   Gift,
+  HeartHandshake,
   Megaphone,
+  MessageCircleWarning,
   ShieldAlert,
   Sparkles,
+  Star,
   Target,
   Ticket,
   Users,
@@ -16,6 +19,7 @@ import {
 import { useLoyaltyAnalytics } from "@/lib/hooks/use-loyalty";
 import { useGiftCardAnalytics } from "@/lib/hooks/use-gift-cards";
 import { useCustomerCreditAnalytics } from "@/lib/hooks/use-customer-credit";
+import { useComplaintAnalytics } from "@/lib/hooks/use-complaints";
 import { formatMinorUnits } from "@/lib/crm-display";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -76,18 +80,37 @@ const SECTIONS = [
     title: "Commercial Risk",
     description: "Review queue for anomalous commercial activity.",
   },
+  {
+    href: "/marketing/feedback",
+    icon: Star,
+    title: "Feedback",
+    description: "Feedback entries, ratings, and post-visit review requests.",
+  },
+  {
+    href: "/marketing/complaints",
+    icon: MessageCircleWarning,
+    title: "Complaints",
+    description: "Complaint case management, SLA tracking, and escalation.",
+  },
+  {
+    href: "/marketing/service-recovery",
+    icon: HeartHandshake,
+    title: "Service Recovery",
+    description: "Recovery actions, compensation, and approval rules.",
+  },
 ];
 
 export function MarketingDashboard() {
   const { data: loyalty, isLoading: loyaltyLoading } = useLoyaltyAnalytics();
   const { data: giftCards, isLoading: giftCardsLoading } = useGiftCardAnalytics();
   const { data: credit, isLoading: creditLoading } = useCustomerCreditAnalytics();
+  const { data: complaints, isLoading: complaintsLoading } = useComplaintAnalytics();
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <PageHeader
         title="Marketing, Loyalty & Feedback"
-        description="Loyalty, segments, offers, campaigns, referrals, achievements, gift cards, customer credit, and commercial risk."
+        description="Loyalty, segments, offers, campaigns, referrals, achievements, gift cards, customer credit, commercial risk, feedback, complaints, and service recovery."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -110,10 +133,10 @@ export function MarketingDashboard() {
           loading={creditLoading}
         />
         <StatCard
-          label="Active credit accounts"
-          value={credit?.active_accounts ?? 0}
-          icon={Wallet}
-          loading={creditLoading}
+          label="Open complaints"
+          value={complaints?.open_count ?? 0}
+          icon={MessageCircleWarning}
+          loading={complaintsLoading}
         />
       </div>
 
