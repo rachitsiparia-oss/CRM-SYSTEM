@@ -101,4 +101,4 @@ cp apps/worker/.env.example apps/worker/.env
 
 ## Production status
 
-**Production deployment and third-party provider integration are deferred.** No production domains, payment provider, communication providers (WhatsApp/email/SMS final accounts), or AI provider credentials exist yet — see [`ROADMAP.md`](ROADMAP.md) for the phase each of these is scheduled in, and [`docs/DEPLOYMENT_AND_ENV.md`](docs/DEPLOYMENT_AND_ENV.md) for the full deployment model. This repository has completed **Phase 11 — Knowledge Base and Staff Operations**; Phase 12 (Loyalty, Offers, and Campaigns) has not started.
+**Production deployment and third-party provider integration are deferred.** No production domains, payment provider, communication providers (WhatsApp/email/SMS final accounts), or AI provider credentials exist yet — see [`ROADMAP.md`](ROADMAP.md) for the phase each of these is scheduled in, and [`docs/DEPLOYMENT_AND_ENV.md`](docs/DEPLOYMENT_AND_ENV.md) for the full deployment model. This repository has completed **Phase 13 — Feedback, Complaints, and Service Recovery**; Phase 14 (Reports, Analytics, and Controlled AI) has not started.
