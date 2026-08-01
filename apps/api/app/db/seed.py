@@ -20,11 +20,13 @@ import asyncio
 from app.achievements.seed import seed_achievements
 from app.campaigns.seed import seed_campaigns
 from app.communications.seed import seed_communications
+from app.complaints.seed import seed_complaints
 from app.core.asyncio_policy import configure_event_loop_policy
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
+from app.feedback.seed import seed_feedback
 from app.inventory.seed import seed_inventory
 from app.knowledge.seed import seed_knowledge_articles
 from app.leads.seed import seed_leads
@@ -41,6 +43,7 @@ from app.permissions.seed import (
 from app.referrals.seed import seed_referrals
 from app.reservations.seed import seed_reservations
 from app.segments.seed import seed_segments
+from app.service_recovery.seed import seed_service_recovery
 from app.staff_operations.seed import seed_staff_operations
 
 logger = get_logger(__name__)
@@ -77,6 +80,9 @@ async def run_seed() -> None:
         # gift_cards/customer_credit/commercial_risk are intentionally not
         # seeded — this phase's own rule against fabricating real-value
         # grants to arbitrary customers or synthetic risk events.
+        await seed_feedback(session)
+        await seed_complaints(session)
+        await seed_service_recovery(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -86,7 +92,8 @@ async def run_seed() -> None:
         note=(
             "departments, roles, permissions, role_permissions, customers, leads, menu, "
             "orders, inventory, reservations, communications, staff operations, knowledge "
-            "base, loyalty, segments, offers, referrals, achievements, campaigns seeded"
+            "base, loyalty, segments, offers, referrals, achievements, campaigns, feedback, "
+            "complaints, service recovery seeded"
         ),
     )
 
