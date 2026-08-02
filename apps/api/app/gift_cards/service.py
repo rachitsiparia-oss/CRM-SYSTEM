@@ -253,6 +253,31 @@ async def expire_card(session: AsyncSession, *, actor: StaffUser, card: GiftCard
     return card
 
 
+async def expire_due_gift_cards(session: AsyncSession, *, now: datetime | None = None) -> int:
+    """The Phase 15 scheduler's entry point — `expire_card` only ever ran
+    one-at-a-time from `POST /gift-cards/{id}/expire`; this is the "which
+    cards are due" batch selector that endpoint never needed."""
+    from app.core.system_actor import get_system_actor
+
+    now = now or datetime.now(UTC)
+    system_actor = await get_system_actor(session)
+    if system_actor is None:
+        return 0
+
+    due_cards = (
+        await session.scalars(
+            select(GiftCard).where(
+                GiftCard.status.in_(_EXPIRABLE_STATUSES),
+                GiftCard.expires_at.isnot(None),
+                GiftCard.expires_at <= now,
+            )
+        )
+    ).all()
+    for card in due_cards:
+        await expire_card(session, actor=system_actor, card=card)
+    return len(due_cards)
+
+
 async def adjust_card(
     session: AsyncSession, *, actor: StaffUser, card: GiftCard, payload: AdjustGiftCardIn
 ) -> GiftCardLedgerEntry:

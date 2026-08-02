@@ -107,7 +107,7 @@ async def assign_role(
         )
 
     session.add(StaffRole(staff_user_id=target.id, role_id=role.id, assigned_by=actor.id))
-    invalidate_permissions_cache(target.id)
+    await invalidate_permissions_cache(target.id)
     await record_audit_event(
         session,
         actor_id=actor.id,
@@ -142,7 +142,7 @@ async def remove_role(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role is not assigned.")
 
     await session.delete(existing)
-    invalidate_permissions_cache(target.id)
+    await invalidate_permissions_cache(target.id)
     await record_audit_event(
         session,
         actor_id=actor.id,
@@ -169,7 +169,7 @@ async def set_account_status(
     before_status = target.account_status
     target.account_status = new_status
     target.updated_by = actor.id
-    invalidate_permissions_cache(target.id)
+    await invalidate_permissions_cache(target.id)
     await record_audit_event(
         session,
         actor_id=actor.id,

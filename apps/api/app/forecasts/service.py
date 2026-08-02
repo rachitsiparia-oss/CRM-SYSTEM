@@ -130,6 +130,31 @@ async def run_forecast(session: AsyncSession, definition: ForecastDefinition) ->
     return snapshot
 
 
+async def run_all_active_forecasts(session: AsyncSession, *, now: datetime | None = None) -> int:
+    """The Phase 15 scheduler's entry point — `run_forecast` only knows
+    how to run *one* definition and has no dedup of its own (each call
+    appends a fresh snapshot), so this wrapper skips any definition that
+    already has a snapshot generated today rather than accumulating
+    multiple identical daily snapshots on repeated scheduler ticks."""
+    now = now or datetime.now(UTC)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    generated = 0
+    for definition in await list_forecast_definitions(session, is_active=True):
+        already_ran_today = await session.scalar(
+            select(ForecastSnapshot.id)
+            .where(
+                ForecastSnapshot.forecast_definition_id == definition.id,
+                ForecastSnapshot.created_at >= today_start,
+            )
+            .limit(1)
+        )
+        if already_ran_today is not None:
+            continue
+        await run_forecast(session, definition)
+        generated += 1
+    return generated
+
+
 async def get_forecast_snapshot(
     session: AsyncSession, snapshot_id: uuid.UUID
 ) -> ForecastSnapshot | None:

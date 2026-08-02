@@ -608,6 +608,7 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     # Settings
     PermissionDef("settings.view", "View system settings."),
     PermissionDef("settings.manage", "Manage system settings.", is_sensitive=True),
+    PermissionDef("settings.integrations.view", "View the integration registry and health status."),
     PermissionDef(
         "settings.integrations.update",
         "Update integration credentials and configuration.",
@@ -616,6 +617,34 @@ PERMISSIONS: tuple[PermissionDef, ...] = (
     # Audit and system
     PermissionDef("audit.view", "View the audit trail.", is_sensitive=True),
     PermissionDef("system.health_view", "View system health status."),
+    # Phase 15 — background jobs, scheduler, event bus, dead-letter recovery,
+    # and cache. `settings.view`/`settings.manage` (above) cover feature
+    # flags, operational settings, and maintenance mode — a dedicated
+    # `settings.feature_flags.*`/`settings.operational.*` split was
+    # considered and rejected as unnecessary permission-code sprawl for a
+    # single-admin-surface concern; every code below is genuinely a
+    # different domain (jobs, queues, scheduler, dead-letter, event log,
+    # cache) that `settings.*` does not already name.
+    PermissionDef("jobs.view", "View background job records and their status."),
+    PermissionDef("jobs.manage", "Cancel or manually retry a background job.", is_sensitive=True),
+    PermissionDef("queues.view", "View queue depth, throughput, and processing latency."),
+    PermissionDef("scheduler.view", "View scheduled/recurring job configuration."),
+    PermissionDef(
+        "scheduler.manage",
+        "Enable, disable, or manually trigger a scheduled job.",
+        is_sensitive=True,
+    ),
+    PermissionDef("dead_letter.view", "View dead-lettered jobs and outbox events."),
+    PermissionDef(
+        "dead_letter.replay",
+        "Replay or bulk-replay a dead-lettered job or event.",
+        is_sensitive=True,
+    ),
+    PermissionDef("event_log.view", "View the domain event / outbox log."),
+    PermissionDef("cache.view", "View cache statistics."),
+    PermissionDef(
+        "cache.invalidate", "Manually invalidate a cache key or family.", is_sensitive=True
+    ),
 )
 
 PERMISSION_CODES: frozenset[str] = frozenset(p.code for p in PERMISSIONS)

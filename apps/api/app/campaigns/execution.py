@@ -164,6 +164,18 @@ async def sync_recipient_statuses(session: AsyncSession, *, campaign: Campaign) 
     return updated
 
 
+async def sync_all_running_campaigns(session: AsyncSession) -> int:
+    """The Phase 15 scheduler's entry point — `sync_recipient_statuses`
+    only knows how to reconcile *one* campaign's recipients; this module's
+    own docstring already named this exact function as future work ("Wiring
+    an ARQ job... is unchanged future work")."""
+    campaigns = (await session.scalars(select(Campaign).where(Campaign.status == "running"))).all()
+    total_updated = 0
+    for campaign in campaigns:
+        total_updated += await sync_recipient_statuses(session, campaign=campaign)
+    return total_updated
+
+
 async def get_analytics(session: AsyncSession, *, campaign_id: uuid.UUID) -> dict[str, int]:
     rows = await session.execute(
         select(CampaignRecipient.status, func.count())

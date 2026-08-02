@@ -69,7 +69,7 @@ async def test_has_permission_true_and_false(
     db_session: AsyncSession, make_staff_user: MakeStaffUser
 ) -> None:
     staff_user = await make_staff_user(role_code="kitchen_staff")
-    invalidate_permissions_cache(staff_user.id)
+    await invalidate_permissions_cache(staff_user.id)
 
     assert await has_permission(db_session, staff_user.id, "orders.view") is True
     assert await has_permission(db_session, staff_user.id, "settings.manage") is False
@@ -79,7 +79,7 @@ async def test_effective_permissions_cache_invalidation(
     db_session: AsyncSession, make_staff_user: MakeStaffUser
 ) -> None:
     staff_user = await make_staff_user(role_code="kitchen_staff")
-    invalidate_permissions_cache(staff_user.id)
+    await invalidate_permissions_cache(staff_user.id)
 
     first = await get_effective_permissions(db_session, staff_user.id)
     assert "orders.view" in first
@@ -95,6 +95,6 @@ async def test_effective_permissions_cache_invalidation(
     still_cached = await get_effective_permissions(db_session, staff_user.id)
     assert still_cached == first
 
-    invalidate_permissions_cache(staff_user.id)
+    await invalidate_permissions_cache(staff_user.id)
     refreshed = await get_effective_permissions(db_session, staff_user.id)
     assert "settings.manage" in refreshed

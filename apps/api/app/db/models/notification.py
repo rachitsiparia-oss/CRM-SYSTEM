@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -76,3 +77,9 @@ class Notification(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     actioned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Phase 15 — channels beyond "in_app" this notification should also be
+    # delivered through (e.g. `["email"]`); NULL/empty means in-app only,
+    # preserving every existing `notify()` call site's behavior unchanged.
+    # `app.notifications.dispatch` is what actually sends these; a
+    # non-empty list here does not by itself deliver anything.
+    delivery_channels: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

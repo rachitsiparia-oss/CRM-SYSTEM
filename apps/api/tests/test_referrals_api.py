@@ -57,7 +57,7 @@ async def _make_scoped_staff_user(
         StaffRole(staff_user_id=staff_user.id, role_id=role.id, assigned_at=datetime.now(UTC))
     )
     await session.flush()
-    invalidate_permissions_cache(staff_user.id)
+    await invalidate_permissions_cache(staff_user.id)
     return staff_user
 
 

@@ -3,10 +3,14 @@ SECURITY_PERFORMANCE_AND_QUALITY.md section 3.4 ("rate limiting by IP and
 account identifier", "progressive delay or lockout controls").
 
 This is an in-process fixed-window limiter, correct for the single API
-instance this project currently runs (ROADMAP.md Phase 3/17 — Redis is not
-provisioned for `apps/api` until the Phase 17 staging deployment). It is
-intentionally isolated behind `check_rate_limit()` so a later phase can
-swap in a Redis-backed implementation for multi-instance correctness
+instance this project currently runs. Phase 15 provisioned a Redis client
+for `apps/api` (`app.cache`) for caching, but this limiter has not been
+migrated onto it — a rate-limit counter has different correctness
+requirements (atomic increment-and-check, not a get/set-with-TTL cache
+read) than `app.cache`'s generic helpers provide, so that migration is
+left for the Phase 17 staging deployment rather than folded in here. It is
+intentionally isolated behind `check_rate_limit()` so that later migration
+can swap in a Redis-backed implementation for multi-instance correctness
 without changing any call site.
 
 Actual password verification happens at Supabase Auth, which the browser

@@ -25,10 +25,19 @@ async def notify(
     record_type: str | None = None,
     record_id: uuid.UUID | None = None,
     dedup_key: str | None = None,
+    delivery_channels: list[str] | None = None,
 ) -> Notification | None:
     """Returns `None` (no-op) when `dedup_key` collides with an existing
     notification — CLAUDE.md section 15 / this phase's own instruction's
-    Definition of Done: "Notifications are deduplicated.\""""
+    Definition of Done: "Notifications are deduplicated."
+
+    `delivery_channels` (Phase 15) requests delivery beyond the in-app row
+    itself — e.g. `["email"]` — actually sent by
+    `app.notifications.dispatch.dispatch_pending_notification_deliveries`,
+    a separate scheduled job, not by this function. Omitting it (the
+    default) preserves every pre-Phase-15 call site's behavior — in-app
+    only — unchanged.
+    """
     if dedup_key is not None:
         insert_stmt = (
             pg_insert(Notification)
@@ -42,6 +51,7 @@ async def notify(
                 record_type=record_type,
                 record_id=record_id,
                 dedup_key=dedup_key,
+                delivery_channels=delivery_channels,
             )
             .on_conflict_do_nothing(
                 index_elements=["dedup_key"], index_where=text("dedup_key IS NOT NULL")
@@ -63,6 +73,7 @@ async def notify(
         priority=priority,
         record_type=record_type,
         record_id=record_id,
+        delivery_channels=delivery_channels,
     )
     session.add(notification)
     await session.flush()

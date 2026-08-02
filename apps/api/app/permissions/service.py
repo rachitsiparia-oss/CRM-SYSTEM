@@ -5,13 +5,11 @@ granted to every active role assigned to them
 (`staff_roles` -> `role_permissions` -> `permissions`,
 DATABASE_AND_API.md section 4.5). Recomputing this on every request would
 mean two extra joined queries per protected endpoint; this module caches
-the result in-process with a short TTL, invalidated explicitly whenever a
-role assignment changes.
-
-In-process only, correct for the single API instance this project
-currently runs — a multi-instance deployment would need a shared cache
-(Redis), deferred to the Phase 16/17 infrastructure hardening, matching
-`app.core.rate_limit`.
+the result two-deep: an in-process L1 (this file's own `_EffectivePermissionCache`,
+correct even with Redis unavailable) in front of the Phase 15 Redis-backed
+L2 (`app.cache`), which is what actually makes the cache shared and
+correct across more than one API instance. Both are invalidated together
+whenever a role assignment changes.
 """
 
 import time
@@ -22,6 +20,10 @@ from threading import Lock
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache.keys import build_key
+from app.cache.service import delete as cache_delete
+from app.cache.service import get_json as cache_get_json
+from app.cache.service import set_json as cache_set_json
 from app.db.models import Permission, Role, RolePermission, StaffRole
 
 _CACHE_TTL_SECONDS = 300
@@ -60,8 +62,13 @@ class _EffectivePermissionCache:
 _cache = _EffectivePermissionCache()
 
 
-def invalidate_permissions_cache(staff_user_id: uuid.UUID) -> None:
+def _cache_key(staff_user_id: uuid.UUID) -> str:
+    return build_key("permissions", str(staff_user_id))
+
+
+async def invalidate_permissions_cache(staff_user_id: uuid.UUID) -> None:
     _cache.invalidate(staff_user_id)
+    await cache_delete(_cache_key(staff_user_id))
 
 
 async def get_effective_permissions(
@@ -70,6 +77,12 @@ async def get_effective_permissions(
     cached = _cache.get(staff_user_id)
     if cached is not None:
         return cached
+
+    cached_remote = await cache_get_json(_cache_key(staff_user_id))
+    if cached_remote is not None:
+        permissions = frozenset(cached_remote)
+        _cache.set(staff_user_id, permissions)
+        return permissions
 
     stmt = (
         select(Permission.code)
@@ -86,6 +99,7 @@ async def get_effective_permissions(
     result = await session.scalars(stmt)
     permissions = frozenset(result.all())
     _cache.set(staff_user_id, permissions)
+    await cache_set_json(_cache_key(staff_user_id), sorted(permissions), family="permissions")
     return permissions
 
 

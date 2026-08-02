@@ -11,6 +11,7 @@ expose data to unauthorized recipients after a role change."
 
 import uuid
 from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,6 +44,54 @@ def compute_occurrence_key(scheduled_report: ScheduledReport, *, as_of: date | N
     else:  # "monthly"
         period_label = f"{today.year}-{today.month:02d}"
     return f"{scheduled_report.id}:{period_label}"
+
+
+_DUE_GRACE_SECONDS = 1800  # matches the ~15-30 minute scheduler tick cadence
+
+
+async def list_due_schedules(
+    session: AsyncSession, *, now: datetime | None = None
+) -> list[ScheduledReport]:
+    """Phase 15's scheduler entry point — `execute_due_occurrence` only
+    knows how to run *one* schedule; this is the "which schedules are due
+    right now" selector that function never had (see the Phase 15
+    deviations note). Safe to call on every tick: a schedule already
+    delivered for its current `compute_occurrence_key()` is excluded, and
+    the time check only matches within a grace window, so re-running this
+    selector before the next occurrence never re-selects the same one."""
+    now = now or datetime.now(UTC)
+    enabled = (
+        await session.scalars(select(ScheduledReport).where(ScheduledReport.is_enabled.is_(True)))
+    ).all()
+    due: list[ScheduledReport] = []
+    for schedule in enabled:
+        local_now = now.astimezone(ZoneInfo(schedule.timezone))
+        if not _schedule_time_matches(schedule, local_now):
+            continue
+        occurrence_key = compute_occurrence_key(schedule, as_of=local_now.date())
+        already_attempted = await session.scalar(
+            select(ReportDeliveryAttempt.id)
+            .where(ReportDeliveryAttempt.occurrence_key == occurrence_key)
+            .limit(1)
+        )
+        if already_attempted is not None:
+            continue
+        due.append(schedule)
+    return due
+
+
+def _schedule_time_matches(schedule: ScheduledReport, local_now: datetime) -> bool:
+    scheduled_today = datetime.combine(
+        local_now.date(), schedule.schedule_time_of_day, tzinfo=local_now.tzinfo
+    )
+    elapsed = (local_now - scheduled_today).total_seconds()
+    if elapsed < 0 or elapsed > _DUE_GRACE_SECONDS:
+        return False
+    if schedule.schedule_frequency == "weekly":
+        return local_now.weekday() == schedule.schedule_day_of_week
+    if schedule.schedule_frequency == "monthly":
+        return local_now.day == schedule.schedule_day_of_month
+    return True  # "daily"
 
 
 async def _resolve_staff_recipients(
@@ -171,6 +220,25 @@ async def execute_due_occurrence(
         attempts.append(attempt)
 
     return attempts
+
+
+async def run_due_scheduled_reports(
+    session: AsyncSession, *, now: datetime | None = None
+) -> dict[str, int]:
+    """The Phase 15 scheduler's entry point — finds every due schedule and
+    executes it, isolating one schedule's failure from the rest (a report
+    owner losing permission must not block every other report's
+    delivery)."""
+    counts = {"executed": 0, "failed": 0}
+    for schedule in await list_due_schedules(session, now=now):
+        try:
+            await execute_due_occurrence(session, schedule)
+        except Exception:
+            await session.rollback()
+            counts["failed"] += 1
+        else:
+            counts["executed"] += 1
+    return counts
 
 
 async def create_scheduled_report(

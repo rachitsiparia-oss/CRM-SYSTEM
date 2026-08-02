@@ -214,7 +214,22 @@ ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "reports.view",
         "reports.export",
         "settings.view",
+        "settings.integrations.view",
         "audit.view",
+        # Phase 15 — operations_manager is the closest existing role to an
+        # operational/IT-oversight role (it already holds settings.view and
+        # audit.view), so it gets read-only visibility into the background
+        # job/scheduler/event/cache surfaces. The sensitive mutation codes
+        # (jobs.manage, scheduler.manage, dead_letter.replay,
+        # cache.invalidate, settings.integrations.update) remain owner/
+        # general_manager only, matching the settings.integrations.update
+        # precedent already established for this role.
+        "jobs.view",
+        "queues.view",
+        "scheduler.view",
+        "dead_letter.view",
+        "event_log.view",
+        "cache.view",
         # Finance is explicitly excluded from broad HR access
         # ("Finance roles: no broad HR access unless explicitly
         # justified") — only the self-service basics every role gets.

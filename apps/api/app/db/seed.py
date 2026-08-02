@@ -28,14 +28,17 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.customers.seed import seed_customers
 from app.db.session import get_session_factory
+from app.feature_flags.seed import seed_feature_flags
 from app.feedback.seed import seed_feedback
 from app.forecasts.seed import seed_forecast_definitions
+from app.integrations.seed import seed_integrations
 from app.inventory.seed import seed_inventory
 from app.knowledge.seed import seed_knowledge_articles
 from app.leads.seed import seed_leads
 from app.loyalty.seed import seed_loyalty
 from app.menu.seed import seed_menu
 from app.offers.seed import seed_offers
+from app.operational_settings.seed import seed_operational_settings
 from app.orders.seed import seed_orders
 from app.permissions.seed import (
     seed_departments,
@@ -93,6 +96,9 @@ async def run_seed() -> None:
         await seed_anomaly_rules(session)
         await seed_forecast_definitions(session)
         await seed_ai_prompt_templates(session)
+        await seed_integrations(session)
+        await seed_feature_flags(session)
+        await seed_operational_settings(session)
         # Future phases append their idempotent seed_*(session) calls here —
         # see PROJECT_PLAN.md section 16 (phase dependency rules).
         await session.commit()
@@ -104,7 +110,8 @@ async def run_seed() -> None:
             "orders, inventory, reservations, communications, staff operations, knowledge "
             "base, loyalty, segments, offers, referrals, achievements, campaigns, feedback, "
             "complaints, service recovery, report definitions, scheduled reports, anomaly "
-            "rules, forecast definitions, AI prompt templates seeded"
+            "rules, forecast definitions, AI prompt templates, integrations, feature flags, "
+            "operational settings seeded"
         ),
     )
 

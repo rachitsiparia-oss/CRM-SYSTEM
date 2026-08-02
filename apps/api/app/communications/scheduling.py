@@ -150,3 +150,30 @@ async def retry_failed_message(session: AsyncSession, *, message: Message) -> Me
     )
     await session.flush()
     return message
+
+
+async def retry_all_failed_messages(session: AsyncSession, *, batch_size: int = 50) -> int:
+    """The Phase 15 scheduler's entry point — `retry_failed_message` only
+    knows how to retry *one* message and has no "find failed retryable
+    messages" selector of its own; it already safely no-ops (returns
+    `None`) for a message whose last attempt was permanent or that has
+    exhausted `_MAX_ATTEMPTS`, so this simply calls it once per candidate
+    and lets that existing guard decide."""
+    candidates = (
+        await session.scalars(
+            select(Message)
+            .where(
+                Message.direction == "outbound",
+                Message.delivery_status == "failed",
+                Message.retry_count < _MAX_ATTEMPTS,
+            )
+            .order_by(Message.created_at)
+            .limit(batch_size)
+        )
+    ).all()
+    retried = 0
+    for message in candidates:
+        result = await retry_failed_message(session, message=message)
+        if result is not None:
+            retried += 1
+    return retried

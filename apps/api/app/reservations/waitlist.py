@@ -8,9 +8,10 @@ actually produced.
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import record_audit_event
@@ -175,3 +176,32 @@ async def expire_waitlist_entry(
         target_id=entry.id,
         request=request,
     )
+
+
+async def expire_stale_waitlist_entries(
+    session: AsyncSession, *, now: datetime | None = None
+) -> int:
+    """The Phase 15 scheduler's entry point `expire_waitlist_entry`'s own
+    docstring already anticipated — the batch selector it never had."""
+    from app.core.system_actor import get_system_actor
+
+    now = now or datetime.now(UTC)
+    system_actor = await get_system_actor(session)
+    if system_actor is None:
+        return 0
+
+    candidates = (
+        await session.scalars(
+            select(ReservationWaitlist).where(
+                ReservationWaitlist.status.in_(_OPEN_STATUSES),
+                ReservationWaitlist.estimated_wait_minutes.isnot(None),
+            )
+        )
+    ).all()
+    expired = 0
+    for entry in candidates:
+        deadline = entry.requested_at + timedelta(minutes=entry.estimated_wait_minutes or 0)
+        if now > deadline:
+            await expire_waitlist_entry(session, actor=system_actor, entry=entry, request=None)
+            expired += 1
+    return expired

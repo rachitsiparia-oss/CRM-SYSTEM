@@ -77,6 +77,15 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
 
+    # Redis (Upstash) — Phase 15 (TOOLS.md section 6). Cache, not a source
+    # of truth; app.cache degrades to a transparent cache-miss whenever
+    # this is unset or unreachable rather than failing requests
+    # (CLAUDE.md section 21, TOOLS.md section 6's "failure must degrade
+    # safely"). The same variable ARQ's worker already uses for its queue
+    # transport (apps/worker/worker/config.py) — this is apps/api's own
+    # copy for its own connection, a separate service per TOOLS.md 7.1.
+    redis_url: str | None = None
+
     @model_validator(mode="after")
     def _require_database_url_outside_local_dev(self) -> Self:
         # Staging and production must never start without a real database —

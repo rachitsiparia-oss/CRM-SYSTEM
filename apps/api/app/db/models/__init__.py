@@ -40,9 +40,11 @@ from app.db.models.customer_merge_event import CustomerMergeEvent
 from app.db.models.customer_note import CustomerNote
 from app.db.models.customer_preference import CustomerPreference
 from app.db.models.customer_tag import CustomerTag
+from app.db.models.dead_letter_entry import DeadLetterEntry
 from app.db.models.department import Department
 from app.db.models.dining_area import DiningArea
 from app.db.models.export_artifact import ExportArtifact
+from app.db.models.feature_flag import FeatureFlag
 from app.db.models.feedback import (
     FeedbackAttachment,
     FeedbackEntry,
@@ -54,6 +56,7 @@ from app.db.models.forecast import ForecastDefinition, ForecastSnapshot
 from app.db.models.gift_card import GiftCard, GiftCardLedgerEntry
 from app.db.models.holiday_calendar import HolidayCalendar
 from app.db.models.inbound_webhook_event import InboundWebhookEvent
+from app.db.models.integration import Integration
 from app.db.models.inventory_batch import InventoryBatch
 from app.db.models.inventory_category import InventoryCategory
 from app.db.models.inventory_item import InventoryItem
@@ -88,7 +91,9 @@ from app.db.models.modifier import Modifier
 from app.db.models.modifier_group import ModifierGroup
 from app.db.models.modifier_group_item import ModifierGroupItem
 from app.db.models.notification import Notification
+from app.db.models.notification_delivery_attempt import NotificationDeliveryAttempt
 from app.db.models.offer import Coupon, Offer, OfferRedemption, OfferVersion
+from app.db.models.operational_setting import OperationalSettings
 from app.db.models.order import Order
 from app.db.models.order_assignment import OrderAssignment
 from app.db.models.order_charge import OrderCharge
@@ -228,9 +233,11 @@ __all__ = [
     "CustomerNote",
     "CustomerPreference",
     "CustomerTag",
+    "DeadLetterEntry",
     "Department",
     "DiningArea",
     "ExportArtifact",
+    "FeatureFlag",
     "FeedbackAttachment",
     "FeedbackEntry",
     "FeedbackRating",
@@ -242,6 +249,7 @@ __all__ = [
     "GiftCardLedgerEntry",
     "HolidayCalendar",
     "InboundWebhookEvent",
+    "Integration",
     "InventoryBatch",
     "InventoryCategory",
     "InventoryItem",
@@ -278,9 +286,11 @@ __all__ = [
     "ModifierGroup",
     "ModifierGroupItem",
     "Notification",
+    "NotificationDeliveryAttempt",
     "Offer",
     "OfferRedemption",
     "OfferVersion",
+    "OperationalSettings",
     "Order",
     "OrderAssignment",
     "OrderCharge",

@@ -208,3 +208,23 @@ async def refresh(session: AsyncSession, *, segment: Segment) -> int:
     segment.last_refreshed_at = now
     await session.flush()
     return len(eligible_now)
+
+
+async def refresh_all_dynamic_segments(session: AsyncSession) -> int:
+    """The Phase 15 scheduler's entry point — `refresh` only knows how to
+    refresh *one* segment; every dynamic segment currently only refreshes
+    when a staff member calls `POST /segments/{id}/refresh` by hand. One
+    segment's failure (a malformed rule definition, say) does not block
+    the rest."""
+    segments = (
+        await session.scalars(select(Segment).where(Segment.segment_type == "dynamic"))
+    ).all()
+    refreshed = 0
+    for segment in segments:
+        try:
+            await refresh(session, segment=segment)
+        except Exception:
+            await session.rollback()
+        else:
+            refreshed += 1
+    return refreshed
