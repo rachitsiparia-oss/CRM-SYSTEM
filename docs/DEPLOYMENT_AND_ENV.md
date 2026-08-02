@@ -583,6 +583,8 @@ At minimum:
 
 Readiness may include critical dependencies such as database availability. Optional provider failures should not necessarily mark the whole API unready.
 
+Phase 15 adds `GET /metrics` (Prometheus exposition format, unauthenticated) alongside these — aggregate request latency/count, cache hit/miss, and derived job-queue/dead-letter/integration-health gauges computed at scrape time from PostgreSQL. This is instrumentation only: no Prometheus server, Grafana, or hosted monitoring SaaS is deployed as part of this project (`TOOLS.md`'s restriction on adding a full observability stack). `apps/worker` has no HTTP server of its own and therefore no `/metrics` or `/health/*` endpoints — its liveness is observed indirectly through the `heartbeat` cron job's `JobRecord` history and through the scrape-time job-queue gauges `apps/api`'s `/metrics` already exposes, deliberately avoiding a second web framework in a background-job service (`CLAUDE.md` §20).
+
 ### 11.4 Startup behavior
 
 The API must not automatically run unsafe migrations on every process start.

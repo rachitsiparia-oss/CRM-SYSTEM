@@ -2330,6 +2330,69 @@ The database and API layer is complete only when:
 - no multi-tenant fields or architecture are introduced
 - no RAG, embeddings, or pgvector tables are introduced
 
-## 41. FINAL DATABASE AND API COMMAND
+## 41. BACKGROUND JOBS, SCHEDULER, DEAD-LETTER, INTEGRATIONS, FEATURE FLAGS, OPERATIONAL SETTINGS, EVENT LOG, AND CACHE API
+
+Phase 15's real API surface — nine domain routers under `apps/api/app/{jobs,dead_letter,integrations,feature_flags,operational_settings,event_bus,cache}`, superseding §32's original `/api/v1/integrations/{provider}` sketch (the real router uses `{integration_id}` — a UUID primary key, not a provider string — and `/pause`/`/resume`/`/disable`/`/run-health-checks` rather than `/test`/`/disconnect`/`/sync-runs`).
+
+### 41.1 Jobs
+
+- `GET /api/v1/jobs` (`jobs.view`) — paginated, filterable by `status`/`job_type`/`queue_name`
+- `GET /api/v1/jobs/queue-stats` (`queues.view`) — counts grouped by `(queue_name, status)`
+- `GET /api/v1/jobs/{job_id}` (`jobs.view`)
+- `POST /api/v1/jobs/{job_id}/cancel` (`jobs.manage`, sensitive) — only meaningful for a `pending`/`scheduled`/`retry_wait` job; a `running` job cannot be interrupted mid-execution (no cross-process cancellation channel)
+
+### 41.2 Scheduler
+
+- `GET /api/v1/scheduler` (`scheduler.view`) — the live `OperationalSettings.scheduler_enabled` flag plus a static cron catalog (`app.jobs.catalog.SCHEDULED_JOB_CATALOG`) describing every job registered in `apps/worker/worker/main.py`
+- `PATCH /api/v1/scheduler` (`scheduler.manage`, sensitive) — `{scheduler_enabled}`, delegates to the same `OperationalSettings` row §41.5 exposes
+
+### 41.3 Dead letter
+
+- `GET /api/v1/dead-letter` (`dead_letter.view`) — paginated, filterable by `resolution_status`/`source_type`
+- `GET /api/v1/dead-letter/{entry_id}` (`dead_letter.view`)
+- `POST /api/v1/dead-letter/{entry_id}/investigate` (`dead_letter.replay`, sensitive)
+- `POST /api/v1/dead-letter/{entry_id}/mark-replay-ready` (`dead_letter.replay`, sensitive) — `{notes?}`
+- `POST /api/v1/dead-letter/{entry_id}/ignore` (`dead_letter.replay`, sensitive) — `{reason}`
+- `POST /api/v1/dead-letter/{entry_id}/replay` (`dead_letter.replay`, sensitive) — only from `replay_ready`; resets the source job/outbox row to `pending` and never re-runs the failed work inline
+
+### 41.4 Integrations
+
+- `GET /api/v1/integrations` (`settings.integrations.view`) — filterable by `category`/`health_state`
+- `GET /api/v1/integrations/{integration_id}` (`settings.integrations.view`)
+- `POST /api/v1/integrations/{integration_id}/pause` | `/resume` | `/disable` (`settings.integrations.update`, sensitive)
+- `POST /api/v1/integrations/run-health-checks` (`settings.integrations.update`, sensitive) — config-presence checks only (a credential is present and the underlying channel/database is reachable); never a live network probe against a real provider, to avoid cost/rate-limit risk from a background health tick
+
+### 41.5 Feature flags and operational settings
+
+- `GET /api/v1/feature-flags`, `POST /api/v1/feature-flags`, `PATCH /api/v1/feature-flags/{flag_id}/enabled` — all `settings.view`/`settings.manage`. A stable on/off switch per `code` only — no percentage rollout, no per-role targeting (`CLAUDE.md` §2's forbidden generic customization surface).
+- `GET /api/v1/operational-settings`, `PATCH /api/v1/operational-settings` — `settings.view`/`settings.manage`. Singleton row (`OperationalSettings.singleton_guard`), same "read/update never get-or-create" convention as `ReservationSettings`. `queue_priority_config`/`notification_channel_config` (JSONB) are readable through the API but have no dedicated JSON editor in the frontend form yet — a deliberate scope cut for this phase, not a hidden gap.
+
+### 41.6 Event log
+
+- `GET /api/v1/event-log` (`event_log.view`) — paginated read surface over `outbox_events`, filterable by `status`/`event_type`. Claiming/dispatching stays in `app.event_bus.dispatcher`; this is read-only.
+
+### 41.7 Cache
+
+- `GET /api/v1/cache/families` (`cache.view`) — the static family/TTL table from `app.cache.keys.CACHE_TTL_SECONDS`
+- `POST /api/v1/cache/invalidate` (`cache.invalidate`, sensitive) — `{family}`, bulk-invalidates via non-blocking `SCAN`, never `KEYS`
+
+### 41.8 Metrics and health
+
+- `GET /metrics` — Prometheus exposition format, unauthenticated (aggregate counts/durations only, never PII). Live in-process counters for HTTP request latency/count and cache hit/miss; scrape-time gauges computed from `job_records`/`outbox_events`/`dead_letter_entries`/`notification_delivery_attempts`/`integrations` for queue depth, job duration, retry counts, dead-letter backlog, and integration health.
+- `GET /health/live`, `GET /health/ready` — unchanged from Phase 3, still unauthenticated.
+
+### 41.9 Phase 15 implementation notes and deviations
+
+- **TOOLS.md/Prometheus resolution**: `docs/TOOLS.md` forbids adding "a full observability stack such as Prometheus, Grafana, Datadog, or New Relic without demonstrated need and approval." Per `CLAUDE.md` §1.1/§27 this was flagged to the user before building; the user chose the narrow reading — the `prometheus_client` library and a `/metrics` text endpoint (instrumentation only), with no Prometheus server, Grafana, or hosted monitoring SaaS deployed as part of this project.
+- **Correlation IDs extended to background execution**: `app.jobs.runner.run_job` and `app.event_bus.dispatcher._process_one` bind `job_id`/`job_type`/`correlation_id` (jobs) or `outbox_event_id`/`event_type` (events) onto `structlog.contextvars` for the duration of execution, the same pattern `RequestContextMiddleware` already applied to HTTP requests — every log line a domain service emits while a job/event runs carries the same identity.
+- **"Automations are code, not a rule-authoring UI"**: every entry in the approved automation catalog is a fixed, code-defined, directly-callable engine function registered as an ARQ cron job in `apps/worker/worker/main.py` — 21 cron entries total, cadences from every-2-minutes (outbox/communication-event dispatch) to daily (expiry sweeps, reminders, retention). There is no `AutomationDefinition` table and no condition-rule editor anywhere in this phase.
+- **Distributed locking for cron overlap safety**: `worker.scheduling.run_scheduled_job` wraps every cron task in a Postgres session-level advisory lock (`app.jobs.locks.advisory_lock`, keyed `cron:{job_type}`) before calling `app.jobs.runner.run_job` — if `apps/worker` is ever scaled beyond one replica, a replica that loses the race treats that as a normal no-op (`{"skipped": "locked"}`), not a failure.
+- **Retention cleanup is conservative**: `app.jobs.retention.purge_stale_operational_records` only deletes terminal (`succeeded`/`cancelled` for jobs, `published`/`cancelled` for outbox events) rows older than 90 days — `failed_permanent` rows are never purged since a `DeadLetterEntry` still references them for triage. Never touches `audit_log`, inventory/loyalty ledgers, or any other durable business-history table.
+- **Known gaps against the original one-line Phase 15 scope, explicitly deferred, not silently dropped**: the pre-merge scope line named "Authenticated realtime channels" and "Integration health and reconciliation." This phase built integration *health checks* (§41.4) but not a *reconciliation* job (detecting and correcting drift between this system's own state and an external provider's actual state — meaningless for the config-presence-only integrations this phase has real adapters for). It did not build Supabase Realtime channel subscriptions at all — every existing frontend page still polls via TanStack Query, matching every prior phase's own realtime posture (`ARCHITECTURE_AND_TECH_STACK.md` §5.4's "realtime is for genuinely live business events," never introduced end-to-end in any phase so far). Both remain open scope for a future phase.
+- **Other explicitly deferred items**: customer-credit expiry (no `expires_at` field exists anywhere in that schema — would require a new migration, out of this phase's scope, not silently worked around); a KPI-snapshot scheduled job (no underlying model exists to snapshot); a manual "run this job now" HTTP trigger (would require `apps/api` to depend on an ARQ/Redis enqueue client it doesn't have today — dead-letter replay and job cancellation cover the manual-intervention surface this phase does build).
+- **RLS enabled on all 5 new tables** (`integrations`, `dead_letter_entries`, `feature_flags`, `operational_settings`, `notification_delivery_attempts`), matching every table since the Phase-3-era RLS migration.
+- **Authenticated manual browser click-through and authenticated Playwright coverage were not built** — no test Supabase session or `storageState` fixture exists in this environment, the same limitation every phase since Phase 5 has documented. The unauthenticated redirect boundary is instead verified by 9 new Playwright specs (`e2e/settings.spec.ts`), and authenticated workflows are fully exercised by 59 new backend tests (57 in `apps/api`, 2 in `apps/worker`) plus 2 new/12 updated frontend component-test assertions in `sidebar.test.tsx`.
+
+## 42. FINAL DATABASE AND API COMMAND
 
 Implement the RKPR Restaurant CRM database and API as a secure, high-speed, single-business system. Keep PostgreSQL authoritative, business rules in FastAPI, collections bounded, writes transactional, financial logic precise (integer minor units, never floating point), status transitions explicit, permissions server-side using the single canonical capability registry, files private, integrations verified, jobs idempotent, and all sensitive operations auditable. Preserve the exact approved dummy dataset only for development and testing, while keeping real technical decisions, providers, libraries, security controls, and architecture strictly non-dummy and consistent across all project documents.
