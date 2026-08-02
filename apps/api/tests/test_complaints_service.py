@@ -423,7 +423,14 @@ async def test_run_sla_escalations_creates_task_and_escalates(
     await db_session.flush()
 
     escalations = await service.run_sla_escalations(db_session)
-    assert len(escalations) == 1
+    # `run_sla_escalations` scans every open complaint with an SLA policy,
+    # not just this test's own — a real complaint seeded (independently of
+    # this test's SAVEPOINT) with its own now-overdue due date is visible
+    # too and would also escalate, the same "detect_sla_events can see
+    # more than what this test created" isolation gap `first_pass`/
+    # `second_pass` above already account for with `>= 1`.
+    assert len(escalations) >= 1
+    assert any(e.complaint_id == complaint.id for e in escalations)
     assert complaint.current_escalation_level == 1
 
 

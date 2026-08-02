@@ -27,3 +27,13 @@ async def test_unknown_route_returns_stable_error_shape(client: AsyncClient) -> 
     body = response.json()
     assert body["error"]["code"] == "not_found"
     assert "request_id" in body["error"]
+
+
+async def test_metrics_exposes_prometheus_text_format(client: AsyncClient) -> None:
+    response = await client.get("/metrics")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+    body = response.text
+    assert "crm_http_requests_total" in body
+    assert "crm_job_queue_depth" in body
+    assert "crm_db_pool_size" in body
