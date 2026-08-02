@@ -11,7 +11,16 @@ dependencies = [
   "psycopg[binary,pool]==3.3.4",
   "structlog==26.1.0",
   "sentry-sdk==2.66.1",
+  # Phase 15 — the worker calls apps/api's domain services and SQLAlchemy
+  # models directly (no HTTP hop, no duplicated model definitions), the
+  # same "backend-owned orchestration" model
+  # INTEGRATIONS_AUTOMATIONS_REALTIME.md section 2.1 requires. Resolved via
+  # the uv workspace, not PyPI — see [tool.uv.sources] below.
+  "rkpr-api",
 ]
+
+[tool.uv.sources]
+rkpr-api = { workspace = true }
 
 [dependency-groups]
 dev = [
