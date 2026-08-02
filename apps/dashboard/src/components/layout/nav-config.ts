@@ -228,7 +228,35 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "AI Center", href: "/reports/ai" },
     ],
   },
-  { label: "Integrations, Security & Settings", href: "/settings", icon: Settings },
+  {
+    label: "Integrations, Security & Settings",
+    href: "/settings",
+    icon: Settings,
+    // Phase 15 — every jobs/scheduler/dead-letter/integrations/cache/
+    // event-log/settings domain permission gates this one section (the
+    // same OR-list pattern the Marketing and Reports sections above use).
+    requiredPermission: [
+      "jobs.view",
+      "queues.view",
+      "scheduler.view",
+      "dead_letter.view",
+      "settings.integrations.view",
+      "settings.view",
+      "event_log.view",
+      "cache.view",
+    ],
+    children: [
+      { label: "Overview", href: "/settings" },
+      { label: "Jobs", href: "/settings/jobs" },
+      { label: "Scheduler", href: "/settings/scheduler" },
+      { label: "Dead Letter Queue", href: "/settings/dead-letter" },
+      { label: "Integrations", href: "/settings/integrations" },
+      { label: "Feature Flags", href: "/settings/feature-flags" },
+      { label: "Operational Settings", href: "/settings/operational" },
+      { label: "Event Log", href: "/settings/event-log" },
+      { label: "Cache", href: "/settings/cache" },
+    ],
+  },
 ];
 
 /** Shared by Sidebar and MobileNav so the two navigation surfaces can never

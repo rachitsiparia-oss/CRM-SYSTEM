@@ -1,5 +1,5 @@
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { SettingsDashboard } from "./settings-dashboard";
 
 export default function Page() {
-  return <ModulePlaceholder title="Integrations, Security & Settings" />;
+  return <SettingsDashboard />;
 }

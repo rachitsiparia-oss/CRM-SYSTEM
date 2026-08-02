@@ -5611,3 +5611,238 @@ export interface AiRequestFeedback {
   feedback_note: string | null;
   created_at: string;
 }
+
+// --- Phase 15: Automation, Jobs, Observability, and Production Operations ---
+// Mirrors apps/api/app/{jobs,dead_letter,integrations,feature_flags,
+// operational_settings,event_bus,cache}/schemas.py.
+
+export type JobStatus =
+  | "scheduled"
+  | "pending"
+  | "queued"
+  | "running"
+  | "retry_wait"
+  | "succeeded"
+  | "failed_permanent"
+  | "cancelled"
+  | "dead_lettered";
+export type JobQueueName =
+  | "critical-domain"
+  | "communications"
+  | "campaigns"
+  | "reports"
+  | "exports"
+  | "integrations"
+  | "ai"
+  | "maintenance";
+export type JobPriority = "critical" | "high" | "normal" | "low" | "maintenance";
+
+export interface JobRecord {
+  id: string;
+  job_type: string;
+  trigger: string;
+  queue_name: JobQueueName;
+  priority: JobPriority;
+  status: JobStatus;
+  attempts: number;
+  max_attempts: number;
+  next_retry_at: string | null;
+  timeout_seconds: number;
+  correlation_id: string | null;
+  idempotency_key: string | null;
+  progress: string | null;
+  result: Record<string, unknown> | null;
+  failure_category: string | null;
+  failure_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface QueueStat {
+  queue_name: string;
+  status: string;
+  count: number;
+}
+
+export interface SchedulerCatalogEntry {
+  job_type: string;
+  queue_name: string;
+  cadence: string;
+  description: string;
+}
+
+export interface SchedulerStatus {
+  scheduler_enabled: boolean;
+  jobs: SchedulerCatalogEntry[];
+}
+
+export type DeadLetterSourceType = "job" | "outbox_event";
+export type DeadLetterResolutionStatus =
+  | "new"
+  | "investigating"
+  | "corrected"
+  | "replay_ready"
+  | "replayed"
+  | "ignored_with_reason"
+  | "permanently_closed";
+
+export interface DeadLetterEntry {
+  id: string;
+  source_type: DeadLetterSourceType;
+  source_id: string;
+  original_type: string;
+  payload_reference: Record<string, unknown> | null;
+  correlation_id: string | null;
+  failure_category: string | null;
+  final_error_summary: string | null;
+  attempt_history: Array<Record<string, unknown>> | null;
+  dead_letter_at: string;
+  owner_staff_id: string | null;
+  resolution_status: DeadLetterResolutionStatus;
+  replay_eligible: boolean;
+  replay_actor_id: string | null;
+  replay_at: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface MarkReplayReadyInput {
+  notes?: string | null;
+}
+
+export interface IgnoreEntryInput {
+  reason: string;
+}
+
+export type IntegrationCategory =
+  | "authentication_identity"
+  | "database_storage"
+  | "email"
+  | "whatsapp"
+  | "sms"
+  | "file_storage_exports"
+  | "ai_provider"
+  | "analytics_observability";
+export type IntegrationStatus =
+  | "draft"
+  | "configuring"
+  | "validating"
+  | "active"
+  | "degraded"
+  | "paused"
+  | "disabled"
+  | "failed"
+  | "revoked"
+  | "archived";
+export type IntegrationHealthState = "unknown" | "healthy" | "degraded" | "unhealthy" | "disabled";
+
+export interface Integration {
+  id: string;
+  code: string;
+  category: IntegrationCategory;
+  provider_code: string;
+  display_name: string;
+  status: IntegrationStatus;
+  environment: string;
+  is_enabled: boolean;
+  config_version: number;
+  credential_reference: string | null;
+  credential_last_validated_at: string | null;
+  webhook_configured: boolean;
+  base_endpoint: string | null;
+  default_sender: string | null;
+  rate_limit_config: Record<string, unknown> | null;
+  timeout_seconds: number;
+  retry_policy_reference: string | null;
+  capability_flags: Record<string, unknown> | null;
+  health_state: IntegrationHealthState;
+  last_success_at: string | null;
+  last_failure_at: string | null;
+  last_error_category: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HealthCheckSummary {
+  healthy: number;
+  unhealthy: number;
+}
+
+export interface FeatureFlag {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureFlagCreateInput {
+  code: string;
+  name: string;
+  description?: string | null;
+  is_enabled?: boolean;
+}
+
+export interface SetFlagEnabledInput {
+  is_enabled: boolean;
+}
+
+export interface OperationalSettings {
+  id: string;
+  maintenance_mode_enabled: boolean;
+  maintenance_message: string | null;
+  scheduler_enabled: boolean;
+  default_max_attempts: number;
+  default_retry_backoff_seconds: number;
+  default_retry_backoff_cap_seconds: number;
+  worker_max_jobs: number;
+  worker_job_timeout_seconds: number;
+  queue_priority_config: Record<string, unknown> | null;
+  notification_channel_config: Record<string, unknown> | null;
+  active_ai_provider_code: string | null;
+  version: number;
+  updated_at: string;
+}
+
+export interface OperationalSettingsUpdateInput {
+  maintenance_mode_enabled?: boolean | null;
+  maintenance_message?: string | null;
+  scheduler_enabled?: boolean | null;
+  default_max_attempts?: number | null;
+  default_retry_backoff_seconds?: number | null;
+  default_retry_backoff_cap_seconds?: number | null;
+  worker_max_jobs?: number | null;
+  worker_job_timeout_seconds?: number | null;
+  queue_priority_config?: Record<string, unknown> | null;
+  notification_channel_config?: Record<string, unknown> | null;
+  active_ai_provider_code?: string | null;
+}
+
+export interface OutboxEvent {
+  id: string;
+  event_type: string;
+  aggregate_type: string;
+  aggregate_id: string;
+  payload: Record<string, unknown>;
+  status: "pending" | "processing" | "published" | "failed_retryable" | "failed_permanent" | "cancelled";
+  available_at: string;
+  attempts: number;
+  locked_by: string | null;
+  locked_at: string | null;
+  completed_at: string | null;
+  last_error: string | null;
+  idempotency_key: string | null;
+  created_at: string;
+}
+
+export interface CacheFamily {
+  family: string;
+  ttl_seconds: number;
+}
+
+export interface CacheInvalidateInput {
+  family: string;
+}
