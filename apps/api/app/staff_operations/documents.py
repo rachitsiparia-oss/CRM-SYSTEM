@@ -1,6 +1,7 @@
 """Staff HR document upload/list/verify — this phase's own instruction
 section 14. Reuses `app.knowledge.attachments`' validator (extension/MIME/
-signature checks for PDF/DOCX/CSV/images) rather than a duplicate one.
+signature checks for PDF/DOCX/CSV/images) and `app.storage.scanning`'s
+malware-scan hook rather than duplicating either.
 """
 
 import uuid
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import StaffDocument, StaffUser
 from app.knowledge.attachments import AttachmentValidationError, validate_attachment_upload
 from app.staff_operations.schemas import DocumentVerifyIn
+from app.storage.scanning import scan_upload
 from app.storage.service import create_signed_url, upload_object
 
 STAFF_DOCUMENTS_BUCKET = "staff-documents"
@@ -38,6 +40,13 @@ async def upload_document(
     except AttachmentValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
+    scan_result = await scan_upload(data)
+    if scan_result.status == "infected":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This file was rejected by malware scanning and was not uploaded.",
+        )
+
     extension = filename[filename.rfind(".") :].lower() if "." in filename else ""
     path = f"staff/{staff_user_id}/{uuid.uuid4()}{extension}"
     await upload_object(
@@ -52,6 +61,7 @@ async def upload_document(
         storage_bucket=STAFF_DOCUMENTS_BUCKET,
         storage_path=path,
         upload_status="uploaded",
+        scan_status=scan_result.status,
         issue_date=issue_date,
         expiry_date=expiry_date,
         replaces_document_id=replaces_document_id,

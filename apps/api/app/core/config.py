@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     db_pool_max_overflow: int = 10
     db_echo: bool = False
 
+    # Phase 16 hardening — CLAUDE.md section 19 ("slow endpoints must be
+    # observable"). A structured warning log, not a new metrics backend:
+    # narrow instrumentation matching the existing Prometheus-scope
+    # philosophy in app/core/metrics.py, not a slow-query dashboard.
+    slow_query_threshold_ms: int = 500
+    slow_request_threshold_ms: int = 1000
+
     # Supabase Auth — required from Phase 3 onward. `supabase_service_role_key`
     # is server-only (SECURITY_PERFORMANCE_AND_QUALITY.md section 3.7,
     # section 5.2) and must never be sent to the browser or logged.

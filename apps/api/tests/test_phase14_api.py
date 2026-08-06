@@ -207,6 +207,28 @@ async def test_get_ai_request_forbidden_for_non_requester(
     assert get_response.status_code == 403
 
 
+async def test_create_ai_request_is_rate_limited_per_staff_account(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    from app.controlled_ai.router import _AI_REQUEST_LIMIT
+
+    actor = await make_staff_user(role_code="owner")
+    payload = {
+        "feature_code": "dashboard_summary",
+        "params": {"domain": "executive", "window_code": "current_month"},
+    }
+    for _ in range(_AI_REQUEST_LIMIT):
+        response = await authed_client.post(
+            "/api/v1/ai/requests", headers=_headers(actor), json=payload
+        )
+        assert response.status_code == 201
+
+    over_limit = await authed_client.post(
+        "/api/v1/ai/requests", headers=_headers(actor), json=payload
+    )
+    assert over_limit.status_code == 429
+
+
 # --- Scheduled reports -----------------------------------------------------------
 
 

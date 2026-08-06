@@ -3,20 +3,40 @@ from datetime import UTC, datetime
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import record_audit_event
 from app.auth.dependencies import CurrentStaffUser
-from app.auth.schemas import CurrentUserOut, PasswordResetRequestIn, RoleOut, SessionOut
+from app.auth.schemas import (
+    CurrentUserOut,
+    LoginHistoryEntryOut,
+    PasswordResetRequestIn,
+    RoleOut,
+    SessionOut,
+)
 from app.auth.tokens import decode_access_token
 from app.core.config import get_settings
+from app.core.pagination import PageParams, PaginatedResponse, Pagination
 from app.core.rate_limit import check_rate_limit
 from app.core.responses import DataResponse, request_meta
-from app.db.models import Role, StaffRole, StaffUser
+from app.db.models import AuditEvent, Role, StaffRole, StaffUser
 from app.db.session import get_db
 from app.permissions.service import get_effective_permissions
 from app.staff.schemas import ProfileUpdateIn
+
+# The account's own authentication/authorization security history — every
+# event a staff member should be able to see about their own account
+# without needing an admin permission. auth.password_reset_requested is
+# excluded: it's recorded with target_id=None by design (unauthenticated,
+# no confirmed identity — SECURITY_PERFORMANCE_AND_QUALITY.md section 3.4's
+# enumeration-avoidance rule), so it can never be attributed to one account.
+_LOGIN_HISTORY_ACTION_CODES = (
+    "auth.login",
+    "auth.logout",
+    "auth.access_denied",
+    "auth.account_locked",
+)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -155,6 +175,42 @@ async def session_info(
         expires_at=datetime.fromtimestamp(claims.expires_at, tz=UTC) if claims.expires_at else None,
     )
     return DataResponse(data=out, meta=request_meta(request))
+
+
+@router.get("/login-history")
+async def login_history(
+    request: Request,
+    staff_user: CurrentStaffUser,
+    session: AsyncSession = Depends(get_db),
+    page_params: PageParams = Depends(),
+) -> PaginatedResponse[LoginHistoryEntryOut]:
+    """The caller's own authentication/authorization security history —
+    logins, logouts, access-denied rejections, and account-lock events.
+    Self-service only (no permission code): every staff member can see
+    their own security history, no admin authority required, and this
+    never returns another account's events."""
+    base_filter = (
+        AuditEvent.target_type == "staff_user",
+        AuditEvent.target_id == staff_user.id,
+        AuditEvent.action_code.in_(_LOGIN_HISTORY_ACTION_CODES),
+    )
+    total = await session.scalar(select(func.count()).select_from(AuditEvent).where(*base_filter))
+    stmt = (
+        select(AuditEvent)
+        .where(*base_filter)
+        .order_by(AuditEvent.created_at.desc())
+        .offset((page_params.page - 1) * page_params.page_size)
+        .limit(page_params.page_size)
+    )
+    rows = (await session.scalars(stmt)).all()
+    data = [LoginHistoryEntryOut.model_validate(row) for row in rows]
+    return PaginatedResponse(
+        data=data,
+        pagination=Pagination(
+            page=page_params.page, page_size=page_params.page_size, total=total or 0
+        ),
+        meta=request_meta(request),
+    )
 
 
 @router.post("/password-reset")

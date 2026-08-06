@@ -152,3 +152,19 @@ its colors through these tokens; nothing here is component-specific. */
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* CLAUDE.md section 10 ("avoid excessive animation") applied to users who
+have asked the OS for less motion — every shadcn/ui open/close transition
+in this app comes from tw-animate-css's utility classes (imported above),
+so a single global override here covers all of them rather than needing a
+per-component opt-out. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

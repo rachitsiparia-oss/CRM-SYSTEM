@@ -408,7 +408,7 @@ Completion notes: Built five new tables (`integrations`, `dead_letter_entries`, 
 
 ## Phase 16 — Security, Performance, and Quality Hardening
 
-Status: NOT STARTED
+Status: COMPLETED
 
 Scope:
 
@@ -419,9 +419,56 @@ Scope:
 - Accessibility and UX quality
 - Observability, alerts, backups, restore tests, and incident readiness
 
-Completion date:
+Completion date: 2026-08-06
 
-Completion notes:
+Completion notes: This phase was an audit-and-harden pass across all 15 completed phases, not a
+new module — no new business functionality was added, per this phase's own explicit instruction.
+Method throughout: read the existing implementation first, fix real gaps found, and document
+"reviewed, already correct" rather than force-add redundant code where a prior phase had already
+built something correctly. Nine real fixes landed: a security-headers middleware (CSP/HSTS/
+X-Frame-Options, disabled on the interactive docs outside local/test); a webhook fail-open gap
+where an unregistered provider name resolved to the always-accepting mock adapter (now a strict
+`get_registered_provider` lookup returning 503); progressive rate-limit backoff plus automatic
+account lockout after repeated permission denials; a malware-scan hook wired onto every existing
+upload path (`NoOpScanner` honestly reports `"skipped"`, never a fabricated `"clean"` — no
+scanning provider is approved yet); structured-log secret redaction and a missing audit event on
+sensitive HR document access; an oversized-prompt guard and a dedicated 20/hour AI rate limit,
+plus completing an already-designed-but-unwired `AiRequest.safety_blocked` audit path; one real
+N+1 query fix in `inventory/balances.py::rebuild_balances`; a worker-timeout retry-classification
+test gap closed; slow-query and slow-request structured warning logs (new
+`app/core/slow_query.py`, `SLOW_QUERY_THRESHOLD_MS`/`SLOW_REQUEST_THRESHOLD_MS`); a graceful-
+shutdown gap where neither `apps/api` nor `apps/worker` disposed its database connection pool;
+three chart components code-split off the initial route bundle via `next/dynamic`; and an
+accessibility pass adding global `prefers-reduced-motion` support plus two missing icon-button
+`aria-label`s. A 565-endpoint authorization coverage audit found 0 confirmed permission-check
+gaps (22 flagged endpoints individually verified as deliberate public/self-service/provider-
+signature exceptions). SQL injection, SSRF, command injection, and stored-XSS were reviewed with
+no gaps found — the codebase already had no raw-SQL, no client-supplied-URL fetch, and no
+`dangerouslySetInnerHTML` surface to begin with. Full report set in `docs/phase-16/`: security
+audit, performance, disaster recovery, load test, accessibility, frontend performance,
+authorization coverage, verification, and deployment checklist.
+
+Deferred, deliberately, and stated plainly rather than fabricated: k6 load testing produced a
+real, ready-to-run script and token-minting helper but no executed benchmark or latency numbers —
+k6 is not installed in this sandboxed session and no live server was running to point it at
+(`docs/TOOLS.md` §12.5 marks k6 "REQUIRED BEFORE PRODUCTION," a pre-production gate, not a
+requirement to run inside a dev coding session). A live `alembic downgrade`/`upgrade` round-trip
+was not executed against the shared development database — every `downgrade()` was read in full
+and found correct (3 representative migrations) but the actual round-trip needs an isolated
+database, since the shared dev instance was concurrently in use by this session's own test runs
+and a bad downgrade risks real data loss. Backup/restore verification remains an infrastructure-
+level, pre-production gate owned by Supabase-managed Postgres once a real project exists — no
+code change was needed or made. Cache-layer coverage expansion into the `analytics`/`dashboard`/
+`reports`/`customer_summary` families was reviewed and deliberately not force-fixed: the natural
+call sites return `Decimal`-heavy frozen dataclasses that need a deliberate serialization design,
+and CLAUDE.md's own priority order (correctness above performance) rules out a rushed cache-wrap
+of financial/analytics data. Conversation-timeline pagination for very long message histories was
+scoped as a cross-stack follow-up (backend cursor pagination plus a frontend `useInfiniteQuery`/
+`useVirtualizer` change) rather than a frontend-only partial fix. The full backend regression
+suite passed (1040 tests; 5 initial failures during the longest single run of the session were
+diagnosed as a transient Supabase-pooler connection drop, not a regression, and confirmed by an
+isolated re-run — 5 passed in 26.27s). Full deviation record in `docs/phase-16/
+DEPLOYMENT_CHECKLIST.md`.
 
 ## Phase 17 — Staging Deployment and Acceptance Testing
 

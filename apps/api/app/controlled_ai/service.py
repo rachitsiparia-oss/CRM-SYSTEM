@@ -36,12 +36,6 @@ async def request_completion(
             f"No active prompt template for feature {feature_code!r} — this capability "
             "is not yet wired in this phase."
         )
-    if requires_hr_sensitive_permission(feature_code) and "ai.analytics.hr_sensitive" not in (
-        permissions
-    ):
-        from app.controlled_ai.errors import HrSensitiveDataBlockedError
-
-        raise HrSensitiveDataBlockedError("This AI capability requires ai.analytics.hr_sensitive.")
 
     ai_request = AiRequest(
         requested_by_staff_id=actor.id,
@@ -55,6 +49,21 @@ async def request_completion(
     )
     session.add(ai_request)
     await session.flush()
+
+    if requires_hr_sensitive_permission(feature_code) and "ai.analytics.hr_sensitive" not in (
+        permissions
+    ):
+        # Recorded on the request itself, not just raised, so a blocked
+        # attempt at HR-sensitive AI access leaves the same audit trail
+        # every other outcome does (CLAUDE.md section 6.6's "AI actions
+        # that affect business records" — a blocked attempt is itself a
+        # security-relevant event worth a durable record).
+        ai_request.status = "blocked"
+        ai_request.safety_blocked = True
+        ai_request.safety_block_reason = "Requires ai.analytics.hr_sensitive permission."
+        ai_request.completed_at = datetime.now(UTC)
+        await session.flush()
+        return ai_request
 
     try:
         user_prompt, grounding_summary, source_refs = await _assemble_grounding(

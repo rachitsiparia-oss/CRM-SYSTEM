@@ -20,6 +20,16 @@ from app.reports.service import get_dashboard, get_report_run, get_report_run_da
 
 SourceRef = tuple[str, str, str | None]  # (source_type, source_id, label)
 
+# Phase 16 hardening: `question` is the one place free-form user text flows
+# into a prompt (every other feature's grounding re-fetches real records
+# filtered by permission — nothing else embeds raw request text). An
+# unbounded question is both a cost/quota risk once a real provider is
+# configured and the "oversized prompts" attack this phase's own
+# instruction section G calls out — bounding it here, before the text ever
+# reaches `_assemble_grounding`'s caller, keeps every other grounding
+# assembler (which never see raw text at all) unaffected.
+_MAX_QUESTION_LENGTH = 2000
+
 
 def _metric_result_summary(result: MetricResult) -> dict[str, object]:
     return {
@@ -118,6 +128,11 @@ async def ground_nl_question_query_plan(
     *, question: str, permissions: frozenset[str]
 ) -> tuple[str, dict[str, object], list[SourceRef]]:
     from app.analytics_core.registry import METRICS
+
+    if len(question) > _MAX_QUESTION_LENGTH:
+        raise ControlledAiError(
+            f"Question is too long — the limit is {_MAX_QUESTION_LENGTH} characters."
+        )
 
     available = [m.code for m in METRICS if m.required_permission in permissions]
     grounding: dict[str, object] = {"question": question, "available_metric_codes": available}

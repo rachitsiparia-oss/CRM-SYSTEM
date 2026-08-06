@@ -51,7 +51,12 @@ export function ReservationCalendar() {
         description="Reservations for a single day, grouped by time — the day view."
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setSelectedDate((d) => shiftDate(d, -1))}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous day"
+              onClick={() => setSelectedDate((d) => shiftDate(d, -1))}
+            >
               <ChevronLeft className="size-4" />
             </Button>
             <Input
@@ -60,7 +65,12 @@ export function ReservationCalendar() {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-40"
             />
-            <Button variant="outline" size="icon" onClick={() => setSelectedDate((d) => shiftDate(d, 1))}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next day"
+              onClick={() => setSelectedDate((d) => shiftDate(d, 1))}
+            >
               <ChevronRight className="size-4" />
             </Button>
             <Button variant="outline" onClick={() => setSelectedDate(today())}>

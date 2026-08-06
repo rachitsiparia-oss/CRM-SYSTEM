@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -44,3 +45,14 @@ class SessionOut(BaseModel):
 
 class PasswordResetRequestIn(BaseModel):
     email: str
+
+
+class LoginHistoryEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    action_code: str
+    created_at: datetime
+    ip_address: str | None
+    user_agent: str | None
+    safe_metadata: dict[str, Any] | None

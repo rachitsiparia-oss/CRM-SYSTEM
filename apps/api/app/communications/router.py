@@ -16,7 +16,7 @@ from app.communications import (
     templates as templates_service,
 )
 from app.communications.messaging import send_message
-from app.communications.providers import get_provider
+from app.communications.providers import get_registered_provider
 from app.communications.schemas import (
     CommunicationAnalyticsOut,
     CommunicationChannelOut,
@@ -717,7 +717,16 @@ async def inbound_webhook(
     )
     if channel is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Unknown provider channel.")
-    provider = get_provider(channel.provider)
+    # Strict lookup (no mock fallback) — a channel's `provider` is free text
+    # with no allowlist, so a channel declared e.g. "whatsapp" before a real
+    # adapter is registered must reject webhooks, not silently validate them
+    # against InternalMockProvider's always-true signature check.
+    provider = get_registered_provider(channel.provider) if channel.provider else None
+    if provider is None:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No provider adapter registered for this channel.",
+        )
     raw_body = await request.body()
     payload = await request.json()
     try:
@@ -745,7 +754,12 @@ async def status_webhook(
     )
     if channel is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Unknown provider channel.")
-    provider = get_provider(channel.provider)
+    provider = get_registered_provider(channel.provider) if channel.provider else None
+    if provider is None:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No provider adapter registered for this channel.",
+        )
     raw_body = await request.body()
     payload = await request.json()
     try:

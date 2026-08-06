@@ -14,11 +14,6 @@ class UnsupportedFeatureError(ControlledAiError):
     code = "unsupported_feature"
 
 
-class HrSensitiveDataBlockedError(ControlledAiError):
-    status_code = status.HTTP_403_FORBIDDEN
-    code = "hr_sensitive_data_blocked"
-
-
 class ProviderUnavailableError(ControlledAiError):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     code = "ai_provider_unavailable"

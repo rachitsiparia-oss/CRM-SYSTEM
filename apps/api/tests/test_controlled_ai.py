@@ -31,7 +31,7 @@ def _force_mock_provider(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_validate_structured_output_requires_declared_fields() -> None:
-    schema = {"type": "object", "required": ["summary", "highlights"]}
+    schema: dict[str, object] = {"type": "object", "required": ["summary", "highlights"]}
     assert validate_structured_output(schema, {"summary": "x", "highlights": []})
     assert not validate_structured_output(schema, {"summary": "x"})
     assert not validate_structured_output(schema, None)
@@ -105,6 +105,61 @@ async def test_request_completion_report_narrative_missing_run_fails_gracefully(
             permissions=_DASHBOARD_PERMISSIONS,
             params={"report_run_id": str(uuid.uuid4())},
         )
+
+
+async def test_ground_nl_question_query_plan_rejects_oversized_question() -> None:
+    from app.controlled_ai import grounding
+    from app.controlled_ai.errors import ControlledAiError
+
+    oversized = "x" * (grounding._MAX_QUESTION_LENGTH + 1)
+    with pytest.raises(ControlledAiError):
+        await grounding.ground_nl_question_query_plan(
+            question=oversized, permissions=_DASHBOARD_PERMISSIONS
+        )
+
+
+async def test_request_completion_rejects_oversized_question(
+    db_session: AsyncSession, make_staff_user: MakeStaffUser
+) -> None:
+    from app.controlled_ai import grounding
+    from app.controlled_ai.errors import ControlledAiError
+
+    actor = await make_staff_user()
+    oversized = "x" * (grounding._MAX_QUESTION_LENGTH + 1)
+    with pytest.raises(ControlledAiError):
+        await ai_service.request_completion(
+            db_session,
+            actor=actor,
+            feature_code="nl_question_query_plan",
+            permissions=_DASHBOARD_PERMISSIONS,
+            params={"question": oversized},
+        )
+
+
+async def test_hr_sensitive_block_is_recorded_on_the_request_row(
+    db_session: AsyncSession,
+    make_staff_user: MakeStaffUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # HR_SENSITIVE_FEATURE_CODES is empty today (no wired capability touches
+    # HR data yet) — force the check to fire for dashboard_summary so the
+    # blocked-request audit trail can be exercised end to end.
+    monkeypatch.setattr(ai_service, "requires_hr_sensitive_permission", lambda code: True)
+    actor = await make_staff_user()
+    ai_request = await ai_service.request_completion(
+        db_session,
+        actor=actor,
+        feature_code="dashboard_summary",
+        permissions=_DASHBOARD_PERMISSIONS,  # lacks ai.analytics.hr_sensitive
+        params={"domain": "executive", "window_code": "current_month"},
+    )
+    assert ai_request.status == "blocked"
+    assert ai_request.safety_blocked is True
+    assert ai_request.safety_block_reason is not None
+    assert ai_request.completed_at is not None
+    # No grounding/provider call happened — the request never left the
+    # blocked state to reach either.
+    assert ai_request.output_text is None
 
 
 async def test_record_feedback_persists_outcome(

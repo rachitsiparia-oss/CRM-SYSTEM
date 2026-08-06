@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import Settings, get_settings
+from app.core.slow_query import instrument_slow_queries
 
 
 class DatabaseNotConfiguredError(RuntimeError):
@@ -29,13 +30,15 @@ def get_engine() -> AsyncEngine:
             "DATABASE_URL is not set. Configure it in apps/api/.env before "
             "using any database-backed endpoint or job."
         )
-    return create_async_engine(
+    engine = create_async_engine(
         settings.database_url,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_pool_max_overflow,
         echo=settings.db_echo,
         pool_pre_ping=True,
     )
+    instrument_slow_queries(engine.sync_engine, threshold_ms=settings.slow_query_threshold_ms)
+    return engine
 
 
 @lru_cache

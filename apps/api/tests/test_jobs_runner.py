@@ -98,6 +98,31 @@ async def test_run_job_retryable_failure_schedules_retry_without_dead_letter(
     assert entry is None
 
 
+async def test_run_job_timeout_is_classified_retryable(db_session: AsyncSession) -> None:
+    import asyncio
+
+    async def _hang() -> dict[str, Any]:
+        await asyncio.sleep(5)
+        return {"never": "reached"}
+
+    with pytest.raises(TimeoutError):
+        await run_job(
+            db_session,
+            job_type="test.timeout",
+            trigger="manual",
+            queue_name="maintenance",
+            func=_hang,
+            max_attempts=3,
+            timeout_seconds=1,
+        )
+
+    job = await db_session.scalar(select(JobRecord).where(JobRecord.job_type == "test.timeout"))
+    assert job is not None
+    assert job.status == "retry_wait"
+    assert job.failure_category == "retryable"
+    assert job.next_retry_at is not None
+
+
 async def test_run_job_idempotency_key_reuses_succeeded_row_without_rerunning(
     db_session: AsyncSession,
 ) -> None:

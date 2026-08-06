@@ -133,10 +133,30 @@ def get_provider(name: str | None) -> ProviderAdapter:
     CLAUDE.md section 21 ("optional integrations remain disabled without
     crashing unrelated modules"): a channel configured with a provider that
     has no adapter yet degrades to the mock rather than raising at request
-    time."""
+    time. Only safe for outbound sends, where "silently use the mock" is
+    the intended degraded behavior — see `get_registered_provider` for the
+    inbound-webhook counterpart, where the same fallback would be unsafe."""
     if name is None:
         return _PROVIDERS["internal_mock"]
     return _PROVIDERS.get(name, _PROVIDERS["internal_mock"])
+
+
+def get_registered_provider(name: str) -> ProviderAdapter | None:
+    """Strict lookup, no mock fallback — `None` if `name` has no adapter
+    registered in `_PROVIDERS`.
+
+    Webhook entry points must use this instead of `get_provider()`. A
+    channel can be created with any free-text `provider` string
+    (`CommunicationChannelCreateIn.provider: str | None`, no allowlist), so
+    `get_provider()`'s mock fallback would mean a channel declared
+    `provider="whatsapp"` — before a real WhatsApp adapter is ever
+    registered — resolves its inbound webhook to `InternalMockProvider`,
+    whose `validate_webhook_signature` unconditionally returns `True`. That
+    fails open: any unauthenticated caller could post unsigned payloads and
+    have them accepted as genuine messages on that channel. Failing closed
+    here (reject with no adapter) is correct until the real adapter lands.
+    """
+    return _PROVIDERS.get(name)
 
 
 def hash_payload(raw_body: bytes) -> str:

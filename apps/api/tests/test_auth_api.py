@@ -76,6 +76,49 @@ async def test_login_records_audit_event_and_updates_last_login(
     assert staff_user.last_login_at is not None
 
 
+async def test_login_history_lists_own_login_and_logout_events(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    staff_user = await make_staff_user(role_code="owner")
+    token = make_access_token(staff_user.auth_user_id)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    await authed_client.post("/api/v1/auth/login", headers=headers)
+    await authed_client.post("/api/v1/auth/logout", headers=headers)
+
+    response = await authed_client.get("/api/v1/auth/login-history", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    # Not asserting exact order: both events land in the same test
+    # transaction, so Postgres's now() (constant per transaction) ties their
+    # created_at — real, separate-request traffic doesn't tie like this.
+    action_codes = {row["action_code"] for row in body["data"]}
+    assert {"auth.login", "auth.logout"}.issubset(action_codes)
+    assert body["pagination"]["total"] >= 2
+
+
+async def test_login_history_never_returns_another_accounts_events(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    owner = await make_staff_user(role_code="owner")
+    other = await make_staff_user(role_code="kitchen_staff")
+
+    await authed_client.post(
+        "/api/v1/auth/login",
+        headers={"Authorization": f"Bearer {make_access_token(other.auth_user_id)}"},
+    )
+
+    response = await authed_client.get(
+        "/api/v1/auth/login-history",
+        headers={"Authorization": f"Bearer {make_access_token(owner.auth_user_id)}"},
+    )
+    assert response.status_code == 200
+    # `other`'s login must not leak into `owner`'s history — the owner has
+    # never authenticated through this client, so their own history is empty.
+    assert response.json()["pagination"]["total"] == 0
+    assert response.json()["data"] == []
+
+
 async def test_staff_view_endpoint_denies_role_without_permission(
     authed_client: AsyncClient, make_staff_user: MakeStaffUser
 ) -> None:

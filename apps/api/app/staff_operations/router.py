@@ -14,6 +14,7 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.audit.service import record_audit_event
 from app.auth.dependencies import CurrentStaffUser
 from app.core.responses import DataResponse, request_meta
 from app.db.models import (
@@ -256,13 +257,29 @@ async def verify_document(
 async def get_document_signed_url(
     document_id: uuid.UUID,
     request: Request,
-    _actor: StaffUser = Depends(require_permission("staff.documents.view")),
+    actor: StaffUser = Depends(require_permission("staff.documents.view")),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[dict[str, str]]:
     document = await session.get(StaffDocument, document_id)
     if document is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Document not found.")
     url = await documents.get_document_signed_url(document)
+    # HR identity/employment documents are sensitive PII — CLAUDE.md section
+    # 6.6 requires auditing "file access... when sensitive", and unlike the
+    # upload/verify actions on this same record, granting read access here
+    # previously left no trail.
+    await record_audit_event(
+        session,
+        actor_id=actor.id,
+        action_code="staff.document_accessed",
+        target_type="staff_document",
+        target_id=document.id,
+        request=request,
+        safe_metadata={
+            "staff_user_id": str(document.staff_user_id),
+            "document_type": document.document_type,
+        },
+    )
     return DataResponse(data={"signed_url": url}, meta=request_meta(request))
 
 

@@ -20,8 +20,10 @@ from app.core.logging import configure_logging, get_logger
 from app.core.metrics_middleware import MetricsMiddleware
 from app.core.observability import configure_sentry
 from app.core.request_context import RequestContextMiddleware
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.customer_credit.router import router as customer_credit_router
 from app.customers.router import router as customers_router
+from app.db.session import get_engine
 from app.dead_letter.router import router as dead_letter_router
 from app.event_bus.router import router as event_log_router
 from app.feature_flags.router import router as feature_flags_router
@@ -68,6 +70,13 @@ def _lifespan_factory(
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         logger.info("api_startup", environment=settings.environment)
         yield
+        # Cleanly close every pooled connection rather than leaving them for
+        # the OS to reap on process exit — CLAUDE.md section 11 ("keep
+        # startup and shutdown behavior safe"). Only attempted when a
+        # database is actually configured (local dev without DATABASE_URL
+        # never created an engine to dispose).
+        if settings.database_url:
+            await get_engine().dispose()
         logger.info("api_shutdown", environment=settings.environment)
 
     return lifespan
@@ -78,16 +87,31 @@ def create_app() -> FastAPI:
     configure_logging(settings)
     configure_sentry(settings)
 
+    # Phase 16 hardening: interactive API docs load their JS/CSS from a CDN
+    # and are a discovery surface for a private internal API — disabled
+    # outside local/test so SecurityHeadersMiddleware's CSP can stay
+    # uniformly strict in every deployed environment.
+    docs_enabled = settings.environment in ("local", "test")
+
     app = FastAPI(
         title="RKPR Restaurant CRM API",
         version="0.1.0",
         # Public API is versioned under /api/v1 — DATABASE_AND_API.md
         # section 19.1. Health endpoints stay unversioned and unauthenticated.
         lifespan=_lifespan_factory(settings),
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
     )
 
     app.add_middleware(RequestContextMiddleware)
-    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(
+        MetricsMiddleware, slow_request_threshold_ms=settings.slow_request_threshold_ms
+    )
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        hsts_enabled=settings.environment in ("staging", "production"),
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allowed_origins,

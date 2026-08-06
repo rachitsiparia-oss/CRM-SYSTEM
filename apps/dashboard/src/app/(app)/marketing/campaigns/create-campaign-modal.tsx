@@ -179,6 +179,7 @@ export function CreateCampaignModal({
                 size="icon"
                 variant="ghost"
                 disabled={rows.length === 1}
+                aria-label="Remove channel template row"
                 onClick={() => setRows((prev) => prev.filter((_, i) => i !== index))}
               >
                 <X className="size-4" />

@@ -16,6 +16,7 @@ from app.controlled_ai.schemas import (
     AiRequestFeedbackOut,
     AiRequestOut,
 )
+from app.core.rate_limit import check_rate_limit
 from app.core.responses import DataResponse, request_meta
 from app.db.models import StaffUser
 from app.db.session import get_db
@@ -25,6 +26,13 @@ from app.permissions.service import get_effective_permissions
 router = APIRouter(prefix="/api/v1/ai", tags=["controlled-ai"])
 
 _QUERY_PLAN_FEATURE = "nl_question_query_plan"
+# CLAUDE.md section 6.5 calls out AI endpoints as their own rate-limit
+# classification, distinct from the generic per-IP auth limiter every
+# authenticated request already gets — a generation has a real per-call
+# cost once a live provider is configured, so this is scoped per staff
+# account rather than per IP.
+_AI_REQUEST_LIMIT = 20
+_AI_REQUEST_WINDOW_SECONDS = 3600
 
 
 @router.post("/requests", status_code=status.HTTP_201_CREATED)
@@ -34,6 +42,13 @@ async def create_ai_request(
     actor: StaffUser = Depends(require_permission("ai.analytics.use")),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[AiRequestOut]:
+    if not check_rate_limit(
+        f"ai:{actor.id}", limit=_AI_REQUEST_LIMIT, window_seconds=_AI_REQUEST_WINDOW_SECONDS
+    ):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many AI requests. Try again later.",
+        )
     permissions = await get_effective_permissions(session, actor.id)
     if payload.feature_code == _QUERY_PLAN_FEATURE and "ai.analytics.query" not in permissions:
         raise HTTPException(

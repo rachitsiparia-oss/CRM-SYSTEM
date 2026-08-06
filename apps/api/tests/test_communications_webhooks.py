@@ -1,9 +1,10 @@
 import uuid
 
 import pytest
-from app.communications.providers import InternalMockProvider
+from app.communications.providers import InternalMockProvider, get_registered_provider
 from app.communications.webhooks import process_inbound_webhook, process_status_webhook
 from app.db.models import CommunicationChannel, InboundWebhookEvent, Message
+from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -129,3 +130,30 @@ async def test_status_webhook_ignored_when_no_matching_message(db_session: Async
     )
     assert result.processing_status == "ignored"
     assert result.message_id is None
+
+
+async def test_get_registered_provider_has_no_mock_fallback() -> None:
+    # Unlike get_provider(), an unregistered name must resolve to None, not
+    # silently degrade to InternalMockProvider — see providers.py's
+    # docstring for why that fallback would be unsafe on the webhook path.
+    assert get_registered_provider("not_a_real_adapter") is None
+    assert get_registered_provider("internal_mock") is not None
+
+
+async def test_inbound_webhook_rejects_channel_with_unregistered_provider(
+    authed_client: AsyncClient, db_session: AsyncSession
+) -> None:
+    # `code` is restricted to CHANNEL_CODES by a check constraint, so this
+    # reuses the already-seeded "whatsapp" channel rather than inserting a
+    # new row — only `provider` (free text, no allowlist) is repointed at a
+    # name with no registered adapter, which is exactly the scenario the
+    # fix guards against. The SAVEPOINT-scoped db_session rolls this back.
+    channel = await _whatsapp_channel(db_session)
+    channel.provider = "not_a_real_adapter"
+    await db_session.flush()
+
+    response = await authed_client.post(
+        "/api/v1/communications/webhooks/not_a_real_adapter/inbound",
+        json={"event_id": "evt-1", "from": "+919800099999", "body": "hi"},
+    )
+    assert response.status_code == 503

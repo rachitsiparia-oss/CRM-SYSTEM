@@ -5,6 +5,7 @@ from arq.connections import RedisSettings
 
 from worker.asyncio_policy import configure_event_loop_policy
 from worker.config import get_worker_settings
+from worker.db import get_engine
 from worker.logging import configure_logging, get_logger
 from worker.observability import configure_sentry
 from worker.tasks.anomalies_and_recovery import (
@@ -42,6 +43,12 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
 
 async def on_shutdown(ctx: dict[str, Any]) -> None:
+    # Cleanly close every pooled connection rather than leaving them for the
+    # OS to reap on process exit — same reasoning as apps/api's identical
+    # lifespan-shutdown fix (CLAUDE.md section 11). Only attempted when a
+    # database is actually configured.
+    if get_worker_settings().database_url:
+        await get_engine().dispose()
     logger.info("worker_shutdown", environment=settings.environment)
 
 

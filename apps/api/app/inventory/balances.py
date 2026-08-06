@@ -239,19 +239,22 @@ async def rebuild_balances(
     await session.flush()
 
     items_stmt = select(InventoryItem)
+    totals_stmt = select(
+        StockBalance.inventory_item_id,
+        func.coalesce(func.sum(StockBalance.on_hand_quantity), 0),
+        func.coalesce(func.sum(StockBalance.reserved_quantity), 0),
+    ).group_by(StockBalance.inventory_item_id)
     if inventory_item_id is not None:
         items_stmt = items_stmt.where(InventoryItem.id == inventory_item_id)
+        totals_stmt = totals_stmt.where(StockBalance.inventory_item_id == inventory_item_id)
+    # One grouped aggregate for every item instead of one query per item —
+    # a full-catalog rebuild (no inventory_item_id filter) previously issued
+    # N+1 queries here.
+    item_totals = {row[0]: (row[1], row[2]) for row in (await session.execute(totals_stmt)).all()}
     for item in (await session.scalars(items_stmt)).all():
-        row = (
-            await session.execute(
-                select(
-                    func.coalesce(func.sum(StockBalance.on_hand_quantity), 0),
-                    func.coalesce(func.sum(StockBalance.reserved_quantity), 0),
-                ).where(StockBalance.inventory_item_id == item.id)
-            )
-        ).one()
-        item.current_stock = quantize_quantity(Decimal(row[0]))
-        item.reserved_stock = quantize_quantity(Decimal(row[1]))
+        on_hand_total, reserved_total = item_totals.get(item.id, (0, 0))
+        item.current_stock = quantize_quantity(Decimal(on_hand_total))
+        item.reserved_stock = quantize_quantity(Decimal(reserved_total))
         if item.stock_status in DERIVED_STOCK_STATUSES:
             item.stock_status = derive_stock_status(item)
 
