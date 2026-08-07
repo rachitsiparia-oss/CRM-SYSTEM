@@ -4,6 +4,13 @@ from httpx import ASGITransport, AsyncClient
 pytestmark = pytest.mark.asyncio
 
 
+def _skip_without_database() -> None:
+    from app.core.config import get_settings
+
+    if not get_settings().database_url:
+        pytest.skip("DATABASE_URL not configured")
+
+
 async def test_liveness(client: AsyncClient) -> None:
     response = await client.get("/health/live")
     assert response.status_code == 200
@@ -30,6 +37,10 @@ async def test_unknown_route_returns_stable_error_shape(client: AsyncClient) -> 
 
 
 async def test_metrics_exposes_prometheus_text_format(client: AsyncClient) -> None:
+    # crm_db_pool_size (and the job-queue/dead-letter gauges) are computed
+    # from a real database query at scrape time — this test genuinely needs
+    # a real DATABASE_URL, unlike the other /health/* tests here.
+    _skip_without_database()
     response = await client.get("/metrics")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
@@ -105,11 +116,16 @@ async def test_lifespan_disposes_engine_on_shutdown_when_database_configured(
 ) -> None:
     from unittest.mock import AsyncMock
 
-    from app.core.config import get_settings
+    from app.core.config import Settings
     from app.main import _lifespan_factory
 
-    settings = get_settings()
-    assert settings.database_url, "this test env must have DATABASE_URL configured"
+    # A directly-constructed Settings, not get_settings() + real env vars —
+    # this test only cares that dispose() is called when database_url is
+    # truthy (the engine itself is mocked below), so it must not depend on
+    # a real DATABASE_URL existing in the test environment (CI has none —
+    # see test_lifespan_skips_disposal_when_database_not_configured below
+    # for the same pattern on the opposite branch).
+    settings = Settings(database_url="postgresql+psycopg://test:test@localhost:5432/test")
 
     disposed = AsyncMock()
 
@@ -137,15 +153,23 @@ async def test_lifespan_skips_disposal_when_database_not_configured() -> None:
 
 
 async def test_docs_disabled_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.core.config import get_settings
+    from app.core.config import Settings
     from app.main import create_app
 
-    monkeypatch.setenv("ENVIRONMENT", "production")
-    get_settings.cache_clear()
-    try:
-        app = create_app()
-        assert app.docs_url is None
-        assert app.redoc_url is None
-        assert app.openapi_url is None
-    finally:
-        get_settings.cache_clear()
+    # A directly-constructed Settings monkeypatched onto app.main.get_settings,
+    # not real env vars — this test only cares about the docs_enabled gate,
+    # not real DB/Supabase connectivity, so it must not depend on a real
+    # DATABASE_URL/SUPABASE_URL/etc existing in the test environment (CI has
+    # none of these; only local dev's own .env file happened to mask this).
+    settings = Settings(
+        environment="production",
+        database_url="postgresql+psycopg://test:test@localhost:5432/test",
+        supabase_url="https://example.supabase.co",
+        supabase_service_role_key="test-service-role-key",
+        auth_jwt_signing_secret="test-signing-secret",
+    )
+    monkeypatch.setattr("app.main.get_settings", lambda: settings)
+    app = create_app()
+    assert app.docs_url is None
+    assert app.redoc_url is None
+    assert app.openapi_url is None
