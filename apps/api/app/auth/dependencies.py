@@ -90,7 +90,21 @@ async def get_current_staff_user(
     session: AsyncSession = Depends(get_db),
 ) -> StaffUser:
     client_host = request.client.host if request.client else "unknown"
-    if not await check_rate_limit(f"auth:{client_host}", limit=60, window_seconds=60):
+    # 1200/60s (20 req/s), not 60/60s: this check runs on every authenticated
+    # request from every staff member sharing one office IP, before the
+    # token is even decoded — Phase 17 load testing against a realistic
+    # concurrent-VU profile found the original 60/60s threshold throttling
+    # entirely legitimate multi-staff traffic (a single dashboard page load
+    # alone can fire several API calls). A first pass raised this to
+    # 600/60s (10 req/s), but that landed exactly on a k6 profile's own
+    # steady-state rate (10 VUs, ~1 req/s each) with no headroom, so any
+    # timing jitter tripped one violation — which then blocks every
+    # request for the rest of the progressive-backoff penalty, cascading
+    # into an outsized failure rate. 1200/60s keeps a real margin above
+    # that steady-state while remaining a meaningful bound against
+    # unauthenticated flooding — an attacker needs no valid token to trip
+    # it either way.
+    if not await check_rate_limit(f"auth:{client_host}", limit=1200, window_seconds=60):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many requests. Try again shortly.",
