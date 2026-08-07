@@ -229,9 +229,9 @@ async def request_password_reset(
     """
     client_host = request.client.host if request.client else "unknown"
     email_key = payload.email.strip().lower()
-    allowed = check_rate_limit(
+    allowed = await check_rate_limit(
         f"pwreset:{email_key}", limit=3, window_seconds=900
-    ) and check_rate_limit(f"pwreset:ip:{client_host}", limit=10, window_seconds=900)
+    ) and await check_rate_limit(f"pwreset:ip:{client_host}", limit=10, window_seconds=900)
     if not allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,

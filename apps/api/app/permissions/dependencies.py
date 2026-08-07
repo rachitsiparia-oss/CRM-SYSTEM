@@ -41,7 +41,7 @@ _PERMISSION_DENIAL_WINDOW_SECONDS = 300
 async def _record_denial_and_maybe_lock(
     session: AsyncSession, *, staff_user: StaffUser, permission_code: str, request: Request
 ) -> None:
-    within_limit = check_rate_limit(
+    within_limit = await check_rate_limit(
         f"permdenied:{staff_user.id}",
         limit=_PERMISSION_DENIAL_LIMIT,
         window_seconds=_PERMISSION_DENIAL_WINDOW_SECONDS,

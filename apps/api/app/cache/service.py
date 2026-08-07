@@ -18,9 +18,9 @@ logger = get_logger(__name__)
 
 
 def _family_from_key(key: str) -> str:
-    # Keys are "crm:v1:{family}:{parts}" — see app.cache.keys.build_key.
+    # Keys are "crm:{environment}:v1:{family}:{parts}" — see app.cache.keys.build_key.
     parts = key.split(":")
-    return parts[2] if len(parts) > 2 else "unknown"
+    return parts[3] if len(parts) > 3 else "unknown"
 
 
 async def get_json(key: str) -> Any | None:

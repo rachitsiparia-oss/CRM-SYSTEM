@@ -42,7 +42,7 @@ async def create_ai_request(
     actor: StaffUser = Depends(require_permission("ai.analytics.use")),
     session: AsyncSession = Depends(get_db),
 ) -> DataResponse[AiRequestOut]:
-    if not check_rate_limit(
+    if not await check_rate_limit(
         f"ai:{actor.id}", limit=_AI_REQUEST_LIMIT, window_seconds=_AI_REQUEST_WINDOW_SECONDS
     ):
         raise HTTPException(

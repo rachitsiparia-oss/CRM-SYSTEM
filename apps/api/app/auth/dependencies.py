@@ -90,7 +90,7 @@ async def get_current_staff_user(
     session: AsyncSession = Depends(get_db),
 ) -> StaffUser:
     client_host = request.client.host if request.client else "unknown"
-    if not check_rate_limit(f"auth:{client_host}", limit=60, window_seconds=60):
+    if not await check_rate_limit(f"auth:{client_host}", limit=60, window_seconds=60):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many requests. Try again shortly.",

@@ -1,4 +1,14 @@
-from app.core.rate_limit import RateLimiter
+import uuid
+
+import pytest
+from app.cache.client import get_redis_client
+from app.core.config import get_settings
+from app.core.rate_limit import RateLimiter, check_rate_limit
+
+
+def _skip_without_redis() -> None:
+    if not get_settings().redis_url:
+        pytest.skip("REDIS_URL not configured")
 
 
 def test_allows_calls_within_limit() -> None:
@@ -69,3 +79,58 @@ def test_different_keys_are_independent() -> None:
         assert limiter.check("a", limit=3, window_seconds=60) is True
     assert limiter.check("a", limit=3, window_seconds=60) is False
     assert limiter.check("b", limit=3, window_seconds=60) is True
+
+
+async def _cleanup_redis_key(key: str) -> None:
+    client = get_redis_client()
+    assert client is not None
+    from app.core.rate_limit import _redis_keys
+
+    blocked_key, count_key, violations_key = _redis_keys(key)
+    await client.delete(blocked_key, count_key, violations_key)
+
+
+async def test_check_rate_limit_uses_redis_and_allows_within_limit() -> None:
+    _skip_without_redis()
+    key = f"test-{uuid.uuid4().hex[:8]}"
+    try:
+        for _ in range(3):
+            assert await check_rate_limit(key, limit=3, window_seconds=60) is True
+    finally:
+        await _cleanup_redis_key(key)
+
+
+async def test_check_rate_limit_blocks_once_limit_exceeded_via_redis() -> None:
+    _skip_without_redis()
+    key = f"test-{uuid.uuid4().hex[:8]}"
+    try:
+        for _ in range(3):
+            assert await check_rate_limit(key, limit=3, window_seconds=60) is True
+        assert await check_rate_limit(key, limit=3, window_seconds=60) is False
+        # Still blocked on a later call within the penalty window, even
+        # though the raw fixed window would already have room again.
+        assert await check_rate_limit(key, limit=3, window_seconds=60) is False
+    finally:
+        await _cleanup_redis_key(key)
+
+
+async def test_check_rate_limit_redis_keys_are_environment_scoped() -> None:
+    _skip_without_redis()
+    from app.core.rate_limit import _redis_keys
+
+    key = f"test-{uuid.uuid4().hex[:8]}"
+    blocked_key, count_key, violations_key = _redis_keys(key)
+    environment = get_settings().environment
+    assert blocked_key == f"ratelimit:{environment}:{key}:blocked"
+    assert count_key == f"ratelimit:{environment}:{key}:count"
+    assert violations_key == f"ratelimit:{environment}:{key}:violations"
+
+
+async def test_check_rate_limit_falls_back_to_in_process_when_redis_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.rate_limit.get_redis_client", lambda: None)
+    key = f"test-{uuid.uuid4().hex[:8]}"
+    for _ in range(2):
+        assert await check_rate_limit(key, limit=2, window_seconds=60) is True
+    assert await check_rate_limit(key, limit=2, window_seconds=60) is False

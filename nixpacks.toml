@@ -1,15 +1,22 @@
-# Explicit Nixpacks phase plan for the Railway API service.
+# Explicit Nixpacks phase plan, shared by both Railway services (API and
+# worker) — see railway.json's comment for why one config file has to
+# serve both.
 #
 # Without this, Nixpacks auto-detects providers from repo contents. Because
 # the repo root has both package.json (pnpm workspace) and pyproject.toml
 # (uv workspace), Nixpacks was including a Node/pnpm "setup" and "install"
-# phase before our own build/start commands ever ran — which the API
-# service doesn't need at all, and which was failing on an unrelated
-# Node/corepack bug. This file replaces phase auto-detection entirely:
-# only Python and curl are installed, and pnpm/Node are never involved.
+# phase before our own build/start commands ever ran — which neither
+# service needs at all, and which was failing on an unrelated Node/corepack
+# bug. This file replaces phase auto-detection entirely: only Python and
+# curl are installed, and pnpm/Node are never involved.
+#
+# `uv sync --all-packages` (not `--package rkpr-api`) installs both
+# workspace members' dependencies in one build, since the same build output
+# is used to start either service depending on $RAILWAY_SERVICE_NAME (see
+# railway.json).
 #
 # See DEPLOYMENT_AND_ENV.md section 11.1 and railway.json (deploy-phase
-# start command, healthcheck, and restart policy).
+# start command, restart policy).
 
 [phases.setup]
 nixPkgs = ["python312", "curl"]
@@ -18,4 +25,4 @@ nixPkgs = ["python312", "curl"]
 cmds = ["curl -LsSf https://astral.sh/uv/install.sh | sh"]
 
 [phases.build]
-cmds = ["$HOME/.local/bin/uv sync --package rkpr-api"]
+cmds = ["$HOME/.local/bin/uv sync --all-packages"]

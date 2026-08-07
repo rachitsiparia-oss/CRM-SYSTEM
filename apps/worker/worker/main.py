@@ -128,6 +128,14 @@ class WorkerSettings:
     on_shutdown = on_shutdown
     max_jobs = settings.max_jobs
     job_timeout = settings.job_timeout_seconds
+    # Environment-scoped so local/staging/production never share a queue
+    # when they share one physical Upstash instance (DEPLOYMENT_AND_ENV.md
+    # section 27, "no shared staging and production queue") — Phase 17
+    # reused the existing Redis instance across environments rather than
+    # provisioning a separate one per environment (see
+    # docs/phase-17/DEPLOYMENT_REPORT.md), so this is the actual isolation
+    # boundary rather than a formality.
+    queue_name = f"arq:queue:{settings.environment}"
     redis_settings = (
         RedisSettings.from_dsn(settings.redis_url) if settings.redis_url else RedisSettings()
     )
