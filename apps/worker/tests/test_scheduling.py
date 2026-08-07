@@ -15,10 +15,18 @@ from app.db.models import JobRecord
 from app.jobs.locks import advisory_lock
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from worker.config import get_worker_settings
 from worker.db import session_scope
 from worker.scheduling import run_scheduled_job
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.skipif(
+        not get_worker_settings().database_url,
+        reason="DATABASE_URL not configured — see apps/api/tests/conftest.py's "
+        "identical skip-not-fail convention (CLAUDE.md section 21)",
+    ),
+]
 
 
 async def _cleanup(job_type: str) -> None:
