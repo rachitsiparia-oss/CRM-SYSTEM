@@ -57,3 +57,6 @@ test-results/
 
 # --- Local CLI tool state (not project source) ---
 supabase/.temp/
+
+.vercel
+.env*

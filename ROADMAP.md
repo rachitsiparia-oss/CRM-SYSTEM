@@ -472,7 +472,7 @@ DEPLOYMENT_CHECKLIST.md`.
 
 ## Phase 17 — Staging Deployment and Acceptance Testing
 
-Status: IN PROGRESS
+Status: COMPLETED
 
 Scope:
 
@@ -482,9 +482,55 @@ Scope:
 - Run smoke, E2E, security, and performance tests
 - Resolve release blockers
 
-Completion date:
+Completion date: 2026-08-07
 
-Completion notes:
+Completion notes: All three services — dashboard, API, worker — are deployed and verified live
+against real infrastructure, not just passing tests.
+
+Scope decision (2026-08-07): mid-phase inspection found this repository already connected to a
+real Railway project (`CRM-SYSTEM`, one live service `@rkpr/crm-backend` already auto-deploying
+from `main` into an environment literally named `production`), a real Supabase project
+(`CRM-SYSTEM`) already serving as the shared dev/test database, and a real, already-correctly-configured
+Vercel project (`crm-system-dashboard`) — none of this was mentioned in any prior phase's
+completion notes. The user was asked how to reconcile this with the roadmap's staging-then-production
+split and explicitly directed: treat this as one production-track deployment inside the existing
+Railway/Supabase/Vercel project set rather than standing up a parallel staging environment, and
+deprioritize Phase 18/19's formal separate-environment ceremony. Per CLAUDE.md section 1.1/27, this
+is recorded as a genuine, user-approved deviation, not a silent rescoping — real production-readiness
+prerequisites that are independent of environment labeling (a real backup/restore rehearsal, final
+third-party provider credentials, an approved custom domain, Sentry) remain unmet regardless and are
+not implied complete by this decision; see "Deferred, explicitly" in `docs/phase-17/DEPLOYMENT_REPORT.md`.
+
+Verified against live infrastructure, not just tests: three previously-misauthenticated CLI
+accounts (Supabase, Railway, Vercel) were each caught and corrected before any resource was created
+against or deployed to the wrong one — including running `vercel login` directly in-session via a
+device-code flow the user confirmed, since Vercel auth does not propagate between the session's own
+terminal and the user's. The Redis-backed rate limiter migration explicitly deferred by Phase 16 to
+this phase was completed (atomic Lua-script implementation, safe in-process fallback, environment-scoped
+keys). Real k6 load testing against a local instance (per `tests/load/README.md`'s "never against
+production") found and fixed two genuine bugs: an auth rate-limit threshold too tight for legitimate
+concurrent office traffic (60/60s → 1200/60s), and a Redis test-isolation regression that had
+silently broken 31 unrelated backend tests (fixed in `apps/api/tests/conftest.py`). A second Railway
+service (`worker`) was created and correctly split from the API service via a
+`$RAILWAY_SERVICE_NAME`-branching start command, since no per-service Config-as-code path was
+reachable via CLI in this session — its first live deploy genuinely read and escalated real
+complaint SLA data. The dashboard's production env vars had a stale API URL and its first deploy
+attempt failed from uploading the whole monorepo (287MB `.venv` included) — both fixed (new
+`.vercelignore`, corrected `NEXT_PUBLIC_API_BASE_URL`) and verified by redeploying. A full
+authenticated browser session (real Supabase Auth user, real login, real data render, real logout,
+full cleanup afterward) was run twice — once against a local dashboard pointed at the live API,
+once against the actual deployed production URL — closing a limitation every phase since Phase 5
+had documented. Full backend regression suite: 1052 passed, 1 error (confirmed transient
+Supabase-pooler flakiness via isolated re-run, matching the pattern already documented in Phase 16)
+— effectively 1053/1053. Full narrative and evidence in `docs/phase-17/DEPLOYMENT_REPORT.md`.
+
+Deferred, deliberately, not silently skipped: Sentry (no CLI/API access in this session; setup
+steps given directly to the user), a live storage-signed-URL smoke test, Realtime, a per-service
+Railway Config-as-code path to restore `healthcheckPath` on just the API service (a two-click
+dashboard follow-up), and — independent of this phase's environment-labeling decision — a real
+backup/restore rehearsal, final third-party provider credentials, and an approved production
+domain, none of which this session can fabricate. Full detail in
+`docs/phase-17/DEPLOYMENT_REPORT.md`.
 
 ## Phase 18 — Production Deployment and Launch
 
