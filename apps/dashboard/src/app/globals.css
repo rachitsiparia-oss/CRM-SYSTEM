@@ -12,11 +12,22 @@ html {
 
 /* Design tokens — CLAUDE.md section 10 ("keep visual language consistent
 across all twelve modules"), ARCHITECTURE_AND_TECH_STACK.md section 6.1.
-Dark mode follows the OS preference (prefers-color-scheme), matching the
-strategy already used throughout the app since Phase 1 — no manual
-light/dark toggle exists, so a class-based `.dark` strategy would be dead
-code. Every shadcn/ui component generated into src/components/ui/ resolves
-its colors through these tokens; nothing here is component-specific. */
+Every shadcn/ui component generated into src/components/ui/ resolves its
+colors through these tokens; nothing here is component-specific.
+
+Theme resolution (manual toggle, added after the OS-only Phase 17.5
+strategy): a blocking inline script in the root layout's <head> (runs
+before first paint, so there is no flash of the wrong theme) resolves the
+user's stored choice — falling back to the OS's prefers-color-scheme only
+the first time, before any explicit choice has been made — into a single
+`data-theme="light" | "dark"` attribute on <html>. Everything below reads
+that one attribute; there is no separate prefers-color-scheme media query
+left in this file, since the script already folded the OS preference into
+the attribute at load time. This `@custom-variant` line is what makes every
+existing `dark:` utility class already used throughout the codebase (shadcn
+primitives, a few page-level tweaks) respond to the manual toggle instead
+of the OS setting — see theme-toggle.tsx. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
   --radius: 0.625rem;
@@ -75,57 +86,55 @@ its colors through these tokens; nothing here is component-specific. */
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    /* Same brand identity across themes (Phase 17.5) — the blue/yellow stay
-    the app's brand colors in dark mode too, just tuned for a dark
-    background, rather than dark mode inverting --primary to near-white the
-    way plain shadcn scaffolding does. */
-    --brand-primary: oklch(0.62 0.19 262);
-    --brand-primary-foreground: oklch(0.985 0 0);
-    --brand-yellow: oklch(0.8 0.16 85);
-    --brand-yellow-foreground: oklch(0.145 0 0);
-    --surface-canvas: oklch(0.19 0.008 255);
+:root[data-theme="dark"] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  /* Same brand identity across themes (Phase 17.5) — the blue/yellow stay
+  the app's brand colors in dark mode too, just tuned for a dark
+  background, rather than dark mode inverting --primary to near-white the
+  way plain shadcn scaffolding does. */
+  --brand-primary: oklch(0.62 0.19 262);
+  --brand-primary-foreground: oklch(0.985 0 0);
+  --brand-yellow: oklch(0.8 0.16 85);
+  --brand-yellow-foreground: oklch(0.145 0 0);
+  --surface-canvas: oklch(0.19 0.008 255);
 
-    --primary: var(--brand-primary);
-    --primary-foreground: var(--brand-primary-foreground);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
-    --success: oklch(0.7 0.15 145);
-    --success-foreground: oklch(0.145 0 0);
-    --warning: oklch(0.8 0.17 75);
-    --warning-foreground: oklch(0.145 0 0);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-primary-foreground);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.7 0.15 145);
+  --success-foreground: oklch(0.145 0 0);
+  --warning: oklch(0.8 0.17 75);
+  --warning-foreground: oklch(0.145 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
 
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
 
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @theme inline {

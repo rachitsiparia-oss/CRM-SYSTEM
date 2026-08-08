@@ -3,6 +3,7 @@ import { Breadcrumbs } from "./breadcrumbs";
 import { GlobalSearch } from "./global-search";
 import { MobileNav } from "./mobile-nav";
 import { NotificationsMenu } from "./notifications-menu";
+import { ThemeToggle } from "./theme-toggle";
 
 /** Reusable top toolbar — every future page gets this for free through the
  * (app) layout; pages never render their own header. Phase 17.5: the
@@ -21,7 +22,8 @@ export function Header() {
       <div className="hidden flex-1 justify-center md:flex">
         <GlobalSearch />
       </div>
-      <div className="flex flex-1 items-center justify-end gap-1">
+      <div className="flex flex-1 items-center justify-end gap-2">
+        <ThemeToggle />
         <NotificationsMenu />
         <div className="md:hidden">
           <UserMenu variant="compact" />
