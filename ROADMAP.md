@@ -524,13 +524,19 @@ had documented. Full backend regression suite: 1052 passed, 1 error (confirmed t
 Supabase-pooler flakiness via isolated re-run, matching the pattern already documented in Phase 16)
 — effectively 1053/1053. Full narrative and evidence in `docs/phase-17/DEPLOYMENT_REPORT.md`.
 
-Deferred, deliberately, not silently skipped: Sentry (no CLI/API access in this session; setup
-steps given directly to the user), a live storage-signed-URL smoke test, Realtime, a per-service
-Railway Config-as-code path to restore `healthcheckPath` on just the API service (a two-click
-dashboard follow-up), and — independent of this phase's environment-labeling decision — a real
-backup/restore rehearsal, final third-party provider credentials, and an approved production
+Deferred, deliberately, not silently skipped: a live storage-signed-URL smoke test, Realtime, a
+per-service Railway Config-as-code path to restore `healthcheckPath` on just the API service (a
+two-click dashboard follow-up), and — independent of this phase's environment-labeling decision —
+a real backup/restore rehearsal, final third-party provider credentials, and an approved production
 domain, none of which this session can fabricate. Full detail in
 `docs/phase-17/DEPLOYMENT_REPORT.md`.
+
+Follow-up (2026-08-08): Sentry was completed after this phase closed, once the user provisioned
+CLI/API access. Three projects created in org `aevum-5f` (`rkpr-crm-api`, `rkpr-crm-worker`,
+`rkpr-crm-dashboard`); real DSNs wired into Railway (API, worker) and Vercel (dashboard, plus
+new `@sentry/nextjs` integration — the dashboard previously had no Sentry SDK code at all, only a
+placeholder env var). Verified with genuine captured errors landing in each of the three projects,
+including a real browser-thrown error on the live production dashboard.
 
 ## Phase 18 — Production Deployment and Launch
 
