@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 import { ErrorState } from "@/components/error-state";
@@ -12,9 +13,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Sentry wiring lands with observability setup later in Phase 1/2; for
-    // now, keep the failure visible in server logs via console.error.
     console.error(error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
