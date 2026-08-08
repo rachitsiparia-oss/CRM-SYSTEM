@@ -14,11 +14,12 @@ post-creation transition/payment steps run on a rerun.
 """
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Customer, Modifier, Product, ProductVariant, StaffUser
+from app.db.models import Customer, Modifier, Order, Product, ProductVariant, StaffUser
 from app.orders import service
 from app.orders.schemas import (
     OrderCreateIn,
@@ -315,5 +316,60 @@ async def seed_orders(session: AsyncSession) -> None:
             await service.transition_order(
                 session, actor=actor, order=order, new_status=target, reason=None, request=None
             )
+
+    # 9. Two weeks of backdated completed orders — Phase 17.5's home
+    # dashboard trend chart and top-menu-items ranking need real historical
+    # spread to render meaningfully; orders 1-8 above are all created "now"
+    # (TimestampMixin's server_default), which alone would show one busy
+    # day and thirteen empty ones. Real business logic still creates and
+    # prices each order (service.create_order/transition_order, same as
+    # every order above) — only `created_at` is backdated afterward via a
+    # direct UPDATE, since the order pipeline has no "as of" parameter and
+    # backdating is a seed-only concern, not a real feature. Deterministic
+    # per day (not random) so reruns stay idempotent, matching this
+    # function's existing idempotency_key convention.
+    trend_customers = [ananya_id, rahul_id, shreya_id, priya_id, karthik_id, brightwave_id]
+    trend_products = [
+        (classic_veg_burger, 2),
+        (bbq_chicken_burger, 1),
+        (margherita_pizza, 1),
+        (crispy_veg_taco, 3),
+        (loaded_cheese_fries, 2),
+        (double_crunch_burger, 1),
+        (onion_rings, 2),
+    ]
+    for day_offset in range(1, 14):
+        product_id, quantity = trend_products[day_offset % len(trend_products)]
+        customer_id = trend_customers[day_offset % len(trend_customers)]
+        order = await service.create_order(
+            session,
+            actor=actor,
+            payload=OrderCreateIn(
+                customer_id=customer_id,
+                source="website",
+                order_type="takeaway",
+                items=[OrderItemCreateIn(product_id=product_id, quantity=quantity)],
+                idempotency_key=f"seed-order-trend-day-{day_offset}",
+            ),
+            request=None,
+        )
+        if order.status == "draft":
+            for target in ("pending_confirmation", "confirmed", "preparing", "ready", "completed"):
+                await service.transition_order(
+                    session, actor=actor, order=order, new_status=target, reason=None, request=None
+                )
+            await service.add_payment(
+                session,
+                actor=actor,
+                order=order,
+                payload=OrderPaymentCreateIn(
+                    method="upi", status="paid", amount_minor=order.grand_total_minor
+                ),
+                request=None,
+            )
+        backdated_at = datetime.now(UTC) - timedelta(days=day_offset)
+        await session.execute(
+            update(Order).where(Order.id == order.id).values(created_at=backdated_at)
+        )
 
     await session.flush()

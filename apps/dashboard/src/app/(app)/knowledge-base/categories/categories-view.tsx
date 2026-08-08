@@ -52,14 +52,14 @@ export function CategoriesView() {
 
       {canManage && (
         <SectionCard title="New category">
-          {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">Name</label>
+              <label className="text-xs text-muted-foreground">Name</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} className="w-56" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">Code</label>
+              <label className="text-xs text-muted-foreground">Code</label>
               <Input value={code} onChange={(e) => setCode(e.target.value)} className="w-40" />
             </div>
             <Button

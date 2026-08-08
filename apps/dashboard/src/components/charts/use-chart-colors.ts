@@ -3,17 +3,25 @@
 import { useEffect, useState } from "react";
 
 const CHART_VARS = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"] as const;
-const TEXT_VARS = ["--muted-foreground", "--border"] as const;
+const TEXT_VARS = ["--muted-foreground", "--border", "--brand-primary", "--brand-yellow"] as const;
 
-function readVars(): { series: string[]; mutedForeground: string; border: string } {
+function readVars(): {
+  series: string[];
+  mutedForeground: string;
+  border: string;
+  brandPrimary: string;
+  brandYellow: string;
+} {
   if (typeof window === "undefined") {
-    return { series: [], mutedForeground: "", border: "" };
+    return { series: [], mutedForeground: "", border: "", brandPrimary: "", brandYellow: "" };
   }
   const styles = getComputedStyle(document.documentElement);
   return {
     series: CHART_VARS.map((name) => styles.getPropertyValue(name).trim()),
     mutedForeground: styles.getPropertyValue(TEXT_VARS[0]).trim(),
     border: styles.getPropertyValue(TEXT_VARS[1]).trim(),
+    brandPrimary: styles.getPropertyValue(TEXT_VARS[2]).trim(),
+    brandYellow: styles.getPropertyValue(TEXT_VARS[3]).trim(),
   };
 }
 

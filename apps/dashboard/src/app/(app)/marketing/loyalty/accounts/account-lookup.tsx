@@ -100,7 +100,7 @@ export function AccountLookup() {
         enableSorting: false,
         cell: ({ row }) => (
           <span
-            className={row.original.points_delta < 0 ? "font-medium text-red-600" : "font-medium text-green-700"}
+            className={row.original.points_delta < 0 ? "font-medium text-destructive" : "font-medium text-success"}
           >
             {row.original.points_delta > 0 ? "+" : ""}
             {row.original.points_delta}
@@ -215,7 +215,7 @@ export function AccountLookup() {
           {accountLoading ? (
             <p className="text-muted-foreground text-sm">Loading…</p>
           ) : accountError ? (
-            <p className="text-sm text-red-600">Could not load this customer&rsquo;s loyalty account.</p>
+            <p className="text-sm text-destructive">Could not load this customer&rsquo;s loyalty account.</p>
           ) : !account ? (
             <EmptyState
               title="Not enrolled"

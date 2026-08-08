@@ -36,7 +36,7 @@ const columns: ColumnDef<StaffUserListItem>[] = [
     header: "Status",
     accessorKey: "account_status",
     cell: ({ getValue }) => (
-      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs capitalize dark:bg-zinc-800">
+      <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">
         {getValue<string>()}
       </span>
     ),
@@ -105,7 +105,7 @@ export function StaffDirectory() {
           className="max-w-xs"
         />
         <select
-          className="h-9 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
           value={accountStatus}
           onChange={(e) => {
             setAccountStatus(e.target.value);
@@ -122,12 +122,12 @@ export function StaffDirectory() {
       </div>
 
       {isError && (
-        <p className="text-sm text-red-600">Could not load the staff directory. Try again.</p>
+        <p className="text-sm text-destructive">Could not load the staff directory. Try again.</p>
       )}
 
       <div className="overflow-x-auto rounded-md border border-black/10 dark:border-white/15">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 dark:bg-zinc-900">
+          <thead className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -141,13 +141,13 @@ export function StaffDirectory() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={columns.length} className="px-3 py-6 text-center text-muted-foreground">
                   Loading…
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={columns.length} className="px-3 py-6 text-center text-muted-foreground">
                   No staff members match these filters.
                 </td>
               </tr>
@@ -166,7 +166,7 @@ export function StaffDirectory() {
         </table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-zinc-500">
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
           Page {page} of {totalPages} · {data?.pagination.total ?? 0} total
         </span>

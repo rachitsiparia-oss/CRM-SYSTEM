@@ -63,7 +63,7 @@ function ReasonPrompt({
   return (
     <div className="flex items-center gap-2">
       <input
-        className="h-8 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+        className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
         placeholder="Reason (required)"
         value={reason}
         onChange={(e) => setReason(e.target.value)}
@@ -129,10 +129,10 @@ export function StaffDetail({ staffId }: { staffId: string }) {
   }
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   }
   if (isError || !staff) {
-    return <div className="p-6 text-sm text-red-600">Could not load this staff member.</div>;
+    return <div className="p-6 text-sm text-destructive">Could not load this staff member.</div>;
   }
 
   const assignedRoleCodes = new Set(staff.roles.map((role) => role.code));
@@ -141,11 +141,11 @@ export function StaffDetail({ staffId }: { staffId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <Link href="/staff" className="text-sm text-zinc-500 hover:underline">
+        <Link href="/staff" className="text-sm text-muted-foreground hover:underline">
           ← Staff & HR
         </Link>
         <h1 className="mt-2 text-lg font-semibold">{staff.display_name}</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           {staff.employee_code} · {staff.email}
           {staff.job_title ? ` · ${staff.job_title}` : ""}
         </p>
@@ -153,24 +153,24 @@ export function StaffDetail({ staffId }: { staffId: string }) {
 
       <div className="grid gap-1 text-sm sm:grid-cols-2">
         <div>
-          <span className="text-zinc-500">Account status: </span>
+          <span className="text-muted-foreground">Account status: </span>
           <span className="capitalize">{staff.account_status}</span>
         </div>
         <div>
-          <span className="text-zinc-500">Employment status: </span>
+          <span className="text-muted-foreground">Employment status: </span>
           <span className="capitalize">{staff.employment_status.replace("_", " ")}</span>
         </div>
         <div>
-          <span className="text-zinc-500">Phone: </span>
+          <span className="text-muted-foreground">Phone: </span>
           <span>{staff.phone_e164 ?? "Not visible or not set"}</span>
         </div>
         <div>
-          <span className="text-zinc-500">Timezone: </span>
+          <span className="text-muted-foreground">Timezone: </span>
           <span>{staff.timezone}</span>
         </div>
       </div>
 
-      {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+      {actionError && <p className="text-sm text-destructive">{actionError}</p>}
 
       {canManageStaff && !isSelf && (
         <div className="flex gap-2">
@@ -200,7 +200,7 @@ export function StaffDetail({ staffId }: { staffId: string }) {
         </div>
       )}
       {isSelf && (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           You cannot change your own account status or roles — ask another privileged staff
           member.
         </p>
@@ -212,14 +212,14 @@ export function StaffDetail({ staffId }: { staffId: string }) {
           {staff.roles.map((role) => (
             <li
               key={role.id}
-              className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-sm dark:bg-zinc-800"
+              className="flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-sm"
             >
               {role.name}
               {canManageRoles && !isSelf && (
                 <button
                   type="button"
                   aria-label={`Remove ${role.name}`}
-                  className="text-zinc-500 hover:text-red-600"
+                  className="text-muted-foreground hover:text-destructive"
                   disabled={removeRole.isPending}
                   onClick={() => {
                     const reason = window.prompt(`Reason for removing ${role.name}?`);
@@ -233,13 +233,13 @@ export function StaffDetail({ staffId }: { staffId: string }) {
               )}
             </li>
           ))}
-          {staff.roles.length === 0 && <li className="text-sm text-zinc-500">No roles assigned.</li>}
+          {staff.roles.length === 0 && <li className="text-sm text-muted-foreground">No roles assigned.</li>}
         </ul>
 
         {canManageRoles && !isSelf && availableRoles.length > 0 && (
           <div className="flex items-center gap-2">
             <select
-              className="h-9 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
               value={selectedRoleCode}
               onChange={(e) => setSelectedRoleCode(e.target.value)}
             >
@@ -288,22 +288,22 @@ export function StaffDetail({ staffId }: { staffId: string }) {
               {profile ? (
                 <div className="grid gap-1 text-sm sm:grid-cols-2">
                   <div>
-                    <span className="text-zinc-500">Lifecycle status: </span>
+                    <span className="text-muted-foreground">Lifecycle status: </span>
                     <StatusBadge
                       label={humanize(profile.lifecycle_status)}
                       tone={LIFECYCLE_STATUS_TONES[profile.lifecycle_status]}
                     />
                   </div>
                   <div>
-                    <span className="text-zinc-500">Joining date: </span>
+                    <span className="text-muted-foreground">Joining date: </span>
                     <span>{formatDate(profile.joining_date)}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Work location: </span>
+                    <span className="text-muted-foreground">Work location: </span>
                     <span>{profile.work_location ?? "Not set"}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-500">Probation end: </span>
+                    <span className="text-muted-foreground">Probation end: </span>
                     <span>{profile.probation_end_date ? formatDate(profile.probation_end_date) : "N/A"}</span>
                   </div>
                 </div>

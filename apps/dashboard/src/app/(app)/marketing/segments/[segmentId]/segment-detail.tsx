@@ -87,7 +87,7 @@ export function SegmentDetail({ segmentId }: { segmentId: string }) {
     [canManage, segment?.segment_type, removeMember],
   );
 
-  if (isLoading) return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (isError || !segment) {
     return (
       <div className="p-6">
@@ -102,7 +102,7 @@ export function SegmentDetail({ segmentId }: { segmentId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <Link href="/marketing/segments" className="text-sm text-zinc-500 hover:underline">
+        <Link href="/marketing/segments" className="text-sm text-muted-foreground hover:underline">
           ← Segments
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -116,7 +116,7 @@ export function SegmentDetail({ segmentId }: { segmentId: string }) {
         {segment.description && <p className="mt-1 text-sm">{segment.description}</p>}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         {canManage &&

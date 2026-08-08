@@ -117,7 +117,7 @@ export function OfferDetail({ offerId }: { offerId: string }) {
     [],
   );
 
-  if (isLoading) return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (isError || !offer) {
     return (
       <div className="p-6">
@@ -131,7 +131,7 @@ export function OfferDetail({ offerId }: { offerId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <Link href="/marketing/offers" className="text-sm text-zinc-500 hover:underline">
+        <Link href="/marketing/offers" className="text-sm text-muted-foreground hover:underline">
           ← Offers & Coupons
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -143,7 +143,7 @@ export function OfferDetail({ offerId }: { offerId: string }) {
         </p>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         {availableTransitions.map((target) => {
@@ -270,7 +270,7 @@ export function OfferDetail({ offerId }: { offerId: string }) {
                   <p className="text-muted-foreground text-sm">Loading…</p>
                 )}
                 {activeLookupId && !redemptionLoading && !redemption && (
-                  <p className="text-sm text-red-600">Redemption not found.</p>
+                  <p className="text-sm text-destructive">Redemption not found.</p>
                 )}
                 {redemption && (
                   <div className="flex flex-col gap-3 rounded-md border p-3">

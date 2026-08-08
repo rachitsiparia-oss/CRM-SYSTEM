@@ -55,9 +55,9 @@ export function ArticleDetail({ articleId }: { articleId: string }) {
     setError(err instanceof ApiError ? err.message : "That action could not be completed.");
   }
 
-  if (isLoading) return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (isError || !article) {
-    return <div className="p-6 text-sm text-red-600">Could not load this article.</div>;
+    return <div className="p-6 text-sm text-destructive">Could not load this article.</div>;
   }
 
   const draftContent = content ?? article.content;
@@ -66,7 +66,7 @@ export function ArticleDetail({ articleId }: { articleId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <Link href="/knowledge-base/articles" className="text-sm text-zinc-500 hover:underline">
+        <Link href="/knowledge-base/articles" className="text-sm text-muted-foreground hover:underline">
           ← Article library
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -82,7 +82,7 @@ export function ArticleDetail({ articleId }: { articleId: string }) {
         </p>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
         {isEditable && canUpdate && content !== null && content !== article.content && (
@@ -277,7 +277,7 @@ export function ArticleDetail({ articleId }: { articleId: string }) {
               canAssign ? (
                 <div className="flex items-center gap-2">
                   <input
-                    className="h-8 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+                    className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                     placeholder="Staff ID"
                     value={assignStaffId}
                     onChange={(e) => setAssignStaffId(e.target.value)}

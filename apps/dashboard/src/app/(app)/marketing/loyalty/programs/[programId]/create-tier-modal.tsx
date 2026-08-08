@@ -107,7 +107,7 @@ export function CreateTierModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tier-code">Code</Label>

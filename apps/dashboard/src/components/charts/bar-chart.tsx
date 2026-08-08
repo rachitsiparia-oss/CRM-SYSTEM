@@ -12,6 +12,10 @@ export interface BarChartProps {
   height?: number;
   horizontal?: boolean;
   stacked?: boolean;
+  /** Index of a single category to render in the brand-yellow highlight
+   * color instead of the default bar color — e.g. today/the selected day
+   * in a weekly trend chart. Only meaningful for a single-series chart. */
+  highlightIndex?: number;
 }
 
 // Phase 16 hardening: echarts-for-react wraps the full echarts package

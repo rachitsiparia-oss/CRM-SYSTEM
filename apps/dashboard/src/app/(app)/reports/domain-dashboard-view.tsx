@@ -121,7 +121,7 @@ export function DomainDashboardView({ domain, title, description }: DomainDashbo
 }
 
 function formatMetricValue(value: number, unit: string | null): string {
-  if (unit === "percent") return `${value.toFixed(1)}%`;
+  if (unit === "%") return `${value.toFixed(1)}%`;
   if (unit === "minor_unit") return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
   return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
 }

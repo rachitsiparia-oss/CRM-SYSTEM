@@ -832,6 +832,13 @@ export interface OrderDashboardStats {
   recent_activity: RecentOrderActivity[];
 }
 
+/** Phase 17.5 home dashboard — GET /api/v1/orders/dashboard/top-items */
+export interface TopMenuItem {
+  product_name: string;
+  quantity_sold: number;
+  revenue_minor: number;
+}
+
 export interface Order {
   id: string;
   order_number: string;
@@ -5181,6 +5188,19 @@ export interface DashboardResult {
   window_end: string;
   metrics: MetricResult[];
   partial_failures: string[];
+}
+
+/** Phase 17.5 home dashboard trend chart — GET /api/v1/reports/timeseries */
+export interface TimeseriesPoint {
+  /** ISO date (YYYY-MM-DD), not a datetime — a daily series has no time-of-day component. */
+  date: string;
+  value: number;
+}
+
+export interface TimeseriesResult {
+  metric_code: string;
+  display_name: string;
+  points: TimeseriesPoint[];
 }
 
 export interface ReportDefinitionCreateInput {

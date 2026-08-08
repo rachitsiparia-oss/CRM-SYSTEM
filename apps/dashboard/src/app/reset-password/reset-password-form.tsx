@@ -53,7 +53,7 @@ function RequestResetForm() {
 
   if (submitted) {
     return (
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+      <p className="text-sm text-muted-foreground">
         If that email has an account, a password reset link has been sent.
       </p>
     );
@@ -71,7 +71,7 @@ function RequestResetForm() {
           disabled={submitting}
           {...register("email")}
         />
-        {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
+        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
       </div>
       <Button type="submit" disabled={submitting}>
         {submitting ? "Sending…" : "Send reset link"}
@@ -119,7 +119,7 @@ function SetNewPasswordForm() {
           disabled={submitting}
           {...register("password")}
         />
-        {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+        {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="confirmPassword">Confirm new password</Label>
@@ -132,11 +132,11 @@ function SetNewPasswordForm() {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
         )}
       </div>
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {formError}
         </p>
       )}
@@ -158,7 +158,7 @@ export function ResetPasswordForm() {
   }, []);
 
   if (hasRecoverySession === null) {
-    return <p className="text-sm text-zinc-500">Loading…</p>;
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
 
   return hasRecoverySession ? <SetNewPasswordForm /> : <RequestResetForm />;

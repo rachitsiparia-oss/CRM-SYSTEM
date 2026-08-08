@@ -95,7 +95,7 @@ export function EarnPointsModal({ accountId, open, onOpenChange }: AccountModalP
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>Entry type</Label>
@@ -201,7 +201,7 @@ export function RedeemPointsModal({ accountId, open, onOpenChange }: AccountModa
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label>Entry type</Label>
@@ -302,7 +302,7 @@ export function AdjustPointsModal({ accountId, open, onOpenChange }: AccountModa
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="adjust-delta">Points delta</Label>
           <Input

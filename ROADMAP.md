@@ -538,6 +538,85 @@ new `@sentry/nextjs` integration — the dashboard previously had no Sentry SDK 
 placeholder env var). Verified with genuine captured errors landing in each of the three projects,
 including a real browser-thrown error on the live production dashboard.
 
+## Phase 17.5 — Frontend Theme Redesign
+
+Status: COMPLETED
+
+Scope:
+
+- Re-theme the entire dashboard's visual system (design tokens, shared primitives, shell, and the
+  previously-unbuilt home page) to a new light/blue/yellow card-and-chart language, analyzed and
+  adapted from a user-supplied reference screenshot rather than cloned 1:1
+- Build both light and dark themes for the new system
+- Build the home dashboard page (previously a placeholder `EmptyState` since Phase 4) with real,
+  backend-computed KPIs, a weekly sales trend, top-selling menu items, recent orders, and recent
+  activity
+
+Completion date: 2026-08-08
+
+Completion notes: Sequenced between Phase 17 (staging/production deployment, already live) and
+Phase 18 (not started) at the user's explicit request — inserted as its own numbered phase rather
+than folded into either. Three decisions were confirmed directly with the user before implementation
+and are recorded here per CLAUDE.md section 27:
+
+1. **No photographic background.** The reference's "floating dual-panel over a nature photo"
+   composition was dropped entirely per explicit instruction ("Just ignore the background image, we
+   dont need it... analyze that theme and put that design into our CRM dashboard"). Only the
+   reference's interior design language — color system, card/chart/table treatment, sidebar
+   structure — was adapted onto the existing `DashboardShell` layout, which needed no structural
+   rework, only reskinning.
+2. **Both light and dark themes were built properly**, not just preserved as-is — new
+   `--brand-primary`/`--brand-yellow`/`--surface-canvas` tokens added to `globals.css`'s
+   `@theme inline` block with distinct light and dark values, verified live via computed-style
+   checks in both color schemes.
+3. **Two home-dashboard widgets (weekly sales trend, top menu items) had no backing data anywhere
+   in the codebase.** Per explicit instruction ("it should be consistent and actually be in real
+   backend and database"), these were built as two real, permission-checked, tested backend
+   endpoints — `GET /api/v1/reports/timeseries` and `GET /api/v1/orders/dashboard/top-items` — not a
+   frontend mock module. `apps/api/app/orders/seed.py` was extended with 13 additional backdated
+   completed orders (dev/staging seed data only, per CLAUDE.md section 12) so the trend chart and
+   ranking have realistic multi-day data to render.
+
+A real correctness bug was found via live authenticated verification (not just automated tests) and
+fixed: percent-unit metrics (e.g. "Repeat customer rate") were rendering as a bare `0` instead of
+`0.0%` on the new home page and on two pre-existing pages (`reports-dashboard.tsx`,
+`domain-dashboard-view.tsx`), because the display code checked `unit === "percent"` when
+`analytics_core/registry.py` actually emits `unit === "%"` for every percent metric. Fixed in all
+three places.
+
+Verified: frontend lint, `tsc --noEmit`, full vitest suite (122/122), and a clean production build
+all pass with zero hardcoded Tailwind color literals remaining anywhere in `apps/dashboard/src`
+(confirmed by direct grep, not just the earlier manual sweep). Backend `ruff check`, `ruff format
+--check`, and `mypy` strict all pass; full backend pytest suite: 1058 passed, 2 failed on first run.
+Both failures were investigated, not waved off: one was a test-isolation bug in this phase's own new
+test (`test_top_items_ranks_completed_orders_by_revenue` assumed an empty database, which stopped
+being true once this phase's own seed data landed in the shared dev database — fixed by scoping the
+test to the `today` window instead of `current_week`, which correctly isolates it from any backdated
+historical orders); the other (`test_slow_query_logs_warning_over_threshold`, untouched by this
+phase, unrelated file) is a pre-existing sleep-threshold timing test that passed cleanly when
+re-run in isolation, consistent with the transient-flakiness pattern Phase 17 already documented
+under heavy full-suite load — not a regression, not modified.
+
+Live-verified beyond automated tests: with a real staff login, the home dashboard rendered end to
+end against the real dev API — correctly formatted currency and percent KPI values, real seeded
+top-selling items, real backdated recent orders, and real recent-activity events — and both new
+endpoints were confirmed live (200 OK, real computed values) and correctly rejecting unauthenticated
+requests (401). Design tokens were confirmed live in both color schemes via computed-style checks on
+the login page (distinct light/dark OKLCH values for `--primary`, `--surface-canvas`, etc.).
+
+Deferred, deliberately, not silently skipped: after that one successful login-triggered render,
+repeated browser-automation navigations in this session got stuck on the route's `loading.tsx`
+fallback and never resolved — reproduced identically on an untouched pre-existing page
+(`/reports`), on a fully restarted dev server, on brand-new browser tabs, and even against a genuine
+production build (`next start`), which rules out a code regression from this phase. The one
+successful render came immediately after a live simulated click (sign-in), and an early screenshot
+attempt in this same session had already failed with "the Browser pane is not displayed, so the
+page is not compositing frames" — consistent with the browser tab running backgrounded/throttled for
+raw programmatic navigations in this environment. Full per-page visual spot-checks across the other
+11 nav sections (Stage E of the working plan) were therefore not completed via live screenshots;
+substituted with a repo-wide grep confirming zero hardcoded color classes remain outside the design
+token system, on top of the production build succeeding for all 118+ routes with zero errors.
+
 ## Phase 18 — Production Deployment and Launch
 
 Status: NOT STARTED

@@ -66,7 +66,7 @@ export function ReverseEntryModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reverse-reason">Reason</Label>
           <Input id="reverse-reason" value={reason} onChange={(e) => setReason(e.target.value)} />

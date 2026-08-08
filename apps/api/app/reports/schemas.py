@@ -82,6 +82,20 @@ class DashboardOut(BaseModel):
     partial_failures: list[str] = Field(default_factory=list)
 
 
+class TimeseriesPointOut(BaseModel):
+    date: str
+    """ISO date (YYYY-MM-DD) in the restaurant's configured timezone —
+    plain calendar dates, not datetimes, since a daily series has no
+    time-of-day component."""
+    value: float
+
+
+class TimeseriesOut(BaseModel):
+    metric_code: str
+    display_name: str
+    points: list[TimeseriesPointOut]
+
+
 class ReportDefinitionCreateIn(BaseModel):
     name: str = Field(min_length=1, max_length=160)
     description: str | None = Field(default=None, max_length=2000)

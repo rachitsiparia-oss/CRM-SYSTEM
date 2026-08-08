@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.analytics_core.windows import REPORT_WINDOW_CODES, InvalidWindowError, resolve_window
 from app.core.pagination import PageParams, PaginatedResponse, Pagination
 from app.core.responses import DataResponse, request_meta
 from app.customers.schemas import CustomerListItemOut
@@ -36,6 +37,7 @@ from app.orders.schemas import (
     OrderTimelineOut,
     OrderTransitionIn,
     OrderUpdateIn,
+    TopMenuItemOut,
 )
 from app.permissions.dependencies import require_permission
 
@@ -141,6 +143,31 @@ async def get_dashboard_stats(
 ) -> DataResponse[OrderDashboardStatsOut]:
     stats = await service.get_dashboard_stats(session)
     return DataResponse(data=stats, meta=request_meta(request))
+
+
+@router.get("/dashboard/top-items")
+async def get_top_items(
+    request: Request,
+    window: str = Query(default="current_week"),
+    limit: int = Query(default=5, ge=1, le=25),
+    custom_start: datetime | None = Query(default=None),
+    custom_end: datetime | None = Query(default=None),
+    _actor: StaffUser = Depends(require_permission("orders.view")),
+    session: AsyncSession = Depends(get_db),
+) -> DataResponse[list[TopMenuItemOut]]:
+    """Best-selling menu items by revenue in the window — Phase 17.5's home
+    dashboard ranked list. Same window-code contract as
+    `GET /api/v1/dashboard/{domain}` (reports router), gated on the
+    ordinary `orders.view` permission since this is order/revenue data,
+    not a new analytics capability."""
+    if window not in REPORT_WINDOW_CODES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unknown report window.")
+    try:
+        resolved = resolve_window(window, custom_start=custom_start, custom_end=custom_end)
+    except InvalidWindowError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    items = await service.get_top_items(session, window=resolved, limit=limit)
+    return DataResponse(data=items, meta=request_meta(request))
 
 
 @router.get("/search-customers")

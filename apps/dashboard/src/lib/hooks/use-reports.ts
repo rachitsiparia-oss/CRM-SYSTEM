@@ -14,6 +14,7 @@ import type {
   ReportDefinitionUpdateInput,
   ReportRunDetail,
   ReportRunRequestInput,
+  TimeseriesResult,
 } from "@rkpr/contracts";
 import { apiFetchClient } from "@/lib/api/browser";
 
@@ -43,6 +44,17 @@ export function useDashboard(
       ),
     select: (response) => response.data,
     enabled: !!domain && (windowCode !== "custom" || !!customRange),
+  });
+}
+
+export function useTimeseries(metricCode: string, days = 7) {
+  return useQuery({
+    queryKey: ["reports", "timeseries", metricCode, days],
+    queryFn: () =>
+      apiFetchClient<DataResponse<TimeseriesResult>>(
+        `/api/v1/reports/timeseries?metric_code=${metricCode}&days=${days}`,
+      ),
+    select: (response) => response.data,
   });
 }
 

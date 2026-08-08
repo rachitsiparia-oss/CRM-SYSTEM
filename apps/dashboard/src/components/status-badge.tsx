@@ -7,9 +7,9 @@ export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
 const TONE_STYLES: Record<StatusTone, string> = {
   neutral: "bg-muted text-muted-foreground border-transparent",
-  info: "bg-blue-100 text-blue-800 border-transparent dark:bg-blue-950 dark:text-blue-300",
+  info: "bg-primary/15 text-primary border-transparent",
   success: "bg-success/15 text-success border-transparent",
-  warning: "bg-warning/20 text-warning-foreground border-transparent",
+  warning: "bg-warning/20 text-warning border-transparent",
   danger: "bg-destructive/15 text-destructive border-transparent",
 };
 

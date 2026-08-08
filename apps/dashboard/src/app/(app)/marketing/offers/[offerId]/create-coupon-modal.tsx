@@ -77,7 +77,7 @@ export function CreateCouponModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="coupon-code">Code</Label>
           <Input

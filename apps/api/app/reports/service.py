@@ -10,14 +10,14 @@ import hashlib
 import json
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics_core.engine import MetricResult, run_metric_query
 from app.analytics_core.registry import get_metric, metrics_for_domain
-from app.analytics_core.windows import ResolvedWindow, resolve_window
+from app.analytics_core.windows import RESTAURANT_TIMEZONE, ResolvedWindow, resolve_window
 from app.core.pagination import DEFAULT_PAGE_SIZE
 from app.db.models import (
     Complaint,
@@ -389,6 +389,29 @@ async def get_dashboard(
         )
         results.append(result)
     return window, results, skipped
+
+
+# Phase 17.5's own instruction: bounded the same way MAX_CUSTOM_RANGE_DAYS
+# bounds a custom report window — a chart never scans unbounded history.
+MAX_TIMESERIES_DAYS = 90
+
+
+async def get_metric_timeseries(
+    session: AsyncSession, *, metric_code: str, days: int
+) -> list[tuple[str, float]]:
+    """Daily values for `metric_code`, oldest first, ending yesterday — the
+    router has already 404/403'd an unknown or unpermitted metric_code via
+    `require_metric_permission_or_404` before this runs, matching
+    `get_drilldown`'s split (router validates, service assumes valid
+    input). Reuses `app.forecasts.data.get_daily_history`, the same
+    per-day windowing this codebase already built for forecasting, rather
+    than a second date-bucketing implementation."""
+    from app.forecasts.data import get_daily_history
+
+    values = await get_daily_history(session, metric_code, num_days=days)
+    today_local = datetime.now(UTC).astimezone(RESTAURANT_TIMEZONE).date()
+    dates = [today_local - timedelta(days=d) for d in range(days, 0, -1)]
+    return [(d.isoformat(), float(v)) for d, v in zip(dates, values, strict=True)]
 
 
 # Drill-down — a deliberately small, hand-written allowlist rather than a

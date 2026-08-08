@@ -21,13 +21,13 @@ export function StatCard({ label, value, icon: Icon, loading, className }: StatC
         <div>
           <p className="text-muted-foreground text-sm">{label}</p>
           {loading ? (
-            <Skeleton className="mt-1 h-7 w-20" />
+            <Skeleton className="mt-1 h-8 w-24" />
           ) : (
-            <p className="text-2xl font-semibold tracking-tight">{value}</p>
+            <p className="text-3xl font-semibold tracking-tight">{value}</p>
           )}
         </div>
         {Icon && (
-          <div className="bg-muted text-muted-foreground rounded-full p-2.5">
+          <div className="bg-primary/10 text-primary rounded-full p-2.5">
             <Icon className="size-5" aria-hidden="true" />
           </div>
         )}

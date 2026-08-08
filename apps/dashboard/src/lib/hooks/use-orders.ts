@@ -18,6 +18,7 @@ import type {
   OrderTimelineEntry,
   OrderUpdateInput,
   PaginatedResponse,
+  TopMenuItem,
 } from "@rkpr/contracts";
 import { apiFetchClient } from "@/lib/api/browser";
 
@@ -46,6 +47,17 @@ export function useOrderDashboardStats() {
     // Refresh periodically so the dashboard stays current during a shift
     // without requiring a manual reload — this is a live operational view.
     refetchInterval: 60_000,
+  });
+}
+
+export function useTopMenuItems(windowCode: string, limit = 5) {
+  return useQuery({
+    queryKey: ["orders", "dashboard-top-items", windowCode, limit],
+    queryFn: () =>
+      apiFetchClient<DataResponse<TopMenuItem[]>>(
+        `/api/v1/orders/dashboard/top-items?window=${windowCode}&limit=${limit}`,
+      ),
+    select: (response) => response.data,
   });
 }
 

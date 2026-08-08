@@ -268,6 +268,16 @@ class OrderDashboardStatsOut(BaseModel):
     recent_activity: list[RecentOrderActivityOut]
 
 
+class TopMenuItemOut(BaseModel):
+    """Ranked by revenue within the window — grouped by
+    `product_name_snapshot` (not a live product join) so a later menu
+    rename/deletion never changes what a historical ranking shows."""
+
+    product_name: str
+    quantity_sold: int
+    revenue_minor: int
+
+
 class OrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

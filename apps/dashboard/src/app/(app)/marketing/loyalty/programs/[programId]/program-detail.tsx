@@ -91,7 +91,7 @@ export function ProgramDetail({ programId }: { programId: string }) {
     [],
   );
 
-  if (isLoading) return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (isError || !program) {
     return (
       <div className="p-6">
@@ -105,7 +105,7 @@ export function ProgramDetail({ programId }: { programId: string }) {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div>
-        <Link href="/marketing/loyalty" className="text-sm text-zinc-500 hover:underline">
+        <Link href="/marketing/loyalty" className="text-sm text-muted-foreground hover:underline">
           ← Loyalty
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -118,7 +118,7 @@ export function ProgramDetail({ programId }: { programId: string }) {
         <p className="text-muted-foreground text-sm">{program.code}</p>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {canManage && availableTransitions.length > 0 && (
         <div className="flex flex-wrap gap-2">

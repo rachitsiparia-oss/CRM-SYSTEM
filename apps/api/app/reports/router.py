@@ -34,6 +34,8 @@ from app.reports.schemas import (
     ReportRunDetailOut,
     ReportRunOut,
     ReportRunRequestIn,
+    TimeseriesOut,
+    TimeseriesPointOut,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["reports"])
@@ -150,6 +152,31 @@ async def get_dashboard(
             window_end=resolved.end,
             metrics=[_metric_result_out(r) for r in results],
             partial_failures=skipped,
+        ),
+        meta=request_meta(request),
+    )
+
+
+@router.get("/reports/timeseries")
+async def get_timeseries(
+    request: Request,
+    metric_code: str = Query(...),
+    days: int = Query(default=7, ge=1, le=service.MAX_TIMESERIES_DAYS),
+    actor: StaffUser = Depends(require_permission("reports.view")),
+    session: AsyncSession = Depends(get_db),
+) -> DataResponse[TimeseriesOut]:
+    """A daily-points series for one metric — Phase 17.5's home dashboard
+    trend chart, and reusable by any future chart needing the same shape.
+    Bounded to `MAX_TIMESERIES_DAYS` (CLAUDE.md section 5.1's "keep charts
+    bounded by date ranges", same principle as the drilldown row limit)."""
+    permissions = await get_effective_permissions(session, actor.id)
+    metric = require_metric_permission_or_404(metric_code, permissions)
+    points = await service.get_metric_timeseries(session, metric_code=metric_code, days=days)
+    return DataResponse(
+        data=TimeseriesOut(
+            metric_code=metric_code,
+            display_name=metric.display_name,
+            points=[TimeseriesPointOut(date=d, value=v) for d, v in points],
         ),
         meta=request_meta(request),
     )

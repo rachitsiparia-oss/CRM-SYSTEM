@@ -13,6 +13,7 @@ from fastapi import HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.analytics_core.windows import ResolvedWindow
 from app.audit.service import record_audit_event
 from app.db.models import (
     Customer,
@@ -50,6 +51,7 @@ from app.orders.schemas import (
     OrderTaxOut,
     OrderUpdateIn,
     RecentOrderActivityOut,
+    TopMenuItemOut,
 )
 from app.orders.states import is_transition_allowed
 from app.outbox.service import record_domain_event
@@ -790,3 +792,40 @@ async def get_dashboard_stats(session: AsyncSession) -> OrderDashboardStatsOut:
         average_order_value_minor=average_order_value_minor,
         recent_activity=recent_activity,
     )
+
+
+async def get_top_items(
+    session: AsyncSession, *, window: ResolvedWindow, limit: int
+) -> list[TopMenuItemOut]:
+    """Best-selling menu items by revenue within `window` — Phase 17.5's
+    home dashboard ranked list. Grouped by `product_name_snapshot` (the
+    per-order-item historical label, not a live join to `products`) so a
+    later rename or deletion never rewrites what a past ranking showed —
+    same "snapshot, don't re-read" principle `OrderItem` itself documents.
+    Only completed orders and active (non-cancelled) line items count,
+    matching every other revenue calculator's `_completed_in_window`
+    convention (CLAUDE.md section 5.3: aggregate in the database, never
+    in application memory)."""
+    rows = (
+        await session.execute(
+            select(
+                OrderItem.product_name_snapshot,
+                func.coalesce(func.sum(OrderItem.quantity), 0),
+                func.coalesce(func.sum(OrderItem.final_price_minor), 0),
+            )
+            .join(Order, Order.id == OrderItem.order_id)
+            .where(
+                Order.status == "completed",
+                Order.created_at >= window.start,
+                Order.created_at < window.end,
+                OrderItem.status == "active",
+            )
+            .group_by(OrderItem.product_name_snapshot)
+            .order_by(func.sum(OrderItem.final_price_minor).desc())
+            .limit(limit)
+        )
+    ).all()
+    return [
+        TopMenuItemOut(product_name=name, quantity_sold=int(qty), revenue_minor=int(revenue))
+        for name, qty, revenue in rows
+    ]

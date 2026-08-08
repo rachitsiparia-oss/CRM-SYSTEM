@@ -51,7 +51,7 @@ export function AttendanceView() {
     <div className="flex flex-1 flex-col gap-6 p-6">
       <PageHeader title="Attendance" description="Manual and roster-derived attendance records." />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="w-56">
         <Select value={staffFilter} onValueChange={setStaffFilter}>

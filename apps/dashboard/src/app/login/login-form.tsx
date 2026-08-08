@@ -81,7 +81,7 @@ export function LoginForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p id="email-error" className="text-sm text-red-600">
+          <p id="email-error" className="text-sm text-destructive">
             {errors.email.message}
           </p>
         )}
@@ -90,7 +90,7 @@ export function LoginForm() {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
-          <Link href="/reset-password" className="text-xs text-zinc-500 hover:underline">
+          <Link href="/reset-password" className="text-xs text-muted-foreground hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -104,14 +104,14 @@ export function LoginForm() {
           {...register("password")}
         />
         {errors.password && (
-          <p id="password-error" className="text-sm text-red-600">
+          <p id="password-error" className="text-sm text-destructive">
             {errors.password.message}
           </p>
         )}
       </div>
 
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {formError}
         </p>
       )}

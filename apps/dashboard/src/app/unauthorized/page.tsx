@@ -6,7 +6,7 @@ export default function UnauthorizedPage() {
     <div className="flex min-h-screen flex-1 items-center justify-center p-6">
       <div className="w-full max-w-md text-center">
         <h1 className="mb-2 text-lg font-semibold">Not signed in</h1>
-        <p className="mb-6 text-sm text-zinc-500">
+        <p className="mb-6 text-sm text-muted-foreground">
           You need to sign in to access the RKPR Restaurant CRM.
         </p>
         <Button asChild>

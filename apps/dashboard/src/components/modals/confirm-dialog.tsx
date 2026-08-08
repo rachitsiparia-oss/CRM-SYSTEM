@@ -21,8 +21,8 @@ export type ConfirmDialogVariant = "confirm" | "delete" | "info" | "warning" | "
 const VARIANT_META: Record<ConfirmDialogVariant, { icon: typeof Info; iconClass: string; destructive: boolean }> = {
   confirm: { icon: CheckCircle2, iconClass: "text-primary", destructive: false },
   delete: { icon: Trash2, iconClass: "text-destructive", destructive: true },
-  info: { icon: Info, iconClass: "text-blue-600", destructive: false },
-  warning: { icon: AlertTriangle, iconClass: "text-warning-foreground", destructive: false },
+  info: { icon: Info, iconClass: "text-primary", destructive: false },
+  warning: { icon: AlertTriangle, iconClass: "text-warning", destructive: false },
   success: { icon: CheckCircle2, iconClass: "text-success", destructive: false },
   danger: { icon: ShieldAlert, iconClass: "text-destructive", destructive: true },
 };

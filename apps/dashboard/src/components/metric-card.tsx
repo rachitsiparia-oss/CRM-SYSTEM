@@ -37,9 +37,9 @@ export function MetricCard({
         <div className="flex flex-col gap-1">
           <p className="text-muted-foreground text-sm">{label}</p>
           {loading ? (
-            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-8 w-24" />
           ) : (
-            <p className="text-2xl font-semibold tracking-tight">{value}</p>
+            <p className="text-3xl font-semibold tracking-tight">{value}</p>
           )}
           {!loading && changePercent !== undefined && (
             <p
@@ -60,7 +60,7 @@ export function MetricCard({
           )}
         </div>
         {Icon && (
-          <div className="bg-muted text-muted-foreground rounded-full p-2.5">
+          <div className="bg-primary/10 text-primary rounded-full p-2.5">
             <Icon className="size-5" aria-hidden="true" />
           </div>
         )}

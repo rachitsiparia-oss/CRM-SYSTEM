@@ -1,16 +1,37 @@
+import type { ReactElement } from "react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { CurrentUser } from "@rkpr/contracts";
 import { Sidebar } from "./sidebar";
 import * as useCurrentUserModule from "@/lib/hooks/use-current-user";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
+  // UserMenu (now rendered in the Sidebar footer, Phase 17.5) calls
+  // useRouter() for its sign-out redirect — unused by these tests
+  // otherwise, but must exist or rendering UserMenu throws.
+  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() }),
 }));
 
+// UserMenu also calls useQueryClient() (query-cache eviction on sign-out) —
+// needs a real QueryClient in the tree or that hook throws at render time.
+function renderSidebar(ui: ReactElement = <Sidebar />) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 function mockCurrentUser(permissions: string[]) {
+  // The sidebar footer now renders UserMenu (Phase 17.5), which also reads
+  // useCurrentUser() and needs display_name/email/roles beyond just
+  // permissions — a bare { permissions } object crashes it at render time.
   vi.spyOn(useCurrentUserModule, "useCurrentUser").mockReturnValue({
-    data: { permissions } as CurrentUser,
+    data: {
+      display_name: "Test User",
+      email: "test.user@example.com",
+      roles: [{ id: "role-1", code: "test_role", name: "Test Role" }],
+      permissions,
+    } as CurrentUser,
     isLoading: false,
   } as ReturnType<typeof useCurrentUserModule.useCurrentUser>);
 }
@@ -30,7 +51,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     // Staff & HR's, Menu's, Orders', Reservations', Communication Hub's,
     // Knowledge Base's, and Marketing's children start collapsed (current
@@ -55,7 +76,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(screen.queryByRole("link", { name: /Staff & HR/ })).not.toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav.querySelectorAll("a")).toHaveLength(9);
@@ -70,7 +91,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.queryByRole("link", { name: /Menu, Products & Inventory/ }),
     ).not.toBeInTheDocument();
@@ -87,7 +108,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.queryByRole("link", { name: /Orders & Restaurant Operations/ }),
     ).not.toBeInTheDocument();
@@ -104,7 +125,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.queryByRole("link", { name: /Reservations & Calendar/ }),
     ).not.toBeInTheDocument();
@@ -121,7 +142,7 @@ describe("Sidebar", () => {
       "knowledge.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(screen.queryByRole("link", { name: /Communication Hub/ })).not.toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav.querySelectorAll("a")).toHaveLength(9);
@@ -136,7 +157,7 @@ describe("Sidebar", () => {
       "communications.view",
       "loyalty.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.queryByRole("link", { name: /Lightweight Knowledge Base/ }),
     ).not.toBeInTheDocument();
@@ -153,7 +174,7 @@ describe("Sidebar", () => {
       "communications.view",
       "knowledge.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.queryByRole("link", { name: /Marketing, Loyalty & Feedback/ }),
     ).not.toBeInTheDocument();
@@ -172,7 +193,7 @@ describe("Sidebar", () => {
       "loyalty.view",
       "reports.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.getByRole("link", { name: /Reports, Analytics & AI Center/ }),
     ).toBeInTheDocument();
@@ -191,7 +212,7 @@ describe("Sidebar", () => {
       "loyalty.view",
       "jobs.view",
     ]);
-    render(<Sidebar />);
+    renderSidebar();
     expect(
       screen.getByRole("link", { name: /Integrations, Security & Settings/ }),
     ).toBeInTheDocument();
@@ -201,7 +222,7 @@ describe("Sidebar", () => {
 
   it("marks the current route as active via aria-current", () => {
     mockCurrentUser(["staff.view"]);
-    render(<Sidebar />);
+    renderSidebar();
     const dashboardLink = screen.getByRole("link", { name: "Dashboard" });
     expect(dashboardLink).toHaveAttribute("aria-current", "page");
   });

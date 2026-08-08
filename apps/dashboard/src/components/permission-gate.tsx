@@ -21,7 +21,7 @@ export function PermissionGate({
   const { data: user, isLoading, isError, refetch } = useCurrentUser();
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   }
 
   // Distinct from "not permitted": the profile couldn't be loaded at all
@@ -45,7 +45,7 @@ export function PermissionGate({
     return (
       <div className="p-6">
         <h1 className="mb-2 text-lg font-semibold">You don&apos;t have access to this</h1>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           This page requires the <code className="font-mono">{permission}</code> permission.
         </p>
       </div>

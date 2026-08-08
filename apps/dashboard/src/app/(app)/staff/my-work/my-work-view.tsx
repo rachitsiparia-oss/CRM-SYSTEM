@@ -57,14 +57,14 @@ export function MyWorkView() {
   const [availabilityDay, setAvailabilityDay] = useState("1");
 
   if (!staffId) {
-    return <div className="p-6 text-sm text-zinc-500">Loading…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <PageHeader title="My work" description="Your own schedule, leave, training, and availability." />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SectionCard title="Upcoming shifts">

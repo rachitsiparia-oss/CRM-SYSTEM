@@ -153,10 +153,10 @@ export function DataTable<TData>({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden rounded-2xl border border-border/60">
         <div className={cn(stickyHeader && "max-h-[70vh] overflow-y-auto")}>
           <Table style={{ width: enableColumnResizing ? table.getTotalSize() : undefined }}>
-            <TableHeader className={cn(stickyHeader && "bg-background sticky top-0 z-10")}>
+            <TableHeader className={cn(stickyHeader && "bg-card sticky top-0 z-10")}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {

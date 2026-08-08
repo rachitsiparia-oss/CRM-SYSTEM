@@ -625,6 +625,57 @@ async def test_dashboard_stats_counts_todays_orders(
     assert len(stats["recent_activity"]) > 0
 
 
+async def test_top_items_requires_permission(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    staff_user = await make_staff_user(role_code="hr_manager")
+    response = await authed_client.get(
+        "/api/v1/orders/dashboard/top-items", headers=_headers(staff_user)
+    )
+    assert response.status_code == 403
+
+
+async def test_top_items_rejects_unknown_window(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    owner = await make_staff_user(role_code="owner")
+    response = await authed_client.get(
+        "/api/v1/orders/dashboard/top-items",
+        params={"window": "not_a_real_window"},
+        headers=_headers(owner),
+    )
+    assert response.status_code == 400
+
+
+async def test_top_items_ranks_completed_orders_by_revenue(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser, db_session: AsyncSession
+) -> None:
+    owner = await make_staff_user(role_code="owner")
+    product = await _make_product(db_session, price_minor=10000)
+    order = await _create_order(authed_client, owner, [_item_payload(product.id, quantity=2)])
+    for target in ("pending_confirmation", "confirmed", "preparing", "ready", "completed"):
+        await authed_client.post(
+            f"/api/v1/orders/{order['id']}/transition",
+            json={"new_status": target},
+            headers=_headers(owner),
+        )
+
+    response = await authed_client.get(
+        "/api/v1/orders/dashboard/top-items",
+        # "today" (not "current_week") so this assertion is isolated from any
+        # backdated historical orders already present in the shared dev
+        # database (e.g. the seed script's trend-chart demo data).
+        params={"window": "today"},
+        headers=_headers(owner),
+    )
+    assert response.status_code == 200
+    items = response.json()["data"]
+    matching = [row for row in items if row["product_name"] == product.name]
+    assert matching, f"expected {product.name!r} in top items, got {items!r}"
+    assert matching[0]["quantity_sold"] >= 2
+    assert matching[0]["revenue_minor"] >= 20000
+
+
 async def test_get_order_timeline_records_created_event(
     authed_client: AsyncClient, make_staff_user: MakeStaffUser, db_session: AsyncSession
 ) -> None:

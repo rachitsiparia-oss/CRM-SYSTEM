@@ -73,6 +73,72 @@ async def test_get_dashboard_succeeds_for_owner(
     assert len(body["metrics"]) == 5
 
 
+# --- Timeseries (Phase 17.5 home dashboard trend chart) ----------------------
+
+
+async def test_get_timeseries_requires_authentication(authed_client: AsyncClient) -> None:
+    response = await authed_client.get(
+        "/api/v1/reports/timeseries", params={"metric_code": "exec_net_sales"}
+    )
+    assert response.status_code == 401
+
+
+async def test_get_timeseries_unknown_metric_is_404(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    actor = await make_staff_user(role_code="owner")
+    response = await authed_client.get(
+        "/api/v1/reports/timeseries",
+        params={"metric_code": "not_a_real_metric"},
+        headers=_headers(actor),
+    )
+    assert response.status_code == 404
+
+
+async def test_get_timeseries_denies_metric_without_permission(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    outsider = await make_staff_user(role_code=None)
+    response = await authed_client.get(
+        "/api/v1/reports/timeseries",
+        params={"metric_code": "exec_net_sales"},
+        headers=_headers(outsider),
+    )
+    assert response.status_code == 403
+
+
+async def test_get_timeseries_succeeds_for_owner(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    actor = await make_staff_user(role_code="owner")
+    response = await authed_client.get(
+        "/api/v1/reports/timeseries",
+        params={"metric_code": "exec_net_sales", "days": 7},
+        headers=_headers(actor),
+    )
+    assert response.status_code == 200
+    body = response.json()["data"]
+    assert body["metric_code"] == "exec_net_sales"
+    assert len(body["points"]) == 7
+    # Oldest-first, ending yesterday — every point has a real ISO date and a
+    # database-computed (never negative) value, not a placeholder.
+    dates = [p["date"] for p in body["points"]]
+    assert dates == sorted(dates)
+    assert all(p["value"] >= 0 for p in body["points"])
+
+
+async def test_get_timeseries_rejects_days_beyond_max(
+    authed_client: AsyncClient, make_staff_user: MakeStaffUser
+) -> None:
+    actor = await make_staff_user(role_code="owner")
+    response = await authed_client.get(
+        "/api/v1/reports/timeseries",
+        params={"metric_code": "exec_net_sales", "days": 91},
+        headers=_headers(actor),
+    )
+    assert response.status_code == 422
+
+
 # --- Report definitions -------------------------------------------------------
 
 

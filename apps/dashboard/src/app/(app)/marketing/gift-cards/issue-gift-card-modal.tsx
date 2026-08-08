@@ -153,7 +153,7 @@ export function IssueGiftCardModal({
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+        {error && <p className="text-sm text-destructive sm:col-span-2">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="gift-card-amount">Amount</Label>
           <CurrencyInput

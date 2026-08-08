@@ -18,8 +18,22 @@ its colors through these tokens; nothing here is component-specific. */
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+
+  /* Brand identity colors — Phase 17.5 redesign. --primary is an alias onto
+  --brand-primary (rather than a second copy of the same value) so every
+  primitive that already resolves through --primary/bg-primary picks up the
+  brand blue for free, and the brand's own color stays a single source of
+  truth. --brand-yellow is deliberately its own token, never aliased onto
+  any shadcn semantic slot — it is used narrowly by chart highlights and
+  progress-bar fills only, never by default Button/Badge variants. */
+  --brand-primary: oklch(0.55 0.21 262);
+  --brand-primary-foreground: oklch(0.985 0 0);
+  --brand-yellow: oklch(0.83 0.15 85);
+  --brand-yellow-foreground: oklch(0.145 0 0);
+  --surface-canvas: oklch(0.975 0.006 250);
+
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-primary-foreground);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -60,8 +74,18 @@ its colors through these tokens; nothing here is component-specific. */
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    /* Same brand identity across themes (Phase 17.5) — the blue/yellow stay
+    the app's brand colors in dark mode too, just tuned for a dark
+    background, rather than dark mode inverting --primary to near-white the
+    way plain shadcn scaffolding does. */
+    --brand-primary: oklch(0.62 0.19 262);
+    --brand-primary-foreground: oklch(0.985 0 0);
+    --brand-yellow: oklch(0.8 0.16 85);
+    --brand-yellow-foreground: oklch(0.145 0 0);
+    --surface-canvas: oklch(0.19 0.008 255);
+
+    --primary: var(--brand-primary);
+    --primary-foreground: var(--brand-primary-foreground);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -107,6 +131,11 @@ its colors through these tokens; nothing here is component-specific. */
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-foreground: var(--brand-primary-foreground);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-yellow-foreground: var(--brand-yellow-foreground);
+  --color-surface-canvas: var(--surface-canvas);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

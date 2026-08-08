@@ -64,7 +64,7 @@ export function QualifyReferralModal({
       }
     >
       <div className="flex flex-col gap-3">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="qualifying-order-id">Qualifying order ID</Label>
           <Input id="qualifying-order-id" value={orderId} onChange={(e) => setOrderId(e.target.value)} />
@@ -124,7 +124,7 @@ export function RejectReferralModal({
       }
     >
       <div className="flex flex-col gap-3">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reject-reason">Reason</Label>
           <Textarea id="reject-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />

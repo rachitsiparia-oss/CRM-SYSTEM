@@ -67,18 +67,18 @@ export function InviteStaffForm({
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="invite-email">
-          Email <span className="text-red-600">*</span>
+          Email <span className="text-destructive">*</span>
         </Label>
         <Input id="invite-email" type="email" required {...register("email")} />
-        {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
+        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="invite-role">
-          Role <span className="text-red-600">*</span>
+          Role <span className="text-destructive">*</span>
         </Label>
         <select
           id="invite-role"
-          className="h-9 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
           {...register("roleCode")}
           defaultValue=""
         >
@@ -91,29 +91,29 @@ export function InviteStaffForm({
             </option>
           ))}
         </select>
-        {errors.roleCode && <p className="text-sm text-red-600">{errors.roleCode.message}</p>}
+        {errors.roleCode && <p className="text-sm text-destructive">{errors.roleCode.message}</p>}
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="invite-first-name">
-          First name <span className="text-red-600">*</span>
+          First name <span className="text-destructive">*</span>
         </Label>
         <Input id="invite-first-name" required {...register("firstName")} />
-        {errors.firstName && <p className="text-sm text-red-600">{errors.firstName.message}</p>}
+        {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="invite-last-name">
-          Last name <span className="text-red-600">*</span>
+          Last name <span className="text-destructive">*</span>
         </Label>
         <Input id="invite-last-name" required {...register("lastName")} />
-        {errors.lastName && <p className="text-sm text-red-600">{errors.lastName.message}</p>}
+        {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
       </div>
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <Label htmlFor="invite-department">
-          Department <span className="text-red-600">*</span>
+          Department <span className="text-destructive">*</span>
         </Label>
         <select
           id="invite-department"
-          className="h-9 rounded-md border border-zinc-300 bg-transparent px-2 text-sm dark:border-zinc-700"
+          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
           {...register("departmentId")}
           defaultValue=""
         >
@@ -127,12 +127,12 @@ export function InviteStaffForm({
           ))}
         </select>
         {errors.departmentId && (
-          <p className="text-sm text-red-600">{errors.departmentId.message}</p>
+          <p className="text-sm text-destructive">{errors.departmentId.message}</p>
         )}
       </div>
 
-      {formError && <p className="text-sm text-red-600 sm:col-span-2">{formError}</p>}
-      {success && <p className="text-sm text-green-700 sm:col-span-2">{success}</p>}
+      {formError && <p className="text-sm text-destructive sm:col-span-2">{formError}</p>}
+      {success && <p className="text-sm text-success sm:col-span-2">{success}</p>}
 
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" disabled={inviteMutation.isPending}>

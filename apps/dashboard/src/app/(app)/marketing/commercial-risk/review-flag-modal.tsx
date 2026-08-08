@@ -82,7 +82,7 @@ export function ReviewFlagModal({
       }
     >
       <div className="flex flex-col gap-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label>New status</Label>
           <Select value={target} onValueChange={(v) => setTarget(v as ReviewTarget)}>

@@ -100,7 +100,7 @@ export function ReportsDashboard() {
                 key={metric.metric_code}
                 label={metric.display_name}
                 value={
-                  metric.unit === "percent"
+                  metric.unit === "%"
                     ? `${metric.value.toFixed(1)}%`
                     : Number.isInteger(metric.value)
                       ? metric.value.toLocaleString()

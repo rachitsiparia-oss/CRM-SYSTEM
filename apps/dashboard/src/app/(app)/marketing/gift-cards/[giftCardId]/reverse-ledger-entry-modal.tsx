@@ -63,7 +63,7 @@ export function ReverseLedgerEntryModal({
       }
     >
       <div className="flex flex-col gap-3">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reverse-reason">Reason</Label>
           <Textarea id="reverse-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />

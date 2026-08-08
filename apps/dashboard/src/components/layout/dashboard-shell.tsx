@@ -18,7 +18,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <Header />
-          <main className="flex-1 overflow-y-auto">
+          <main className="bg-surface-canvas flex-1 overflow-y-auto">
             <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col p-4 md:p-6">
               {children}
             </div>
