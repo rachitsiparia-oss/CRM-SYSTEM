@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
 function applyTheme(theme: Theme) {
@@ -33,15 +34,20 @@ export function ThemeToggle() {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Sun className="text-muted-foreground size-3.5" aria-hidden="true" />
+    <div className="bg-muted/60 flex items-center gap-2 rounded-full px-3 py-1.5">
+      <Sun
+        className={cn("size-4", !isDark ? "text-primary" : "text-muted-foreground")}
+        aria-hidden="true"
+      />
       <Switch
         checked={isDark}
         onCheckedChange={toggle}
-        size="sm"
         aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       />
-      <Moon className="text-muted-foreground size-3.5" aria-hidden="true" />
+      <Moon
+        className={cn("size-4", isDark ? "text-primary" : "text-muted-foreground")}
+        aria-hidden="true"
+      />
     </div>
   );
 }
