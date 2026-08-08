@@ -36,7 +36,7 @@ export function MobileNav() {
         <SheetHeader className="border-b">
           <SheetTitle>RKPR Restaurant CRM</SheetTitle>
         </SheetHeader>
-        <nav aria-label="Primary" className="flex flex-col gap-1 overflow-y-auto p-2">
+        <nav aria-label="Primary" className="scrollbar-none flex flex-col gap-1 overflow-y-auto p-2">
           {sections.map((section) => {
             const Icon = section.icon;
             const active = isActive(pathname, section.href);

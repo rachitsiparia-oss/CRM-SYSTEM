@@ -118,7 +118,7 @@ export function Sidebar({ className }: { className?: string }) {
         </div>
       )}
 
-      <ul className="flex flex-1 flex-col gap-1 overflow-y-auto p-2">
+      <ul className="scrollbar-none flex flex-1 flex-col gap-1 overflow-y-auto p-2">
         {sections.map((section) => {
           const Icon = section.icon;
           const active = isActive(pathname, section.href);

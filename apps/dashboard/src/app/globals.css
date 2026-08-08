@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Tailwind's spacing/sizing/radius/type scale is entirely rem-based, so
+scaling the root font-size scales the whole UI uniformly — the same effect
+as the browser's own zoom, but baked into the page so every user gets the
+denser, information-dense density CLAUDE.md section 22 asks for by default
+instead of having to zoom out manually. */
+html {
+  font-size: 75%;
+}
+
 /* Design tokens — CLAUDE.md section 10 ("keep visual language consistent
 across all twelve modules"), ARCHITECTURE_AND_TECH_STACK.md section 6.1.
 Dark mode follows the OS preference (prefers-color-scheme), matching the
@@ -179,6 +188,20 @@ its colors through these tokens; nothing here is component-specific. */
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* Scroll stays functional (keyboard, wheel, touch) — only the visible
+scrollbar track/thumb is suppressed. Applied to the sidebar nav lists, which
+scroll internally within a fixed-height shell rather than growing the page,
+so a visible scrollbar there reads as clutter rather than useful affordance. */
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
